@@ -1,0 +1,12 @@
+{
+	"mail": {
+		"host": "your.mail.host",
+		"port": 465,
+		"auth": {
+			"user": "ne_pas_repondre@votre_adresse.fr",
+			"pass": "blablabla"
+		}
+	},
+	"port": 3005,
+	"db": "C:\\Users\\ACE\\Documents\\Bridge virginie\\bridge.db"
+}

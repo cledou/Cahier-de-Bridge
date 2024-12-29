@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Cahier de Bridge</title>
+		<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png" />
+		<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png" />
+		<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png" />
+		<link rel="manifest" href="/images/site.webmanifest" />
+		<style type="text/css">
+			body {
+				box-sizing: border-box;
+				margin: 0;
+				padding: 0;
+			}
+			#container {
+				position: absolute;
+				display: flex;
+				flex-direction: column;
+				width: 100%;
+				height: 100%;
+				box-sizing: border-box;
+			}
+			#volets {
+				position: relative;
+				width: 100%;
+				height: 100%;
+				display: flex;
+				flex-direction: row;
+				justify-content: flex-start;
+				align-items: stretch;
+				box-sizing: border-box;
+			}
+			#volet_tree {
+				display: block;
+				position: relative;
+				min-width: 200px;
+				background-color: lightgray;
+			}
+			#volet_centre {
+				position: relative;
+				box-sizing: border-box;
+				display: flex;
+				flex-direction: column;
+				flex-grow: 2;
+				background-color: lightgray;
+				background: linear-gradient(rgba(211, 211, 211, 0.5), rgba(211, 211, 211, 0.5)), url("/images/Cards.png");
+			}
+			#volet_tree.hide_me {
+				display: none;
+			}
+			.menu {
+				width: 100%;
+				height: 48px;
+				background-color: lightgray;
+				display: flex;
+				flex-direction: row;
+				border-radius: 5px;
+				justify-content: flex-start;
+				align-items: center;
+			}
+			#tree_sw {
+				appearance: none;
+				margin: 5px;
+				padding: 0;
+			}
+
+			#tree_sw + label {
+				cursor: pointer;
+			}
+
+			#tree_sw:checked + label img {
+				transform: rotate(180deg);
+			}
+			#status {
+				box-sizing: border-box;
+				display: flex;
+				flex-direction: row;
+				justify-content: flex-start;
+				align-items: center;
+				height: 32px;
+				font-weight: bold;
+				border: grey 5px inset;
+				background-color: lightgray;
+				width: 100%;
+			}
+
+			#status.error {
+				background-color: red;
+				color: antiquewhite;
+			}
+
+			#status.ok {
+				background-color: lightgreen;
+			}
+
+			#status.warning {
+				background-color: lightsalmon;
+			}
+			.donne {
+				height: 50%;
+				background-color: aquamarine;
+				display: flex;
+				flex-direction: row;
+			}
+			.cartes {
+				background-color: azure;
+				flex-grow: 2;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+			}
+			.cartes div {
+				border: blue 1px solid;
+			}
+			.nord,
+			.milieu,
+			.sud {
+				height: 33%;
+			}
+			.milieu {
+				display: flex;
+				flex-direction: row;
+				align-items: center;
+				width: 100%;
+			}
+			.nord,
+			.sud {
+				width: 33%;
+			}
+			.milieu div {
+				width: 33%;
+				height: 100%;
+			}
+			.encheres {
+				background-color: bisque;
+			}
+			.encheres table {
+				margin: 8px;
+				border: 1px solid black;
+				table-layout: fixed;
+				width: 300px;
+				text-align: center;
+			}
+
+			.encheres table th {
+				border-bottom: 1px solid black;
+			}
+
+			.encheres table td {
+				vertical-align: middle;
+			}
+			.encheres table td img {
+				vertical-align: middle;
+			}
+			.explik {
+				height: 50%;
+				background-color: antiquewhite;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="container">
+			<div id="volets">
+				<div id="volet_tree" class="hide_me"></div>
+				<div id="volet_centre">
+					<div class="menu">
+						<input type="checkbox" id="tree_sw" />
+						<label for="tree_sw">
+							<img src="/images/arrow_d.png" alt="Afficher/Cacher l'arbre de situation" />
+						</label>
+						<div style="width: 90%"></div>
+						<!-- repousser menuD à droite-->
+						<button onclick="PrintThis()"><img src="/images/print_30px.png" alt="Faire le PDF" /></button>
+						<button class="undo" onclick="Undo()" disabled><img src="/images/undo_30px.png" alt="Revenir en arrière (ctrl-Z)" /></button>
+						<button class="redo" onclick="Redo()" disabled><img src="/images/redo_30px.png" alt="Annuler retour en arrière (shift-ctrl-Z)" /></button>
+						<button class="si_dirty" onclick="onSave()"><img src="/images/save_30px.png" alt="Sauver les modifications" /></button>
+						<button class="si_dirty" onclick="onOk()"><img src="/images/Check Mark.png" alt="Valider et fermer" /></button>
+						<button id="cancel_btn" onclick="onCancel()"><img src="/images/Cross Mark.png" alt="Fermer sans valider" /></button>
+					</div>
+					<div class="donne">
+						<div class="cartes">
+							<div id="nord"></div>
+							<div class="milieu">
+								<div id="ouest"></div>
+								<div class="centre"></div>
+								<div id="est"></div>
+							</div>
+							<div id="sud"></div>
+						</div>
+						<div class="encheres">
+							<table id="tbe"></table>
+						</div>
+					</div>
+					<div class="explik"></div>
+				</div>
+			</div>
+			<div id="status"></div>
+		</div>
+	</body>
+</html>
+<script>
+	const volet_tree = document.getElementById("volet_tree"); // lié à session.choix.hide_tree
+	const tree_sw = document.getElementById("tree_sw");
+	MakeEncheres(["", "", "-", "-", "1K", "1C", "2K"]);
+	const donne = ["D 8 7", "3 2", "D 10 7 3", "A 6 5 4", "V 4 3 2", "R D 8 5", "2", "10 8 7 3", "A 10 6", "7 6", "A R V 6 4", "V 9 2"];
+
+	/****************************/
+	/*           STUFF          */
+	/****************************/
+	function MakeEncheres(ar) {
+		let st = "<tr><th>Sud</th><th>Ouest</th><th>Nord</th><th>Est</th></tr>";
+		for (let i = 0; i < ar.length; i++) {
+			if (i % 4 == 0) st += "</tr><tr>";
+			st += "<td>";
+			const v = ar[i];
+			if (v != "") {
+				if (v == "-") st += "Passe";
+				else if (v == "X") st += "Contre";
+				else if (v == "S") st += "Surcontre";
+				else {
+					st += v[0];
+					if (v[1] == "P") st += '<img src="/images/pique.png" />';
+					else if (v[1] == "C") st += '<img src="/images/coeur.png" />';
+					else if (v[1] == "K") st += '<img src="/images/carreau.png" />';
+					else if (v[1] == "T") st += '<img src="/images/trefle.png" />';
+					else st += v.substr(1);
+				}
+			}
+			st += "</td>";
+		}
+		st += "</tr>";
+		document.getElementById("tbe").innerHTML = st;
+	}
+
+	function MakeDonne(ar, idx) {
+		let st = '<img src="/images/pique.png" />' + ar[idx++] + "<br>";
+		st += '<img src="/images/coeur.png" />' + ar[idx++] + "<br>";
+		st += '<img src="/images/carreau.png" />' + ar[idx++] + "<br>";
+		st += '<img src="/images/trefle.png" />' + ar[idx++] + "<br>";
+		return st;
+	}
+
+	document.getElementById("nord").innerHTML = MakeDonne(donne, 0);
+	document.getElementById("est").innerHTML = MakeDonne(donne, 4);
+	document.getElementById("sud").innerHTML = MakeDonne(donne, 12);
+	//document.getElementById("nord").innerHTML = MakeDonne(donne,0);
+
+	/****************************/
+	/*           MENUS          */
+	/****************************/
+
+	function HideVoletGauche(b) {
+		if (b) volet_tree.classList.remove("hide_me");
+		else volet_tree.classList.add("hide_me");
+	}
+
+	tree_sw.addEventListener("change", function () {
+		HideVoletGauche(this.checked);
+		//session.choix.hide_tree = this.checked;
+	});
+	//tree_sw.checked = false;
+
+	/****************************/
+	/*        STATUS BAR        */
+	/****************************/
+	const status = document.getElementById("status"); //https://codepen.io/lcoulon/pen/QdPgqz
+	document.querySelectorAll("[hlp],[alt]").forEach((itm) => {
+		itm.addEventListener("mouseover", (e) => {
+			e.stopPropagation();
+			if (!itm.parentElement.hasAttribute("disabled")) Info(itm.getAttribute("hlp") || itm.getAttribute("alt"));
+		});
+		itm.addEventListener("mouseout", (e) => {
+			Info("");
+		});
+	});
+
+	function Info(msg) {
+		status.classList.remove("warning");
+		status.classList.remove("error");
+		status.classList.remove("ok");
+		status.innerHTML = msg;
+	}
+
+	function Erreur(msg) {
+		console.error(msg);
+		Info('<img src="/images/error_25px.png"/>' + msg);
+		status.classList.add("error");
+	}
+
+	function OK(msg) {
+		Info('<img src="/images/Ok_25px.png"/>' + msg);
+		status.classList.add("ok");
+	}
+
+	function Warning(msg) {
+		Info('<img src="/images/Warning Shield.png"/>' + msg);
+		status.classList.add("warning");
+	}
+</script>
