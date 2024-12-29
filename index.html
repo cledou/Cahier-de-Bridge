@@ -104,39 +104,30 @@
 				display: flex;
 				flex-direction: row;
 			}
-			.cartes {
+			.explik {
+				height: 50%;
+				background-color: antiquewhite;
+			}
+			.donne > .cartes {
 				background-color: azure;
 				flex-grow: 2;
-				display: flex;
-				flex-direction: column;
-				align-items: center;
+				display: grid;
+				grid-template-columns: repeat(3, 3fr);
+				border: red 2px solid;
 			}
-			.cartes div {
-				border: blue 1px solid;
-			}
-			.nord,
-			.milieu,
-			.sud {
-				height: 33%;
-			}
-			.milieu {
-				display: flex;
-				flex-direction: row;
-				align-items: center;
-				width: 100%;
-			}
-			.nord,
-			.sud {
-				width: 33%;
-			}
-			.milieu div {
-				width: 33%;
-				height: 100%;
-			}
-			.encheres {
+
+			.donne > .encheres {
 				background-color: bisque;
 			}
-			.encheres table {
+
+			#nord,
+			#sud,
+			#est,
+			#ouest {
+				border: blue 1px solid;
+			}
+
+			.donne > .encheres table {
 				margin: 8px;
 				border: 1px solid black;
 				table-layout: fixed;
@@ -144,19 +135,23 @@
 				text-align: center;
 			}
 
-			.encheres table th {
+			.donne > .encheres table th {
 				border-bottom: 1px solid black;
 			}
 
-			.encheres table td {
+			.donne > .encheres table td {
 				vertical-align: middle;
 			}
-			.encheres table td img {
+			.donne > .encheres table td img {
 				vertical-align: middle;
 			}
-			.explik {
-				height: 50%;
-				background-color: antiquewhite;
+			.main {
+				display: flex;
+				flex-direction: row;
+				align-items: center;
+			}
+			.main > img {
+				margin-right: 8px;
 			}
 		</style>
 	</head>
@@ -203,7 +198,7 @@
 <script>
 	const volet_tree = document.getElementById("volet_tree"); // lié à session.choix.hide_tree
 	const tree_sw = document.getElementById("tree_sw");
-	MakeEncheres(["", "", "-", "-", "1K", "1C", "2K"]);
+	MakeEncheres(["", "", "-", "-", "1K", "1C", "2K", "3C"]);
 	const donne = ["D 8 7", "3 2", "D 10 7 3", "A 6 5 4", "V 4 3 2", "R D 8 5", "2", "10 8 7 3", "A 10 6", "7 6", "A R V 6 4", "V 9 2"];
 
 	/****************************/
@@ -235,16 +230,16 @@
 	}
 
 	function MakeDonne(ar, idx) {
-		let st = '<img src="/images/pique.png" />' + ar[idx++] + "<br>";
-		st += '<img src="/images/coeur.png" />' + ar[idx++] + "<br>";
-		st += '<img src="/images/carreau.png" />' + ar[idx++] + "<br>";
-		st += '<img src="/images/trefle.png" />' + ar[idx++] + "<br>";
+		let st = '<div class="main"><img src="/images/pique.png" />' + ar[idx++] + "</div>";
+		st += '<div class="main"><img src="/images/coeur.png" />' + ar[idx++] + "</div>";
+		st += '<div class="main"><img src="/images/carreau.png" />' + ar[idx++] + "</div>";
+		st += '<div class="main"><img src="/images/trefle.png" />' + ar[idx++] + "</div>";
 		return st;
 	}
 
 	document.getElementById("nord").innerHTML = MakeDonne(donne, 0);
 	document.getElementById("est").innerHTML = MakeDonne(donne, 4);
-	document.getElementById("sud").innerHTML = MakeDonne(donne, 12);
+	document.getElementById("sud").innerHTML = MakeDonne(donne, 8);
 	//document.getElementById("nord").innerHTML = MakeDonne(donne,0);
 
 	/****************************/
