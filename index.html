@@ -112,7 +112,10 @@
 				background-color: azure;
 				flex-grow: 2;
 				display: grid;
-				grid-template-columns: repeat(3, 3fr);
+				grid-template-areas:
+					". nord . "
+					"ouest centre est"
+					". sud . ";
 				border: red 2px solid;
 			}
 
@@ -120,8 +123,30 @@
 				background-color: bisque;
 			}
 
+			#nord {
+				grid-area: nord;
+				align-self: flex-end;
+			}
+			#centre {
+				grid-area: centre;
+				align-self: center;
+			}
+			#sud {
+				grid-area: sud;
+				align-self: flex-start;
+				justify-content: center;
+			}
+			#est {
+				grid-area: est;
+				align-self: center;
+			}
+			#ouest {
+				grid-area: ouest;
+				align-self: center;
+			}
 			#nord,
 			#sud,
+			#centre,
 			#est,
 			#ouest {
 				border: blue 1px solid;
@@ -176,15 +201,11 @@
 					</div>
 					<div class="donne">
 						<div class="cartes">
-							<div></div>
 							<div id="nord"></div>
-							<div></div>
 							<div id="ouest"></div>
-							<div class="centre"></div>
+							<div id="centre"></div>
 							<div id="est"></div>
-							<div></div>
 							<div id="sud"></div>
-							<div></div>
 						</div>
 						<div class="encheres">
 							<table id="tbe"></table>
