@@ -223,6 +223,7 @@
 	const tree_sw = document.getElementById("tree_sw");
 	MakeEncheres(["", "", "-", "-", "1K", "1C", "2K", "3C"]);
 	const donne = ["D 8 7", "3 2", "D 10 7 3", "A 6 5 4", "V 4 3 2", "R D 8 5", "2", "10 8 7 3", "A 10 6", "7 6", "A R V 6 4", "V 9 2"];
+	CompleteJeu(donne);
 
 	/****************************/
 	/*           STUFF          */
@@ -258,6 +259,32 @@
 		st += '<div class="main"><img src="/images/carreau.png" />' + ar[idx++] + "</div>";
 		st += '<div class="main"><img src="/images/trefle.png" />' + ar[idx++] + "</div>";
 		return st;
+	}
+
+	function ARDV2N(v) {
+		if (v == "A" || v == "1") return 12;
+		else if (v == "R") return 11;
+		else if (v == "D") return 10;
+		else if (v == "V") return 9;
+		else return Number(v) - 2;
+	}
+	function N2ARDV(n) {
+		if (n == 12) return "A";
+		if (n == 11) return "R";
+		if (n == 10) return "D";
+		if (n == 9) return "V";
+		return (n + 2).toString();
+	}
+
+	function CompleteJeu(donne) {
+		let jeu = new Array(52).fill(0);
+		for (let i = 0; i < donne.length; i++) {
+			const ar = donne[i].split(" ");
+			for (let j = 0; j < ar.length; j++) {
+				jeu[13 * (i % 4) + ARDV2N(ar[j])]++;
+			}
+		}
+		console.log(jeu);
 	}
 
 	document.getElementById("nord").innerHTML = MakeDonne(donne, 0);
