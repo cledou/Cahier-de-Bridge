@@ -8,6 +8,10 @@
 		<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png" />
 		<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png" />
 		<link rel="manifest" href="/images/site.webmanifest" />
+		<link rel="stylesheet" href="/css/style.css" />
+		<link rel="stylesheet" href="/css/status.css" />
+		<link rel="stylesheet" href="/css/tree.css" />
+		<link rel="stylesheet" href="/css/menu.css" />
 		<style type="text/css">
 			body {
 				box-sizing: border-box;
@@ -43,70 +47,21 @@
 				box-sizing: border-box;
 				display: flex;
 				flex-direction: column;
-				flex-grow: 2;
 				background-color: lightgray;
 				background: linear-gradient(rgba(211, 211, 211, 0.5), rgba(211, 211, 211, 0.5)), url("/images/Cards.png");
 			}
 			#volet_tree.hide_me {
 				display: none;
 			}
-			.menu {
-				width: 100%;
-				height: 48px;
-				background-color: lightgray;
-				display: flex;
-				flex-direction: row;
-				border-radius: 5px;
-				justify-content: flex-start;
-				align-items: center;
-			}
-			#tree_sw {
-				appearance: none;
-				margin: 5px;
-				padding: 0;
-			}
-
-			#tree_sw + label {
-				cursor: pointer;
-			}
-
-			#tree_sw:checked + label img {
-				transform: rotate(180deg);
-			}
-			#status {
-				box-sizing: border-box;
-				display: flex;
-				flex-direction: row;
-				justify-content: flex-start;
-				align-items: center;
-				height: 32px;
-				font-weight: bold;
-				border: grey 5px inset;
-				background-color: lightgray;
-				width: 100%;
-			}
-
-			#status.error {
-				background-color: red;
-				color: antiquewhite;
-			}
-
-			#status.ok {
-				background-color: lightgreen;
-			}
-
-			#status.warning {
-				background-color: lightsalmon;
-			}
 			.donne {
-				height: 50%;
 				background-color: aquamarine;
 				display: flex;
 				flex-direction: row;
 			}
 			.explik {
-				height: 50%;
 				background-color: antiquewhite;
+				min-height: 50px;
+				width: 100%;
 			}
 			.donne > .cartes {
 				background-color: azure;
@@ -116,11 +71,13 @@
 					". nord . "
 					"ouest centre est"
 					". sud . ";
-				border: red 2px solid;
 			}
 
 			.donne > .encheres {
 				background-color: bisque;
+				display: flex;
+				flex-direction: column;
+				padding: 8px;
 			}
 
 			#nord {
@@ -130,6 +87,12 @@
 			#centre {
 				grid-area: centre;
 				align-self: center;
+				min-width: 60px;
+				min-height: 60px;
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+				align-items: center;
 			}
 			#sud {
 				grid-area: sud;
@@ -144,16 +107,7 @@
 				grid-area: ouest;
 				align-self: center;
 			}
-			#nord,
-			#sud,
-			#centre,
-			#est,
-			#ouest {
-				border: blue 1px solid;
-			}
-
 			.donne > .encheres table {
-				margin: 8px;
 				border: 1px solid black;
 				table-layout: fixed;
 				width: 300px;
@@ -170,6 +124,12 @@
 			.donne > .encheres table td img {
 				vertical-align: middle;
 			}
+			.donne > .encheres #etxt {
+				width: 100%;
+				height: 100%;
+				border: 1px black solid;
+			}
+
 			.main {
 				display: flex;
 				flex-direction: row;
@@ -177,6 +137,37 @@
 			}
 			.main > img {
 				margin-right: 8px;
+			}
+			#table {
+				border: green 10px solid;
+				width: 50px;
+				height: 50px;
+			}
+			#table.NSV {
+				border-top-color: red;
+				border-bottom-color: red;
+			}
+			#table.EOV {
+				border-left-color: red;
+				border-right-color: red;
+			}
+			#sw_edit {
+				appearance: none;
+			}
+			#sw_edit + label {
+				border: 1px darkgray solid;
+				border-radius: 5px;
+				margin-right: 8px;
+			}
+			#sw_edit + label:hover {
+				cursor: pointer;
+				background-color: rgb(190, 190, 190);
+			}
+			#sw_edit:not(:checked) + label img.si_chk {
+				display: none;
+			}
+			#sw_edit:checked + label img.si_unchk {
+				display: none;
 			}
 		</style>
 	</head>
@@ -192,6 +183,10 @@
 						</label>
 						<div style="width: 90%"></div>
 						<!-- repousser menuD à droite-->
+						<input type="checkbox" id="sw_edit" /><label for="sw_edit">
+							<img src="/images/Lock.png" class="si_unchk" hlp="Autoriser les modifications" />
+							<img src="/images/Unlock.png" class="si_chk" hlp="Interdir les modifications"
+						/></label>
 						<button onclick="PrintThis()"><img src="/images/print_30px.png" alt="Faire le PDF" /></button>
 						<button class="undo" onclick="Undo()" disabled><img src="/images/undo_30px.png" alt="Revenir en arrière (ctrl-Z)" /></button>
 						<button class="redo" onclick="Redo()" disabled><img src="/images/redo_30px.png" alt="Annuler retour en arrière (shift-ctrl-Z)" /></button>
@@ -203,15 +198,27 @@
 						<div class="cartes">
 							<div id="nord"></div>
 							<div id="ouest"></div>
-							<div id="centre"></div>
+							<div id="centre">
+								<div id="table" class="NSV"></div>
+								<div class="si_edit">
+									Vulnérable:<br />
+									<select id="ed_vul">
+										<option value="-">Aucun</option>
+										<option value="NSEO">Tous</option>
+										<option value="NS">Nord Sud</option>
+										<option value="EO">Est Ouest</option>
+									</select>
+								</div>
+							</div>
 							<div id="est"></div>
 							<div id="sud"></div>
 						</div>
 						<div class="encheres">
 							<table id="tbe"></table>
+							<div id="etxt" contenteditable="true">Les enchères : Est répond 2V au nom de ses 7HLD. Il est temps pour Sud, à qui il ne manquait qu'un point pour ouvrir, de se manifester. Nord, avec un singleton dans la couleur adverse et trois beaux honneurs, conclut à la manche.</div>
 						</div>
 					</div>
-					<div class="explik"></div>
+					<div class="explik">Le déclarant appelle l'As de carreau puis le 2 de Coeur pour ouvrir sa coupe. Pour battre la manche, Est doit plonger du Roi et rejouer Trèfle pour dégager Ouest dans la couleur. Celui-ci doit alors rejouer Carreau sans tirer son second honneur à Trèfle... Gageons qu'une si belle défense ne sera que rarement trouvée à la table !</div>
 				</div>
 			</div>
 			<div id="status"></div>
@@ -221,8 +228,8 @@
 <script>
 	const volet_tree = document.getElementById("volet_tree"); // lié à session.choix.hide_tree
 	const tree_sw = document.getElementById("tree_sw");
-	MakeEncheres(["", "", "-", "-", "1K", "1C", "2K", "3C"]);
-	const donne = ["D 8 7", "3 2", "D 10 7 3", "A 6 5 4", "V 4 3 2", "R D 8 5", "2", "10 8 7 3", "A 10 6", "7 6", "A R V 6 4", "V 9 2"];
+	MakeEncheres(["-", "1C", "-", "2C", "2P", "-", "4P"]);
+	const donne = ["R 7 6 3", "2", "A R 10 5", "10 7 6 2", "9 2", "R 9 8 5", "V 9 6", "9 5 4 3", "A V 10 5 4", "D 10 4", "8 3 2", "R V"];
 	CompleteJeu(donne);
 
 	/****************************/
@@ -232,7 +239,7 @@
 		let st = "<tr><th>Sud</th><th>Ouest</th><th>Nord</th><th>Est</th></tr>";
 		for (let i = 0; i < ar.length; i++) {
 			if (i % 4 == 0) st += "</tr><tr>";
-			st += "<td>";
+			st += '<td contenteditable="true">';
 			const v = ar[i];
 			if (v != "") {
 				if (v == "-") st += "Passe";
@@ -253,12 +260,11 @@
 		document.getElementById("tbe").innerHTML = st;
 	}
 
+	function GetHTMLmain(img, val) {
+		return '<div class="main" ><img src="/images/' + img + '.png" /><span style="min-width: 5em" contenteditable="true" >' + val + "</span></div>";
+	}
 	function MakeDonne(ar, idx) {
-		let st = '<div class="main"><img src="/images/pique.png" />' + ar[idx++] + "</div>";
-		st += '<div class="main"><img src="/images/coeur.png" />' + ar[idx++] + "</div>";
-		st += '<div class="main"><img src="/images/carreau.png" />' + ar[idx++] + "</div>";
-		st += '<div class="main"><img src="/images/trefle.png" />' + ar[idx++] + "</div>";
-		return st;
+		return GetHTMLmain("pique", ar[idx++]) + GetHTMLmain("coeur", ar[idx++]) + GetHTMLmain("carreau", ar[idx++]) + GetHTMLmain("trefle", ar[idx++]);
 	}
 
 	function ARDV2N(v) {
@@ -284,13 +290,23 @@
 				jeu[13 * (i % 4) + ARDV2N(ar[j])]++;
 			}
 		}
-		console.log(jeu);
+		let base = 0;
+		for (let i = 0; i < 4; i++) {
+			let foo = "";
+			for (let j = 0; j < 13; j++)
+				if (jeu[base + j] == 0) {
+					foo = N2ARDV(j) + " " + foo;
+				}
+			console.log(foo);
+			donne.push(foo);
+			base += 13;
+		}
 	}
 
 	document.getElementById("nord").innerHTML = MakeDonne(donne, 0);
 	document.getElementById("est").innerHTML = MakeDonne(donne, 4);
 	document.getElementById("sud").innerHTML = MakeDonne(donne, 8);
-	//document.getElementById("nord").innerHTML = MakeDonne(donne,0);
+	document.getElementById("ouest").innerHTML = MakeDonne(donne, 12);
 
 	/****************************/
 	/*           MENUS          */

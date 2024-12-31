@@ -1,0 +1,24 @@
+#status {
+	display: flex;
+	flex-direction: row;
+	justify-content: flex-start;
+	align-items: center;
+	height: 32px;
+	font-weight: bold;
+	border: grey 5px inset;
+	background-color: lightgray;
+	width: 100%;
+}
+
+#status.error {
+	background-color: red;
+	color: antiquewhite;
+}
+
+#status.ok {
+	background-color: lightgreen;
+}
+
+#status.warning {
+	background-color: lightsalmon;
+}
