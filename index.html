@@ -49,22 +49,25 @@
 				flex-direction: column;
 				background-color: lightgray;
 				background: linear-gradient(rgba(211, 211, 211, 0.5), rgba(211, 211, 211, 0.5)), url("/images/Cards.png");
+				padding: 0.5em;
+				max-width: 1000px;
 			}
 			#volet_tree.hide_me {
 				display: none;
 			}
 			.donne {
-				background-color: aquamarine;
 				display: flex;
 				flex-direction: row;
+				background-color: white;
 			}
 			.explik {
-				background-color: antiquewhite;
 				min-height: 50px;
 				width: 100%;
+				padding: 0.5em;
+				background-color: white;
+				border: 1px solid black;
 			}
 			.donne > .cartes {
-				background-color: azure;
 				flex-grow: 2;
 				display: grid;
 				grid-template-areas:
@@ -74,10 +77,10 @@
 			}
 
 			.donne > .encheres {
-				background-color: bisque;
 				display: flex;
 				flex-direction: column;
-				padding: 8px;
+				padding: 0.5em;
+				align-items: center;
 			}
 
 			#nord {
@@ -103,8 +106,10 @@
 				grid-area: est;
 				align-self: center;
 			}
-			#ouest {
+			#ouest_cnt {
 				grid-area: ouest;
+			}
+			#ouest {
 				align-self: center;
 			}
 			.donne > .encheres table {
@@ -128,6 +133,7 @@
 				width: 100%;
 				height: 100%;
 				border: 1px black solid;
+				padding: 0.5em;
 			}
 
 			.main {
@@ -138,16 +144,16 @@
 			.main > img {
 				margin-right: 8px;
 			}
-			#table {
+			#vulnerable {
 				border: green 10px solid;
 				width: 50px;
 				height: 50px;
 			}
-			#table.NSV {
+			#vulnerable.NS {
 				border-top-color: red;
 				border-bottom-color: red;
 			}
-			#table.EOV {
+			#vulnerable.EW {
 				border-left-color: red;
 				border-right-color: red;
 			}
@@ -170,10 +176,60 @@
 			#sw_edit:checked + label img.si_unchk {
 				display: none;
 			}
+			[contenteditable="false"] {
+				cursor: default;
+			}
+			[contenteditable="true"] {
+				cursor: text;
+				border: lightgray 1px solid;
+			}
+			h3 {
+				text-align: center;
+			}
+			.d_nord::before {
+				position: relative;
+				content: "▲";
+				top: -100%;
+				left: 30%;
+			}
+			.d_ouest::before {
+				position: relative;
+				content: "◀";
+				top: 4px;
+				left: -100%;
+			}
+			.d_est::after {
+				position: relative;
+				content: "▶";
+				top: 4px;
+				left: 140%;
+			}
+			.d_sud::after {
+				position: relative;
+				content: "▼";
+				top: 130%;
+				left: 30%;
+			}
+			@media print {
+				#volet_tree,
+				.menu,
+				#status {
+					display: none;
+				}
+				#volet_centre {
+					background-color: transparent;
+					background: inherit;
+				}
+			}
+			@media (width <= 700px) {
+				.donne {
+					flex-direction: column-reverse;
+				}
+			}
 		</style>
 	</head>
 	<body>
-		<div id="container">
+		<div id="container" onclick="closeMenu()">
 			<div id="volets">
 				<div id="volet_tree" class="hide_me"></div>
 				<div id="volet_centre">
@@ -182,13 +238,27 @@
 						<label for="tree_sw">
 							<img src="/images/arrow_d.png" alt="Afficher/Cacher l'arbre de situation" />
 						</label>
+						<div class="menu2">
+							<div class="level0" style="background-image: url('/images/dossier.png')" hlp="Actions génériques sur une donne (ouvrir, sauver, copier...)">
+								<div class="level1">
+									<button class="itmh" id="itm_new"><img src="/images/create_30px.png" alt="Créer une nouvelle donne" />Créer une donne</button>
+									<!--
+									<button class="itmh si_un" alt="Ouvrir état déjà existant" id="itm_open"><img src="/images/live_folder_30px.png" />Ouvrir un état</button>
+									<button class="itmh si_un" alt="Effacer un état de la base de donnée" id="itm_del"><img src="/images/trash_30px.png" />Effacer un état</button>
+									<button class="itmh si_dirty" onclick="onSave()" alt="Enregistrer les modifications"><img src="/images/save_30px.png" />Sauver les changements</button>
+									<button class="itmh si_open" alt="Enregistrer sous..." id="itm_save_as"><img src="/images/save_as_30px.png" />Faire une copie</button>
+									-->
+									<button class="itmh si_open" onclick="PrintThis()" alt="Imprimer"><img src="/images/print_30px.png" />Imprimer cette donne</button>
+								</div>
+							</div>
+						</div>
 						<div style="width: 90%"></div>
 						<!-- repousser menuD à droite-->
 						<input type="checkbox" id="sw_edit" /><label for="sw_edit">
 							<img src="/images/Lock.png" class="si_unchk" hlp="Autoriser les modifications" />
 							<img src="/images/Unlock.png" class="si_chk" hlp="Interdir les modifications"
 						/></label>
-						<button onclick="PrintThis()"><img src="/images/print_30px.png" alt="Faire le PDF" /></button>
+						<button onclick="PrintThis()"><img src="/images/print_30px.png" alt="Imprimer la donne" /></button>
 						<button class="undo" onclick="Undo()" disabled><img src="/images/undo_30px.png" alt="Revenir en arrière (ctrl-Z)" /></button>
 						<button class="redo" onclick="Redo()" disabled><img src="/images/redo_30px.png" alt="Annuler retour en arrière (shift-ctrl-Z)" /></button>
 						<button class="si_dirty" onclick="onSave()"><img src="/images/save_30px.png" alt="Sauver les modifications" /></button>
@@ -198,28 +268,45 @@
 					<div class="donne">
 						<div class="cartes">
 							<div id="nord"></div>
-							<div id="ouest"></div>
+							<div id="ouest_cnt" style="display: flex; flex-direction: row; justify-content: flex-end"><div id="ouest"></div></div>
 							<div id="centre">
-								<div id="table" class="NSV"></div>
-								<div class="si_edit">
-									Vulnérable:<br />
-									<select id="ed_vul">
-										<option value="-">Aucun</option>
-										<option value="NSEO">Tous</option>
-										<option value="NS">Nord Sud</option>
-										<option value="EO">Est Ouest</option>
-									</select>
-								</div>
+								<div id="vulnerable"></div>
 							</div>
 							<div id="est"></div>
 							<div id="sud"></div>
 						</div>
 						<div class="encheres">
+							<h3>Enchères</h3>
 							<table id="tbe"></table>
-							<div id="etxt" contenteditable="true">Les enchères : Est répond 2V au nom de ses 7HLD. Il est temps pour Sud, à qui il ne manquait qu'un point pour ouvrir, de se manifester. Nord, avec un singleton dans la couleur adverse et trois beaux honneurs, conclut à la manche.</div>
+							<div class="si_edit flexSA">
+								<span><b>-</b>:Passe</span>
+								<span><b>X</b>:Contre</span>
+								<span><b>XX</b>:Surcontre</span>
+							</div>
+							<div id="etxt" contenteditable="true"></div>
+							<div class="flexH" style="align-self: flex-start">
+								Entame:
+								<label class="flexH" id="entame" contenteditable="true" style="min-width: 3em"></label>
+							</div>
+							<div class="si_edit flexH">
+								Vulnérable:
+								<select id="ed_vul">
+									<option value="-">Aucun</option>
+									<option value="NSEW">Tous</option>
+									<option value="NS">Nord Sud</option>
+									<option value="EW">Est Ouest</option></select
+								>&nbsp;&nbsp; Donneur:
+								<select id="ed_donneur">
+									<option value="N">Nord</option>
+									<option value="E">Est</option>
+									<option value="S">Sud</option>
+									<option value="W">Ouest</option>
+								</select>
+							</div>
 						</div>
 					</div>
-					<div class="explik">Le déclarant appelle l'As de carreau puis le 2 de Coeur pour ouvrir sa coupe. Pour battre la manche, Est doit plonger du Roi et rejouer Trèfle pour dégager Ouest dans la couleur. Celui-ci doit alors rejouer Carreau sans tirer son second honneur à Trèfle... Gageons qu'une si belle défense ne sera que rarement trouvée à la table !</div>
+					<h3>Jeu de la carte</h3>
+					<div class="explik" id="jtxt"></div>
 				</div>
 			</div>
 			<div id="status"></div>
@@ -229,9 +316,22 @@
 <script>
 	const volet_tree = document.getElementById("volet_tree"); // lié à session.choix.hide_tree
 	const tree_sw = document.getElementById("tree_sw");
-	MakeEncheres(["-", "1C", "-", "2C", "2P", "-", "4P"]);
-	const donne = ["R 7 6 3", "2", "A R 10 5", "10 7 6 2", "9 2", "R 9 8 5", "V 9 6", "9 5 4 3", "A V 10 5 4", "D 10 4", "8 3 2", "R V"];
-	CompleteJeu(donne);
+	const sw_edit = document.getElementById("sw_edit");
+	const DisableSelector = (classe, val) => {
+		document.querySelectorAll(classe).forEach((el) => (el.disabled = val));
+	};
+	const SetClassDisplay = (classe, val) => {
+		document.querySelectorAll(classe).forEach((el) => (el.style.display = val));
+	};
+	const enr = {
+		donneur: "S",
+		vul: "EW",
+		txt1: "Est répond 2V au nom de ses 7HLD. Il est temps pour Sud, à qui il ne manquait qu'un point pour ouvrir, de se manifester.\nNord, avec un singleton dans la couleur adverse et trois beaux honneurs, conclut à la manche.",
+		txt2: "Le déclarant appelle l'As de carreau puis le 2 de Coeur pour ouvrir sa coupe. \n Pour battre la manche, Est doit plonger du Roi et rejouer Trèfle pour dégager Ouest dans la couleur.\nCelui-ci doit alors rejouer Carreau sans tirer son second honneur à Trèfle...\nGageons qu'une si belle défense ne sera que rarement trouvée à la table !",
+		donne: ["R 7 6 3", "2", "A R 10 5", "10 7 6 2", "9 2", "R 9 8 5", "V 9 6", "9 5 4 3", "A V 10 5 4", "D 10 4", "8 3 2", "R V"],
+		enchere: ["-", "1C", "-", "2C", "2P", "-", "4P"],
+		entame: "4K",
+	};
 
 	/****************************/
 	/*           STUFF          */
@@ -240,25 +340,49 @@
 		let st = "<tr><th>Sud</th><th>Ouest</th><th>Nord</th><th>Est</th></tr>";
 		for (let i = 0; i < ar.length; i++) {
 			if (i % 4 == 0) st += "</tr><tr>";
-			st += '<td contenteditable="true">';
-			const v = ar[i];
-			if (v != "") {
-				if (v == "-") st += "Passe";
-				else if (v == "X") st += "Contre";
-				else if (v == "S") st += "Surcontre";
-				else {
-					st += v[0];
-					if (v[1] == "P") st += '<img src="/images/pique.png" />';
-					else if (v[1] == "C") st += '<img src="/images/coeur.png" />';
-					else if (v[1] == "K") st += '<img src="/images/carreau.png" />';
-					else if (v[1] == "T") st += '<img src="/images/trefle.png" />';
-					else st += v.substr(1);
+			st += '<td contenteditable="';
+			if (sw_edit.checked) {
+				st += 'true">' + ar[i];
+			} else {
+				st += 'false">';
+				const v = ar[i];
+				if (v != "") {
+					if (v == "-") st += "Passe";
+					else if (v == "X") st += "Contre";
+					else if (v == "XX") st += "Surcontre";
+					else {
+						st += v[0];
+						if (v[1] == "P") st += '<img src="/images/pique.png" />';
+						else if (v[1] == "C") st += '<img src="/images/coeur.png" />';
+						else if (v[1] == "K") st += '<img src="/images/carreau.png" />';
+						else if (v[1] == "T") st += '<img src="/images/trefle.png" />';
+						else st += v.substr(1);
+					}
 				}
 			}
 			st += "</td>";
 		}
 		st += "</tr>";
 		document.getElementById("tbe").innerHTML = st;
+		// entame
+		st = "";
+		if (sw_edit.checked) st = enr.entame;
+		else if (enr.entame != "") {
+			const c1 = enr.entame[0];
+			if (c1 == "A") st += "As";
+			else if (c1 == "R") st += "Roi";
+			else if (c1 == "D") st += "Dame";
+			else if (c1 == "V") st += "Valet";
+			else if (enr.entame.startsWith("10")) st += "10";
+			else st += c1;
+			st += " de ";
+			const c2 = enr.entame.substr(-1);
+			if (c2 == "P") st += '<img src="/images/pique.png" />';
+			else if (c2 == "C") st += '<img src="/images/coeur.png" />';
+			else if (c2 == "K") st += '<img src="/images/carreau.png" />';
+			else if (c2 == "T") st += '<img src="/images/trefle.png" />';
+		}
+		document.getElementById("entame").innerHTML = st;
 	}
 
 	function GetHTMLmain(img, val) {
@@ -298,20 +422,48 @@
 				if (jeu[base + j] == 0) {
 					foo = N2ARDV(j) + " " + foo;
 				}
-			console.log(foo);
 			donne.push(foo);
 			base += 13;
 		}
 	}
+	var session = { choix: {} };
 
-	document.getElementById("nord").innerHTML = MakeDonne(donne, 0);
-	document.getElementById("est").innerHTML = MakeDonne(donne, 4);
-	document.getElementById("sud").innerHTML = MakeDonne(donne, 8);
-	document.getElementById("ouest").innerHTML = MakeDonne(donne, 12);
+	function SetChoix(nom, val) {
+		session.choix[nom] = val;
+		console.log(session);
+	}
 
 	/****************************/
 	/*           MENUS          */
 	/****************************/
+	const menu2 = document.querySelector(".menu2");
+	const level0 = document.querySelectorAll(".level0");
+
+	function closeMenu() {
+		level0.forEach((itm) => {
+			itm.classList.remove("open");
+		});
+	}
+
+	level0.forEach((el, idx) => {
+		el.addEventListener("click", (e) => {
+			e.stopPropagation();
+			// différencier le bouton du menu des sous-menus
+			if (e.target.classList.contains("level0")) {
+				let foo = e.target.classList.contains("open");
+				level0.forEach((el1) => {
+					el1.classList.remove("open");
+				});
+				if (!foo) e.target.classList.add("open");
+				//mesChoix.open = idx;
+				//io.emit("upducfg", "etats", mesChoix);
+			}
+		});
+	});
+
+	function SetDirty(b) {
+		DisableSelector(".si_dirty", !b);
+	}
 
 	function HideVoletGauche(b) {
 		if (b) volet_tree.classList.remove("hide_me");
@@ -324,6 +476,55 @@
 	});
 	//tree_sw.checked = false;
 
+	function SetElvisEdit(b) {
+		if (session.choix.edit != b) SetChoix("edit", b);
+		if (b != sw_edit.checked) sw_edit.checked = b;
+		document.querySelectorAll('[contenteditable="' + (b ? "false" : "true") + '"]').forEach((el) => {
+			el.setAttribute("contenteditable", b);
+		});
+		SetClassDisplay(".si_edit", b ? "block" : "none");
+		MakeEncheres(enr.enchere);
+	}
+
+	sw_edit.addEventListener("change", function () {
+		SetElvisEdit(this.checked);
+	});
+
+	function PrintThis() {
+		closeMenu();
+		window.print();
+	}
+
+	const vulnerable = document.getElementById("vulnerable");
+	const classIf = (el, c, b) => {
+		if (b) el.classList.add(c);
+		else el.classList.remove(c);
+	};
+
+	function SetVulnerable(val) {
+		classIf(vulnerable, "NS", val.startsWith("NS"));
+		classIf(vulnerable, "EW", val.startsWith("EW"));
+	}
+
+	const ed_vul = document.getElementById("ed_vul");
+	ed_vul.addEventListener("change", function () {
+		enr.vul = this.value;
+		SetVulnerable(this.value);
+		SetDirty(true);
+	});
+
+	function SetElvisDonneur(val) {
+		classIf(vulnerable, "d_nord", val == "N");
+		classIf(vulnerable, "d_sud", val == "S");
+		classIf(vulnerable, "d_est", val == "E");
+		classIf(vulnerable, "d_ouest", val == "W");
+	}
+	const ed_donneur = document.getElementById("ed_donneur");
+	ed_donneur.addEventListener("change", function () {
+		enr.donneur = this.value;
+		SetElvisDonneur(this.value);
+		SetDirty(true);
+	});
 	/****************************/
 	/*        STATUS BAR        */
 	/****************************/
@@ -360,4 +561,25 @@
 		Info('<img src="/images/Warning Shield.png"/>' + msg);
 		status.classList.add("warning");
 	}
+
+	/****************************/
+	/*           START          */
+	/****************************/
+	function AfficheDonne(obj) {
+		document.getElementById("nord").innerHTML = MakeDonne(obj.donne, 0);
+		document.getElementById("est").innerHTML = MakeDonne(obj.donne, 4);
+		document.getElementById("sud").innerHTML = MakeDonne(obj.donne, 8);
+		document.getElementById("ouest").innerHTML = MakeDonne(obj.donne, 12);
+		SetElvisEdit(session.choix.edit || false);
+		ed_vul.value = obj.vul;
+		SetVulnerable(obj.vul);
+		ed_donneur.value = obj.donneur;
+		SetElvisDonneur(obj.donneur);
+		document.getElementById("etxt").innerText = enr.txt1;
+		document.getElementById("jtxt").innerText = enr.txt2;
+	}
+
+	CompleteJeu(enr.donne);
+	AfficheDonne(enr);
+	SetDirty(false);
 </script>
