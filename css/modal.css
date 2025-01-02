@@ -1,0 +1,106 @@
+.puclose {
+	position: absolute;
+	background: #606061;
+	color: #ffffff;
+	line-height: 25px;
+	right: -12px;
+	text-align: center;
+	top: -10px;
+	width: 24px;
+	text-decoration: none;
+	font-weight: bold;
+	-webkit-border-radius: 12px;
+	-moz-border-radius: 12px;
+	border-radius: 12px;
+	-moz-box-shadow: 1px 1px 3px #000;
+	-webkit-box-shadow: 1px 1px 3px #000;
+	box-shadow: 1px 1px 3px #000;
+}
+
+.puclose:hover,
+.puclose:focus {
+	color: yellow;
+	text-decoration: none;
+	cursor: pointer;
+	background: #00d9ff;
+}
+
+.modalBackground {
+	display: none;
+	/* nécessaire pour centrer la fille */
+	position: fixed;
+	font-family: Arial, Helvetica, sans-serif;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	background: rgba(0, 0, 0, 0.7);
+	flex-direction: column;
+	z-index: 9990;
+}
+
+.modalWnd {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-around;
+	align-items: center;
+	margin: auto;
+	max-width: 90%;
+	min-height: 200px;
+	padding: 5px 20px 13px 20px;
+	border-radius: 10px;
+	background: #999;
+	background: -moz-linear-gradient(#000, #999);
+	background: -webkit-linear-gradient(#000, #999);
+	background: -o-linear-gradient(#000, #999);
+	-webkit-animation-name: zoom;
+	-webkit-animation-duration: 0.6s;
+	animation-name: zoom;
+	animation-duration: 0.6s;
+	color: antiquewhite;
+}
+
+.modalWnd input {
+	color: black;
+}
+
+.modalWnd button {
+	color: black;
+	font-size: 1.1rem;
+	padding: 8px;
+}
+
+.modalWnd > h1 {
+	margin-top: 0px;
+	text-align: center;
+}
+
+.modalWnd select {
+	font-size: 1.1rem;
+}
+
+.modalWnd input[type="number"] {
+	max-width: 5em;
+	align-self: flex-start;
+}
+
+@-webkit-keyframes zoom {
+	from {
+		-webkit-transform: scale(0);
+	}
+
+	to {
+		-webkit-transform: scale(1);
+	}
+}
+
+@keyframes zoom {
+	from {
+		transform: scale(0);
+	}
+
+	to {
+		transform: scale(1);
+	}
+}
