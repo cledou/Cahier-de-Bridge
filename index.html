@@ -60,7 +60,7 @@
 				flex-direction: row;
 				background-color: white;
 			}
-			.explik {
+			#jtxt {
 				min-height: 50px;
 				width: 100%;
 				padding: 0.5em;
@@ -123,6 +123,9 @@
 				border-bottom: 1px solid black;
 			}
 
+			.donne > .encheres table tr {
+				height: 1.2em;
+			}
 			.donne > .encheres table td {
 				vertical-align: middle;
 			}
@@ -239,16 +242,24 @@
 							<img src="/images/arrow_d.png" alt="Afficher/Cacher l'arbre de situation" />
 						</label>
 						<div class="menu2">
-							<div class="level0" style="background-image: url('/images/dossier.png')" hlp="Actions génériques sur une donne (ouvrir, sauver, copier...)">
+							<div
+								class="level0"
+								style="background-image: url('/images/dossier.png')"
+								hlp="Actions génériques sur une donne (ouvrir, sauver, copier...)"
+							>
 								<div class="level1">
-									<button class="itmh" id="itm_new"><img src="/images/create_30px.png" alt="Créer une nouvelle donne" />Créer une donne</button>
+									<button class="itmh" id="itm_new"
+										><img src="/images/create_30px.png" alt="Créer une nouvelle donne" />Créer une donne</button
+									>
 									<!--
 									<button class="itmh si_un" alt="Ouvrir état déjà existant" id="itm_open"><img src="/images/live_folder_30px.png" />Ouvrir un état</button>
 									<button class="itmh si_un" alt="Effacer un état de la base de donnée" id="itm_del"><img src="/images/trash_30px.png" />Effacer un état</button>
 									<button class="itmh si_dirty" onclick="onSave()" alt="Enregistrer les modifications"><img src="/images/save_30px.png" />Sauver les changements</button>
 									<button class="itmh si_open" alt="Enregistrer sous..." id="itm_save_as"><img src="/images/save_as_30px.png" />Faire une copie</button>
 									-->
-									<button class="itmh si_open" onclick="PrintThis()" alt="Imprimer"><img src="/images/print_30px.png" />Imprimer cette donne</button>
+									<button class="itmh si_open" onclick="PrintThis()" alt="Imprimer"
+										><img src="/images/print_30px.png" />Imprimer cette donne</button
+									>
 								</div>
 							</div>
 						</div>
@@ -260,10 +271,10 @@
 						/></label>
 						<button onclick="PrintThis()"><img src="/images/print_30px.png" alt="Imprimer la donne" /></button>
 						<button class="undo" onclick="Undo()" disabled><img src="/images/undo_30px.png" alt="Revenir en arrière (ctrl-Z)" /></button>
-						<button class="redo" onclick="Redo()" disabled><img src="/images/redo_30px.png" alt="Annuler retour en arrière (shift-ctrl-Z)" /></button>
+						<button class="redo" onclick="Redo()" disabled
+							><img src="/images/redo_30px.png" alt="Annuler retour en arrière (shift-ctrl-Z)"
+						/></button>
 						<button class="si_dirty" onclick="onSave()"><img src="/images/save_30px.png" alt="Sauver les modifications" /></button>
-						<button class="si_dirty" onclick="onOk()"><img src="/images/Check Mark.png" alt="Valider et fermer" /></button>
-						<button id="cancel_btn" onclick="onCancel()"><img src="/images/Cross Mark.png" alt="Fermer sans valider" /></button>
 					</div>
 					<div class="donne">
 						<div class="cartes">
@@ -286,7 +297,7 @@
 							<div id="etxt" contenteditable="true"></div>
 							<div class="flexH" style="align-self: flex-start">
 								Entame:
-								<label class="flexH" id="entame" contenteditable="true" style="min-width: 3em"></label>
+								<label class="flexH" id="entame" contenteditable="true" style="min-width: 3em; min-height: 1em"></label>
 							</div>
 							<div class="si_edit flexH">
 								Vulnérable:
@@ -306,7 +317,7 @@
 						</div>
 					</div>
 					<h3>Jeu de la carte</h3>
-					<div class="explik" id="jtxt"></div>
+					<div id="jtxt" contenteditable="true"></div>
 				</div>
 			</div>
 			<div id="status"></div>
@@ -317,19 +328,22 @@
 	const volet_tree = document.getElementById("volet_tree"); // lié à session.choix.hide_tree
 	const tree_sw = document.getElementById("tree_sw");
 	const sw_edit = document.getElementById("sw_edit");
+	const etxt = document.getElementById("etxt");
+	const jtxt = document.getElementById("jtxt");
+	const entame = document.getElementById("entame");
 	const DisableSelector = (classe, val) => {
 		document.querySelectorAll(classe).forEach((el) => (el.disabled = val));
 	};
 	const SetClassDisplay = (classe, val) => {
 		document.querySelectorAll(classe).forEach((el) => (el.style.display = val));
 	};
-	const enr = {
+	let enr = {
 		donneur: "S",
 		vul: "EW",
 		txt1: "Est répond 2V au nom de ses 7HLD. Il est temps pour Sud, à qui il ne manquait qu'un point pour ouvrir, de se manifester.\nNord, avec un singleton dans la couleur adverse et trois beaux honneurs, conclut à la manche.",
 		txt2: "Le déclarant appelle l'As de carreau puis le 2 de Coeur pour ouvrir sa coupe. \n Pour battre la manche, Est doit plonger du Roi et rejouer Trèfle pour dégager Ouest dans la couleur.\nCelui-ci doit alors rejouer Carreau sans tirer son second honneur à Trèfle...\nGageons qu'une si belle défense ne sera que rarement trouvée à la table !",
 		donne: ["R 7 6 3", "2", "A R 10 5", "10 7 6 2", "9 2", "R 9 8 5", "V 9 6", "9 5 4 3", "A V 10 5 4", "D 10 4", "8 3 2", "R V"],
-		enchere: ["-", "1C", "-", "2C", "2P", "-", "4P"],
+		enchere: ["-", "1C", "-", "2C", "2P", "-", "4P", " "],
 		entame: "4K",
 	};
 
@@ -340,9 +354,11 @@
 		let st = "<tr><th>Sud</th><th>Ouest</th><th>Nord</th><th>Est</th></tr>";
 		for (let i = 0; i < ar.length; i++) {
 			if (i % 4 == 0) st += "</tr><tr>";
-			st += '<td contenteditable="';
+			st += '<td id="enc_' + i + '" oninput="editEnchere(' + i + ',this.innerText)" contenteditable="';
 			if (sw_edit.checked) {
-				st += 'true">' + ar[i];
+				st += 'true"';
+				if (i + 1 == ar.length) st += ' onblur="blurEnchere()"';
+				st += ">" + ar[i];
 			} else {
 				st += 'false">';
 				const v = ar[i];
@@ -382,14 +398,22 @@
 			else if (c2 == "K") st += '<img src="/images/carreau.png" />';
 			else if (c2 == "T") st += '<img src="/images/trefle.png" />';
 		}
-		document.getElementById("entame").innerHTML = st;
+		entame.innerHTML = st;
 	}
 
-	function GetHTMLmain(img, val) {
-		return '<div class="main" ><img src="/images/' + img + '.png" /><span style="min-width: 5em" contenteditable="true" >' + val + "</span></div>";
+	function GetHTMLmain(img, ar, idx) {
+		return (
+			'<div class="main" ><img src="/images/' +
+			img +
+			'.png" /><span style="min-width: 5em" contenteditable="true" oninput="editMain(' +
+			idx +
+			', this.innerText)" onblur="blurMain()">' +
+			ar[idx] +
+			"</span></div>"
+		);
 	}
 	function MakeDonne(ar, idx) {
-		return GetHTMLmain("pique", ar[idx++]) + GetHTMLmain("coeur", ar[idx++]) + GetHTMLmain("carreau", ar[idx++]) + GetHTMLmain("trefle", ar[idx++]);
+		return GetHTMLmain("pique", ar, idx++) + GetHTMLmain("coeur", ar, idx++) + GetHTMLmain("carreau", ar, idx++) + GetHTMLmain("trefle", ar, idx++);
 	}
 
 	function ARDV2N(v) {
@@ -422,7 +446,7 @@
 				if (jeu[base + j] == 0) {
 					foo = N2ARDV(j) + " " + foo;
 				}
-			donne.push(foo);
+			donne.push(foo.trim());
 			base += 13;
 		}
 	}
@@ -525,6 +549,80 @@
 		SetElvisDonneur(this.value);
 		SetDirty(true);
 	});
+
+	function onEdit(id, val) {
+		console.log(id, val);
+	}
+
+	etxt.addEventListener("input", function () {
+		enr.txt1 = this.innerText;
+		SetDirty(true);
+	});
+
+	jtxt.addEventListener("input", function () {
+		enr.txt2 = this.innerText;
+		SetDirty(true);
+	});
+
+	entame.addEventListener("input", function () {
+		enr.entame = this.innerText;
+		SetDirty(true);
+	});
+
+	function editEnchere(i, val) {
+		enr.enchere[i] = val.toUpperCase();
+		SetDirty(true);
+	}
+
+	function blurEnchere() {
+		const i = enr.enchere.length - 1;
+		if (i >= 0 && enr.enchere[i] != " ") {
+			enr.enchere.push(" ");
+			MakeEncheres(enr.enchere);
+			document.getElementById("enc_" + (i + 1)).focus();
+		}
+	}
+
+	function editMain(idx, val) {
+		Info("");
+		enr.donne[idx] = val.toUpperCase().trim();
+		SetDirty(true);
+	}
+
+	function blurMain() {
+		// vérifier si donne OK
+		let jeu = new Array(52).fill(0);
+		for (let i = 0; i < enr.donne.length; i++) {
+			const ar = enr.donne[i].split(" ");
+			for (let j = 0; j < ar.length; j++) {
+				jeu[13 * (i % 4) + ARDV2N(ar[j])]++;
+			}
+		}
+		// vérifier si doublon
+		for (let i = 0; i < 52; i++)
+			if (jeu[i] > 1) {
+				const foo = ["pique", "coeur", "carreau", "trèfle"];
+				Erreur("" + N2ARDV(i % 13) + " de " + foo[Math.floor(i / 13)] + " en double");
+			}
+	}
+
+	document.getElementById("itm_new").addEventListener("click", () => {
+		closeMenu();
+		enr = {
+			donneur: "",
+			vul: "",
+			txt1: "",
+			txt2: "",
+			donne: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""],
+			enchere: [" ", " ", " ", " "],
+			entame: " ",
+		};
+		SetElvisEdit(true);
+		AfficheDonne(enr);
+		if ("showPicker" in HTMLSelectElement.prototype) ed_donneur.showPicker();
+		else ed_donneur.focus();
+	});
+
 	/****************************/
 	/*        STATUS BAR        */
 	/****************************/
@@ -575,8 +673,8 @@
 		SetVulnerable(obj.vul);
 		ed_donneur.value = obj.donneur;
 		SetElvisDonneur(obj.donneur);
-		document.getElementById("etxt").innerText = enr.txt1;
-		document.getElementById("jtxt").innerText = enr.txt2;
+		etxt.innerText = enr.txt1;
+		jtxt.innerText = enr.txt2;
 	}
 
 	CompleteJeu(enr.donne);

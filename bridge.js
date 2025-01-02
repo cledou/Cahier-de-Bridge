@@ -57,9 +57,9 @@ app.set("view engine", "ejs");
 // un moteur de rendu est nécessaire. Mon choix: ejs..
 app.engine(".html", require("ejs").__express);
 app.use(
-    express.urlencoded({
-        extended: true,
-    })
+	express.urlencoded({
+		extended: true,
+	})
 );
 app.use(express.json());
 
@@ -70,16 +70,17 @@ var old_date = new Date().getDate();
 //*******************************
 
 var session = Session({
-    // Defaults to MemoryStore, meaning sessions are stored as POJOs
-    // in server memory, and are cleared out when the server restarts.
-    name: "sid",
-    saveUninitialized: false,
-    resave: false,
-    secret: "WqiZvuvVsIV1zmzJQeYUgINqXYe",
-    cookie: {
-        maxAge: 1000 * 60 * 60 * 2,
-        sameSite: true,
-        secure: process.env.NODE_ENV === "production",
-    },
+	// Defaults to MemoryStore, meaning sessions are stored as POJOs
+	// in server memory, and are cleared out when the server restarts.
+	name: "sid",
+	saveUninitialized: false,
+	resave: false,
+	secret: "WqiZvuvVsIV1zmzJQeYUgINqXYe",
+	cookie: {
+		maxAge: 1000 * 60 * 60 * 2,
+		sameSite: true,
+		secure: process.env.NODE_ENV === "production",
+	},
 });
 
+console.log("Pas encore fait ! Utiliser Go Live.");
