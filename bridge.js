@@ -270,8 +270,7 @@ socketio.on("connection", (client) => {
 				let info = {};
 				let enr = db.prepare("SELECT id,hash,LENGTH(hash) AS pwl FROM users WHERE id=?").get(id);
 				if (enr == undefined) throw new Error("Erreur dans les identifiants");
-				else if ((old_val != "" || (enr.hash != undefined && enr.pwl != 0)) && bcrypt.compareSync(old_val, enr.hash) == false)
-					throw new Error("Ancien mot de passe incorrect");
+				else if ((old_val != "" || (enr.hash != undefined && enr.pwl != 0)) && bcrypt.compareSync(old_val, enr.hash) == false) throw new Error("Ancien mot de passe incorrect");
 				else if (new_val != "")
 					bcrypt.hash(new_val, 10, function (err, hash) {
 						if (err) throw new Error("Hash:" + err.message);
@@ -343,9 +342,10 @@ socketio.on("connection", (client) => {
 		if (db == undefined) cb({ err: "Session fermée. Reconnectez-vous" });
 		else
 			try {
-				const contenu = JSON.stringify(enr.donne);
-				if (enr.id == undefined) cb(db.prepare("INSERT INTO donnes (nom,contenu) VALUES (?,?)").run(enr.nom, contenu));
-				else cb(db.prepare("UPDATE donnes set nom=?,contenu=? WHERE id=?").run(enr.nom, contenu, enr.id));
+				console.log(enr);
+				const contenu = JSON.stringify(enr.jeu);
+				if (enr.id == undefined) cb(db.prepare("INSERT INTO donnes (nom,data) VALUES (?,?)").run(enr.nom, contenu));
+				else cb(db.prepare("UPDATE donnes set nom=?,data=? WHERE id=?").run(enr.nom, contenu, enr.id));
 			} catch (err) {
 				cb({ err: err.message });
 			}

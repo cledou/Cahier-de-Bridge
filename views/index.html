@@ -67,6 +67,7 @@
 				padding: 0.5em;
 				background-color: white;
 				border: 1px solid black;
+				border-top: none;
 			}
 			.donne > .cartes {
 				flex-grow: 2;
@@ -214,6 +215,20 @@
 				top: 130%;
 				left: 30%;
 			}
+			.titre {
+				align-self: center;
+				padding: 0px 8px;
+				background-color: white;
+				border-top-left-radius: 10px;
+				border-top-right-radius: 10px;
+				border: 1px solid black;
+				border-bottom: none;
+			}
+			.bas {
+				flex-grow: 2;
+				border-bottom: 1px solid black;
+				height: 100%;
+			}
 			@media print {
 				#volet_tree,
 				.menu,
@@ -225,7 +240,7 @@
 					background: inherit;
 				}
 			}
-			@media (width <= 700px) {
+			@media (width <= 890px) {
 				.donne {
 					flex-direction: column-reverse;
 				}
@@ -256,26 +271,16 @@
 							<img src="/images/arrow_d.png" alt="Afficher/Cacher l'arbre de situation" />
 						</label>
 						<div class="menu2">
-							<div
-								class="level0"
-								style="background-image: url('/images/dossier.png')"
-								hlp="Actions génériques sur une donne (ouvrir, sauver, copier...)"
-							>
+							<div class="level0" style="background-image: url('/images/dossier.png')" hlp="Actions génériques sur une donne (ouvrir, sauver, copier...)">
 								<div class="level1">
-									<button class="itmh" id="itm_new"
-										><img src="/images/create_30px.png" alt="Créer une nouvelle donne" />Créer une donne</button
-									>
-									<button class="itmh si_un" alt="Sélectionner une donne existante" id="itm_open"
-										><img src="/images/dossier.png" />Ouvrir une donne</button
-									>
+									<button class="itmh" id="itm_new"><img src="/images/create_30px.png" alt="Créer une nouvelle donne" />Créer une donne</button>
+									<button class="itmh si_un" alt="Sélectionner une donne existante" id="itm_open"><img src="/images/dossier.png" />Ouvrir une donne</button>
+									<button class="itmh si_dirty" onclick="onSave()" alt="Enregistrer les modifications"><img src="/images/save_30px.png" />Sauver les changements</button>
 									<!--
 									<button class="itmh si_un" alt="Effacer un état de la base de donnée" id="itm_del"><img src="/images/trash_30px.png" />Effacer un état</button>
-									<button class="itmh si_dirty" onclick="onSave()" alt="Enregistrer les modifications"><img src="/images/save_30px.png" />Sauver les changements</button>
 									<button class="itmh si_open" alt="Enregistrer sous..." id="itm_save_as"><img src="/images/save_as_30px.png" />Faire une copie</button>
 									-->
-									<button class="itmh si_open" onclick="PrintThis()" alt="Imprimer"
-										><img src="/images/print_30px.png" />Imprimer cette donne</button
-									>
+									<button class="itmh si_open" onclick="PrintThis()" alt="Imprimer"><img src="/images/print_30px.png" />Imprimer cette donne</button>
 								</div>
 							</div>
 						</div>
@@ -287,11 +292,10 @@
 						/></label>
 						<button onclick="PrintThis()"><img src="/images/print_30px.png" alt="Imprimer la donne" /></button>
 						<button class="undo" onclick="Undo()" disabled><img src="/images/undo_30px.png" alt="Revenir en arrière (ctrl-Z)" /></button>
-						<button class="redo" onclick="Redo()" disabled
-							><img src="/images/redo_30px.png" alt="Annuler retour en arrière (shift-ctrl-Z)"
-						/></button>
+						<button class="redo" onclick="Redo()" disabled><img src="/images/redo_30px.png" alt="Annuler retour en arrière (shift-ctrl-Z)" /></button>
 						<button class="si_dirty" onclick="onSave()"><img src="/images/save_30px.png" alt="Sauver les modifications" /></button>
 					</div>
+					<h1 class="titre" id="enr_nom" contenteditable="true" style="min-width: 3em; min-height: 1em"></h1>
 					<div class="donne">
 						<div class="cartes">
 							<div id="nord"></div>
@@ -332,7 +336,11 @@
 							</div>
 						</div>
 					</div>
-					<h3>Jeu de la carte</h3>
+					<div class="flexH">
+						<div class="bas"></div>
+						<h3 class="titre">Jeu de la carte</h3>
+						<div class="bas"></div>
+					</div>
 					<div id="jtxt" contenteditable="true"></div>
 				</div>
 			</div>
@@ -355,6 +363,7 @@
 	const jtxt = document.getElementById("jtxt");
 	const entame = document.getElementById("entame");
 	const itm_new = document.getElementById("itm_new");
+	const enr_nom = document.getElementById("enr_nom");
 	const DisableSelector = (classe, val) => {
 		document.querySelectorAll(classe).forEach((el) => (el.disabled = val));
 	};
@@ -449,8 +458,9 @@
 		try {
 			const row = await SQL_get("SELECT * FROM donnes WHERE id=" + id);
 			enr.jeu = JSON.parse(row.data);
-			enr.nom = row.nom;
+			enr.nom = row.nom || "Donne n°" + row.id;
 			enr.id = row.id;
+			enr_nom.innerText = enr.nom;
 			CompleteJeu(enr.jeu.donne);
 			AfficheDonne(enr.jeu);
 			SetDirty(false);
@@ -521,15 +531,7 @@
 	}
 
 	function GetHTMLmain(img, ar, idx) {
-		return (
-			'<div class="main" ><img src="/images/' +
-			img +
-			'.png" /><span style="min-width: 5em" contenteditable="true" oninput="editMain(' +
-			idx +
-			', this.innerText)" onblur="blurMain()">' +
-			ar[idx] +
-			"</span></div>"
-		);
+		return '<div class="main" ><img src="/images/' + img + '.png" /><span style="min-width: 5em" contenteditable="true" oninput="editMain(' + idx + ', this.innerText)" onblur="blurMain()">' + ar[idx] + "</span></div>";
 	}
 	function MakeDonne(ar, idx) {
 		return GetHTMLmain("pique", ar, idx++) + GetHTMLmain("coeur", ar, idx++) + GetHTMLmain("carreau", ar, idx++) + GetHTMLmain("trefle", ar, idx++);
@@ -551,24 +553,36 @@
 	}
 
 	function CompleteJeu(donne) {
+		if (donne.length != 12) return;
 		let jeu = new Array(52).fill(0);
-		for (let i = 0; i < donne.length; i++) {
-			const ar = donne[i].split(" ");
+		for (let i = 0; i < 12; i++) {
+			const ar = donne[i].trim().split(" ");
 			for (let j = 0; j < ar.length; j++) {
 				jeu[13 * (i % 4) + ARDV2N(ar[j])]++;
 			}
 		}
-		let base = 0;
-		for (let i = 0; i < 4; i++) {
-			let foo = "";
-			for (let j = 0; j < 13; j++)
-				if (jeu[base + j] == 0) {
-					foo = N2ARDV(j) + " " + foo;
-				}
-			donne.push(foo.trim());
-			base += 13;
+		// compter les manquants
+		let n = 0;
+		jeu.forEach((el) => {
+			if (el == 0) n++;
+		});
+		if (n != 13) {
+			console.log(jeu);
+			Erreur("Erreur de donne: Il ne manque pas 13 cartes !");
+		} else {
+			let base = 0;
+			for (let i = 0; i < 4; i++) {
+				let foo = "";
+				for (let j = 0; j < 13; j++)
+					if (jeu[base + j] == 0) {
+						foo = N2ARDV(j) + " " + foo;
+					}
+				donne.push(foo.trim());
+				base += 13;
+			}
 		}
 	}
+
 	var session = { choix: {} };
 
 	function SetChoix(nom, val) {
@@ -695,6 +709,43 @@
 		OpenID(this.value);
 	});
 
+	function onSave() {
+		io.emit("save_donne", enr, (r) => {
+			if (r.err) Erreur(r);
+			else setDirty(false);
+		});
+	}
+
+	itm_new.addEventListener("click", () => {
+		closeMenu();
+		io.emit(
+			"save_donne",
+			{
+				jeu: {
+					donneur: "",
+					vul: "",
+					txt1: "",
+					txt2: "",
+					donne: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""],
+					enchere: [" ", " ", " ", " "],
+					entame: " ",
+				},
+			},
+			(r) => {
+				if (r.err) Erreur(r);
+				else if (r.changes == 1 && OpenID(r.lastInsertRowid)) {
+					SetElvisEdit(true);
+					if ("showPicker" in HTMLSelectElement.prototype) ed_donneur.showPicker();
+					else ed_donneur.focus();
+				}
+			}
+		);
+	});
+
+	/****************************/
+	/*   EDITION DE LA DONNE    */
+	/****************************/
+
 	const vulnerable = document.getElementById("vulnerable");
 	const classIf = (el, c, b) => {
 		if (b) el.classList.add(c);
@@ -730,6 +781,11 @@
 		console.log(id, val);
 	}
 
+	enr_nom.addEventListener("input", function () {
+		enr.nom = this.innerText;
+		SetDirty(true);
+	});
+
 	etxt.addEventListener("input", function () {
 		enr.jeu.txt1 = this.innerText;
 		SetDirty(true);
@@ -761,7 +817,9 @@
 
 	function editMain(idx, val) {
 		Info("");
+		console.log(enr.jeu.donne);
 		enr.jeu.donne[idx] = val.toUpperCase().trim();
+		console.log("editMain", enr.jeu.donne);
 		SetDirty(true);
 	}
 
@@ -769,11 +827,13 @@
 		// vérifier si donne OK
 		let jeu = new Array(52).fill(0);
 		for (let i = 0; i < enr.jeu.donne.length; i++) {
-			const ar = enr.jeu.donne[i].split(" ");
+			const ar = enr.jeu.donne[i].trim().split(" ");
 			for (let j = 0; j < ar.length; j++) {
+				console.log(ar[j]);
 				jeu[13 * (i % 4) + ARDV2N(ar[j])]++;
 			}
 		}
+		console.log(jeu);
 		// vérifier si doublon
 		for (let i = 0; i < 52; i++)
 			if (jeu[i] > 1) {
@@ -781,25 +841,6 @@
 				Erreur("" + N2ARDV(i % 13) + " de " + foo[Math.floor(i / 13)] + " en double");
 			}
 	}
-
-	itm_new.addEventListener("click", () => {
-		closeMenu();
-		enr = {
-			jeu: {
-				donneur: "",
-				vul: "",
-				txt1: "",
-				txt2: "",
-				donne: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""],
-				enchere: [" ", " ", " ", " "],
-				entame: " ",
-			},
-		};
-		SetElvisEdit(true);
-		AfficheDonne(enr.jeu);
-		if ("showPicker" in HTMLSelectElement.prototype) ed_donneur.showPicker();
-		else ed_donneur.focus();
-	});
 
 	/****************************/
 	/*        STATUS BAR        */
@@ -872,8 +913,8 @@
 		SetVulnerable(jeu.vul);
 		ed_donneur.value = jeu.donneur;
 		SetElvisDonneur(jeu.donneur);
-		etxt.innerText = jeu.txt1;
-		jtxt.innerText = jeu.txt2;
+		etxt.innerHTML = jeu.txt1;
+		jtxt.innerHTML = jeu.txt2;
 	}
 
 	SetDirty(false);
