@@ -16,14 +16,11 @@ const fs = require("fs");
 // utiliser le framework 'express' (alias: app)
 const express = require("express");
 const app = express();
-const net = require("net");
 const sqlite3 = require("better-sqlite3");
 const bcrypt = require("bcrypt");
 const child_process = require("child_process");
 // authentificaton
 const Session = require("express-session");
-// nécessaire pour récupérer les paramètres dans POST
-const bodyParser = require("body-parser");
 
 // créer le serveur web (alias: httpserver)
 const httpserver = require("http").createServer(app);
@@ -32,9 +29,6 @@ const httpserver = require("http").createServer(app);
 const socketio = require("socket.io")(httpserver);
 const favicon = require("serve-favicon"); // icone page web
 const ios = require("socket.io-express-session");
-const multer = require("multer"); // upload middleware
-//const parseString = require('xml2js').parseString;
-const nodemailer = require("nodemailer");
 const { exit } = require("process");
 
 //******************
@@ -173,7 +167,14 @@ socketio.on("connection", (client) => {
 	if (session.user == undefined) {
 		let foo = db.prepare("SELECT * FROM users WHERE nom=?").get(app_config.user);
 		if (foo == undefined) foo = db.prepare("SELECT * FROM users ORDER BY id LIMIT 1").get();
-		session.user = { id: foo.id, nom: foo.nom, is_admin: Boolean(foo.admin), can_add: Boolean(foo.can_add), can_edit: Boolean(foo.can_edit), can_delete: Boolean(foo.can_delete) };
+		session.user = {
+			id: foo.id,
+			nom: foo.nom,
+			is_admin: Boolean(foo.admin),
+			can_add: Boolean(foo.can_add),
+			can_edit: Boolean(foo.can_edit),
+			can_delete: Boolean(foo.can_delete),
+		};
 		try {
 			session.choix = JSON.parse(foo.choix);
 		} catch (e) {
@@ -183,7 +184,7 @@ socketio.on("connection", (client) => {
 		}
 	}
 	nbr_clients++;
-
+	console.log(session.user.nom + " est connecté.");
 	client.on("session", () => {
 		client.emit("session", session);
 	});
@@ -269,7 +270,8 @@ socketio.on("connection", (client) => {
 				let info = {};
 				let enr = db.prepare("SELECT id,hash,LENGTH(hash) AS pwl FROM users WHERE id=?").get(id);
 				if (enr == undefined) throw new Error("Erreur dans les identifiants");
-				else if ((old_val != "" || (enr.hash != undefined && enr.pwl != 0)) && bcrypt.compareSync(old_val, enr.hash) == false) throw new Error("Ancien mot de passe incorrect");
+				else if ((old_val != "" || (enr.hash != undefined && enr.pwl != 0)) && bcrypt.compareSync(old_val, enr.hash) == false)
+					throw new Error("Ancien mot de passe incorrect");
 				else if (new_val != "")
 					bcrypt.hash(new_val, 10, function (err, hash) {
 						if (err) throw new Error("Hash:" + err.message);
@@ -297,6 +299,23 @@ socketio.on("connection", (client) => {
 			cb({});
 		}
 	});
+
+	client.on("upducfg", (nom, valeur) => {
+		updSession(nom, valeur);
+	});
+
+	function updSession(nom, valeur) {
+		console.log("updSession", nom, valeur);
+		let b = false;
+		if (session.choix == undefined) session.choix = {};
+		if (typeof valeur == "object") b = JSON.stringify(session.choix[nom]) === JSON.stringify(valeur);
+		else b = session.choix[nom] == valeur;
+		if (!b) {
+			session.choix[nom] = valeur; // ajout dynamique.
+			session.dirty = true;
+			session.save();
+		}
+	}
 
 	client.on("liste_donnes", (cb) => {
 		if (db == undefined) cb({ err: "Session expirée. Identifiez-vous" });
@@ -438,16 +457,4 @@ function MakePatch(db, fn) {
 			}
 		}
 	});
-}
-
-function updSession(nom, valeur) {
-	let b = false;
-	if (session.choix == undefined) session.choix = {};
-	if (typeof valeur == "object") b = JSON.stringify(session.choix[nom]) === JSON.stringify(valeur);
-	else b = session.choix[nom] == valeur;
-	if (!b) {
-		session.choix[nom] = valeur; // ajout dynamique.
-		session.dirty = true;
-		session.save();
-	}
 }
