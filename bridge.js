@@ -229,6 +229,27 @@ socketio.on("connection", (client) => {
 	/*****************/
 	/* AVEC CALLBACK */
 	/*****************/
+	function AddTreeNode(node, id_parent) {
+		if (node.jeux == undefined) node.jeux = db.prepare("SELECT d.id,d.nom FROM data2tree t LEFT JOIN donnes d ON d.id==t.id_donne WHERE t.id_arbre" + id_parent).all();
+		node.childs = db.prepare("SELECT id,itm FROM arbre WHERE id_parent" + id_parent).all();
+		node.childs.forEach((el) => {
+			AddTreeNode(el, "=" + el.id);
+		});
+		return node;
+	}
+
+	client.on("get_tree", (cb) => {
+		if (db == undefined) cb({ err: "Session expirée. Identifiez-vous" });
+		else
+			try {
+				let node = {};
+				node.jeux = db.prepare("SELECT id,nom FROM donnes WHERE id NOT IN(SELECT id_donne FROM data2tree)").all();
+				cb(AddTreeNode(node, " IS NULL"));
+			} catch (e) {
+				cb({ err: e.message });
+			}
+	});
+
 	client.on("cb_all", (requete, param, cb) => {
 		if (db == undefined) cb({ err: "Session expirée. Identifiez-vous" });
 		else

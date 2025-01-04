@@ -72,7 +72,7 @@
 
 .tree summary::before {
 	z-index: 1;
-	background: #696 url("expand-collapse.svg") 0 0;
+	background: #696 url("/images/expand-collapse.svg") 0 0;
 }
 
 .tree details[open] > summary::before {
@@ -82,9 +82,6 @@
 .tree_sel {
 	font-weight: bold;
 	color: blue;
-}
-.tree .champ {
-	margin-top: 4px;
 }
 #tree_sw {
 	appearance: none;

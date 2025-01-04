@@ -37,12 +37,6 @@
 				align-items: stretch;
 				box-sizing: border-box;
 			}
-			#volet_tree {
-				display: block;
-				position: relative;
-				min-width: 200px;
-				background-color: lightgray;
-			}
 			#volet_centre {
 				position: relative;
 				box-sizing: border-box;
@@ -52,9 +46,6 @@
 				background: linear-gradient(rgba(211, 211, 211, 0.5), rgba(211, 211, 211, 0.5)), url("/images/Cards.png");
 				padding: 0.5em;
 				max-width: 1000px;
-			}
-			#volet_tree.hide_me {
-				display: none;
 			}
 			.donne {
 				display: flex;
@@ -229,6 +220,43 @@
 				border-bottom: 1px solid black;
 				height: 100%;
 			}
+			#volet_tree {
+				display: block;
+				position: relative;
+				min-width: 200px;
+				background-color: lightgray;
+				box-sizing: border-box;
+			}
+			#volet_tree.hide_me {
+				display: none;
+			}
+			#volet_tree .find {
+				width: 100%;
+				display: flex;
+				flex-direction: row;
+				align-items: center;
+				padding-right: 8px;
+			}
+			#volet_tree .find > input {
+				width: 100%;
+				height: 100%;
+			}
+			#volet_tree .find > img {
+				padding: 8px;
+			}
+			#volet_tree .icones {
+				margin-top: 0.5em;
+				display: flex;
+				flex-direction: row;
+				justify-content: space-between;
+				width: 100%;
+				align-items: center;
+			}
+			#volet_tree #arbre {
+				margin-top: 1em;
+				box-sizing: border-box;
+				padding-bottom: 100px;
+			}
 			@media print {
 				#volet_tree,
 				.menu,
@@ -263,7 +291,17 @@
 
 		<div id="container" onclick="closeMenu()">
 			<div id="volets">
-				<div id="volet_tree" class="hide_me"></div>
+				<div id="volet_tree" class="hide_me">
+					<div class="find">
+						<img src="/images/Search.png" />
+						<input type="search" id="ed_find" hlp="Rechercher une donne, un mot dans les textes" />
+					</div>
+					<div class="si_edit icones">
+						<img src="/images/subtree.png" alt="Déplacer cette icone sur l'arbre pour créer des nouveaux dossiers ou sous-dossiers" ondragstart="onSubnodeDrag(event)" />
+						<img id="node_trash" src="/images/trash_40px.png" draggable="false" alt="Faire glisser ici les dossiers ou jeux à effacer" />
+					</div>
+					<div id="arbre"></div>
+				</div>
 				<div id="volet_centre">
 					<div class="menu">
 						<input type="checkbox" id="tree_sw" />
@@ -357,6 +395,8 @@
 	var session;
 
 	const volet_tree = document.getElementById("volet_tree"); // lié à session.choix.show_tree
+	const arbre = document.getElementById("arbre");
+	const node_trash = document.getElementById("node_trash");
 	const tree_sw = document.getElementById("tree_sw");
 	const sw_edit = document.getElementById("sw_edit");
 	const etxt = document.getElementById("etxt");
@@ -364,6 +404,8 @@
 	const entame = document.getElementById("entame");
 	const itm_new = document.getElementById("itm_new");
 	const enr_nom = document.getElementById("enr_nom");
+	const ouest = document.getElementById("ouest");
+	const sud = document.getElementById("sud");
 	const DisableSelector = (classe, val) => {
 		document.querySelectorAll(classe).forEach((el) => (el.disabled = val));
 	};
@@ -391,7 +433,7 @@
 	});
 
 	io.on("session", function (data) {
-		console.log(data);
+		//console.log(data);
 		session = data;
 		if (data.erreur != undefined) {
 			Erreur(data.erreur);
@@ -468,6 +510,7 @@
 				session.choix.last_id = row.id;
 				io.emit("upducfg", "last_id", row.id);
 			}
+			MakeTree();
 			return true;
 		} catch (e) {
 			Erreur(e);
@@ -531,7 +574,7 @@
 	}
 
 	function GetHTMLmain(img, ar, idx) {
-		return '<div class="main" ><img src="/images/' + img + '.png" /><span style="min-width: 5em" contenteditable="true" oninput="editMain(' + idx + ', this.innerText)" onblur="blurMain()">' + ar[idx] + "</span></div>";
+		return '<div class="main" ><img src="/images/' + img + '.png" /><span style="min-width: 5em" contenteditable="true" oninput="Info(\'\')" onblur="blurMain(' + idx + ',this)">' + AjouteBlancs(ar[idx]) + "</span></div>";
 	}
 	function MakeDonne(ar, idx) {
 		return GetHTMLmain("pique", ar, idx++) + GetHTMLmain("coeur", ar, idx++) + GetHTMLmain("carreau", ar, idx++) + GetHTMLmain("trefle", ar, idx++);
@@ -551,50 +594,53 @@
 		if (n == 9) return "V";
 		return (n + 2).toString();
 	}
+	function MainManquante(donne) {
+		if (donne.length >= 16 && donne[12] == "" && donne[13] == "" && donne[14] == "" && donne[15] == "") donne.length = 12;
+		return donne.length == 12;
+	}
 
 	function CompleteJeu(donne) {
-		if (donne.length != 12) return;
-		let jeu = new Array(52).fill(0);
-		for (let i = 0; i < 12; i++) {
-			const ar = donne[i].trim().split(" ");
-			for (let j = 0; j < ar.length; j++) {
-				jeu[13 * (i % 4) + ARDV2N(ar[j])]++;
+		if (MainManquante(donne)) {
+			let jeu = new Array(52).fill(0);
+			for (let i = 0; i < 12; i++) {
+				const ar = AjouteBlancs(donne[i]).split(" ");
+				for (let j = 0; j < ar.length; j++) {
+					jeu[13 * (i % 4) + ARDV2N(ar[j])]++;
+				}
+			}
+			// compter les manquants
+			let n = 0;
+			jeu.forEach((el) => {
+				if (el == 0) n++;
+			});
+			if (n == 13) {
+				let base = 0;
+				for (let i = 0; i < 4; i++) {
+					let foo = "";
+					for (let j = 0; j < 13; j++)
+						if (jeu[base + j] == 0) {
+							foo = N2ARDV(j) + " " + foo;
+						}
+					donne.push(foo.trim());
+					base += 13;
+				}
+				return true;
 			}
 		}
-		// compter les manquants
-		let n = 0;
-		jeu.forEach((el) => {
-			if (el == 0) n++;
-		});
-		if (n != 13) {
-			console.log(jeu);
-			Erreur("Erreur de donne: Il ne manque pas 13 cartes !");
-		} else {
-			let base = 0;
-			for (let i = 0; i < 4; i++) {
-				let foo = "";
-				for (let j = 0; j < 13; j++)
-					if (jeu[base + j] == 0) {
-						foo = N2ARDV(j) + " " + foo;
-					}
-				donne.push(foo.trim());
-				base += 13;
-			}
-		}
+		return false;
 	}
 
 	var session = { choix: {} };
 
 	function SetChoix(nom, val) {
 		session.choix[nom] = val;
-		console.log(session);
 	}
 
 	function SQL(id, stm, p) {
 		return new Promise((resolve, reject) => {
 			io.emit(id, stm, p, (r) => {
 				// ATTENTION: S'assurer que le serveur retourne bien un objet err si erreur
-				console.log("SQL", r);
+				//console.log("SQL", r);
 				if (r != undefined && r.err != undefined) {
 					reject(r.err);
 				} else resolve(r);
@@ -663,7 +709,7 @@
 		document.querySelectorAll('[contenteditable="' + (b ? "false" : "true") + '"]').forEach((el) => {
 			el.setAttribute("contenteditable", b);
 		});
-		SetSelectorDisplay(".si_edit", b ? "block" : "none");
+		SetSelectorDisplay(".si_edit", b ? "flex" : "none");
 		MakeEncheres(enr.jeu.enchere);
 	}
 
@@ -712,7 +758,7 @@
 	function onSave() {
 		io.emit("save_donne", enr, (r) => {
 			if (r.err) Erreur(r);
-			else setDirty(false);
+			else SetDirty(false);
 		});
 	}
 
@@ -777,10 +823,6 @@
 		SetDirty(true);
 	});
 
-	function onEdit(id, val) {
-		console.log(id, val);
-	}
-
 	enr_nom.addEventListener("input", function () {
 		enr.nom = this.innerText;
 		SetDirty(true);
@@ -797,7 +839,7 @@
 	});
 
 	entame.addEventListener("input", function () {
-		enr.jeu.entame = this.innerText;
+		enr.jeu.entame = this.innerText.toUpperCase();
 		SetDirty(true);
 	});
 
@@ -815,31 +857,44 @@
 		}
 	}
 
-	function editMain(idx, val) {
-		Info("");
-		console.log(enr.jeu.donne);
-		enr.jeu.donne[idx] = val.toUpperCase().trim();
-		console.log("editMain", enr.jeu.donne);
-		SetDirty(true);
-	}
-
-	function blurMain() {
-		// vérifier si donne OK
-		let jeu = new Array(52).fill(0);
-		for (let i = 0; i < enr.jeu.donne.length; i++) {
-			const ar = enr.jeu.donne[i].trim().split(" ");
-			for (let j = 0; j < ar.length; j++) {
-				console.log(ar[j]);
-				jeu[13 * (i % 4) + ARDV2N(ar[j])]++;
+	function AjouteBlancs(val) {
+		// ajouter les espaces
+		let st = "";
+		if (val != undefined && val.length) {
+			let idx = 0;
+			while (idx < val.length) {
+				const c = val[idx++];
+				if (c != " ") {
+					if (st != "") st += " ";
+					if (c == "1" && idx < val.length && val[idx] == "0") {
+						st += "10";
+						idx++;
+					} else st += c;
+				}
 			}
 		}
-		console.log(jeu);
-		// vérifier si doublon
-		for (let i = 0; i < 52; i++)
-			if (jeu[i] > 1) {
-				const foo = ["pique", "coeur", "carreau", "trèfle"];
-				Erreur("" + N2ARDV(i % 13) + " de " + foo[Math.floor(i / 13)] + " en double");
-			}
+		return st;
+	}
+
+	function RetireBlancs(val) {
+		// retirer les espaces
+		let st = "";
+		let idx = 0;
+		while (idx < val.length) {
+			const c = val[idx++];
+			if (c != " ") st += c;
+		}
+		return st;
+	}
+
+	function blurMain(idx, val) {
+		const st = RetireBlancs(val.innerText.toUpperCase());
+		if (enr.jeu.donne[idx] != st) {
+			enr.jeu.donne[idx] = st;
+			SetDirty(true);
+		}
+		val.innerText = AjouteBlancs(st);
+		if (CompleteJeu(enr.jeu.donne)) sud.innerHTML = MakeDonne(enr.jeu.donne, 12);
 	}
 
 	/****************************/
@@ -901,13 +956,148 @@
 	});
 
 	/****************************/
+	/*   ARBRE DE SELECTION     */
+	/****************************/
+	/* Crédit: https://iamkate.com/code/tree-views/
+		 structure de base d'un noeud simple:  <li>noeud</li>
+		 structure de base d'un noeud avec enfants:
+		  <li>
+		    <details>
+		      <summary>Nom du noeud</summary>
+		      <ul>
+		        <li>Enfant 1</li>
+		        <li>Enfant 2</li>
+		      </ul>
+		    </details>
+		  </li>
+		  les enfants peuvent aussi imbriquer cette structure
+		// ATTENTION: ontoggle se déclenche si 'open' dans le HTML de départ
+		*/
+	function AddJeux(ar) {
+		let st = "";
+		ar.forEach((el) => {
+			st += '<li id="j_' + el.id + '" onclick="clickJeu(event)">' + el.nom + "</li>";
+		});
+		return st;
+	}
+
+	function AddChilds(ar) {
+		let st = "";
+		if (ar != undefined)
+			ar.forEach((el) => {
+				st += '<li><details open><summary ondragstart="onNodeDrag(event)" ondragenter="onDragEnter(this)" ondragleave="onDragLeave(this)" onDrop="onNodeDrop(event)" ><span id="node' + el.id + '" draggable="true">' + el.itm + "</span></summary>";
+				st += "<ul>" + AddChilds(el.childs) + AddJeux(el.jeux) + "</ul></details>";
+			});
+		return st;
+	}
+
+	function MakeTree() {
+		io.emit("get_tree", (r) => {
+			let st = '<ul class="tree">' + AddChilds(r.childs) + "<li><details open><summary>Non classés</summary><ul>" + AddJeux(r.jeux) + "</ul></details></li></ul>";
+			arbre.innerHTML = st;
+			SetSelectorDisplay("#volet_tree .si_edit", session.choix.edit ? "flex" : "none");
+
+			document.querySelectorAll(".tree [hlp],.tree [alt]").forEach((itm) => {
+				itm.addEventListener("mouseover", (e) => {
+					console.log("mouseover");
+					e.stopPropagation();
+					Info(itm.getAttribute("hlp") || itm.getAttribute("alt"));
+				});
+				itm.addEventListener("mouseout", (e) => {
+					Info("");
+				});
+			});
+		});
+	}
+
+	const all_sel = arbre.getElementsByClassName("tree_sel"); // en temps réel
+	const removeSelection = () => {
+		for (const el of all_sel) el.classList.remove("tree_sel");
+	};
+
+	function clickJeu(e) {
+		e.stopPropagation();
+		e.preventDefault();
+		if (e.ctrlKey == false) {
+			removeSelection();
+			OpenID(Number(e.target.id.substr(2)));
+		} else e.target.classList.add("tree_sel");
+		//SelectObjet(e.target.id, e.shiftKey, e.ctrlKey);
+	}
+
+	function delNode(id) {
+		console.log("effacer arbre " + id);
+	}
+
+	arbre.addEventListener("dragover", (e) => {
+		if (session.choix.edit) e.preventDefault();
+	});
+
+	arbre.addEventListener("drop", (ev) => {
+		ev.preventDefault();
+		console.log("arbre drop", ev.target.id);
+	});
+
+	node_trash.addEventListener("dragover", (ev) => {
+		ev.preventDefault();
+	});
+
+	node_trash.addEventListener("drop", (ev) => {
+		ev.preventDefault();
+		let id = ev.dataTransfer.getData("application/internal");
+		console.log(id);
+		if (id.startsWith("node")) {
+			SQL_run("DELETE FROM arbre WHERE id=" + id).then((r) => {
+				// les triggers effacent automatiquement les data2tree et les enfants
+				console.log(r);
+				MakeTree();
+			});
+		}
+	});
+
+	function onDragEnter(el) {
+		el.style.color = "blue";
+		el.style.fontWeight = "bold";
+	}
+
+	function onDragLeave(el) {
+		el.style.color = "inherit";
+		el.style.fontWeight = "inherit";
+	}
+
+	function onNodeDrag(ev) {
+		ev.dataTransfer.setData("application/internal", ev.target.id);
+		ev.dataTransfer.setData("text/plain", ev.target.id);
+		ev.dataTransfer.dropEffect = "move";
+	}
+
+	function onNodeDrop(ev) {
+		// id est toujours sous la forme 'nodexxx'
+		ev.preventDefault();
+		ev.stopPropagation();
+		onDragLeave(ev.target.parentElement);
+		const dt = ev.dataTransfer;
+		let foo = dt.getData("application/internal");
+		let id = Number(ev.target.id.substr(4));
+		SQL_run("INSERT INTO arbre (id_parent,itm) VALUES (" + id + ",'Nouveau dossier')").then((r) => {
+			MakeTree();
+		});
+	}
+
+	function onSubnodeDrag(ev) {
+		ev.dataTransfer.setData("application/internal", "subnode");
+		ev.dataTransfer.setData("text/plain", "subnode");
+		ev.dataTransfer.dropEffect = "copy";
+	}
+
+	/****************************/
 	/*           START          */
 	/****************************/
 	function AfficheDonne(jeu) {
 		document.getElementById("nord").innerHTML = MakeDonne(jeu.donne, 0);
-		document.getElementById("est").innerHTML = MakeDonne(jeu.donne, 4);
-		document.getElementById("sud").innerHTML = MakeDonne(jeu.donne, 8);
-		document.getElementById("ouest").innerHTML = MakeDonne(jeu.donne, 12);
+		ouest.innerHTML = MakeDonne(jeu.donne, 4);
+		document.getElementById("est").innerHTML = MakeDonne(jeu.donne, 8);
+		sud.innerHTML = MakeDonne(jeu.donne, 12);
 		SetElvisEdit(session.choix.edit || false);
 		ed_vul.value = jeu.vul;
 		SetVulnerable(jeu.vul);
