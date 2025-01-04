@@ -312,7 +312,6 @@ socketio.on("connection", (client) => {
 
 	// callback indispensable car sinon déconnexion session AVANT sauvegarde
 	client.on("updSession", (nom, valeur, cb) => {
-		//console.log(session);
 		if (db == undefined) cb({ err: "Session fermée. Reconnectez vous" });
 		else {
 			updSession(nom, valeur);
@@ -325,7 +324,6 @@ socketio.on("connection", (client) => {
 	});
 
 	function updSession(nom, valeur) {
-		console.log("updSession", nom, valeur);
 		let b = false;
 		if (session.choix == undefined) session.choix = {};
 		if (typeof valeur == "object") b = JSON.stringify(session.choix[nom]) === JSON.stringify(valeur);

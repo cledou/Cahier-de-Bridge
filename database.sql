@@ -11,7 +11,7 @@ CREATE TABLE users (
   nom  VARCHAR(64),
   email VARCHAR(64),
   hash VARCHAR(60),
-  choix TEXT DEFAULT '{"flags": 0}',
+  choix TEXT DEFAULT '{"flags": 1}',
   admin BOOLEAN DEFAULT FALSE,
   can_add BOOLEAN DEFAULT FALSE,
   can_edit BOOLEAN DEFAULT FALSE,

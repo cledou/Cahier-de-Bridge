@@ -224,7 +224,7 @@
 				display: block;
 				position: relative;
 				min-width: 200px;
-				background-color: lightgray;
+				background-color: whitesmoke;
 				box-sizing: border-box;
 			}
 			#volet_tree.hide_me {
@@ -296,7 +296,7 @@
 						<img src="/images/Search.png" />
 						<input type="search" id="ed_find" hlp="Rechercher une donne, un mot dans les textes" />
 					</div>
-					<div class="si_edit icones">
+					<div class="icones si_edit">
 						<img src="/images/subtree.png" alt="Déplacer cette icone sur l'arbre pour créer des nouveaux dossiers ou sous-dossiers" ondragstart="onSubnodeDrag(event)" />
 						<img id="node_trash" src="/images/trash_40px.png" draggable="false" alt="Faire glisser ici les dossiers ou jeux à effacer" />
 					</div>
@@ -412,17 +412,7 @@
 	const SetSelectorDisplay = (classe, val) => {
 		document.querySelectorAll(classe).forEach((el) => (el.style.display = val));
 	};
-	let enr = {
-		jeu: {
-			donneur: "S",
-			vul: "EW",
-			txt1: "Est répond 2V au nom de ses 7HLD. Il est temps pour Sud, à qui il ne manquait qu'un point pour ouvrir, de se manifester.\nNord, avec un singleton dans la couleur adverse et trois beaux honneurs, conclut à la manche.",
-			txt2: "Le déclarant appelle l'As de carreau puis le 2 de Coeur pour ouvrir sa coupe. \n Pour battre la manche, Est doit plonger du Roi et rejouer Trèfle pour dégager Ouest dans la couleur.\nCelui-ci doit alors rejouer Carreau sans tirer son second honneur à Trèfle...\nGageons qu'une si belle défense ne sera que rarement trouvée à la table !",
-			donne: ["R 7 6 3", "2", "A R 10 5", "10 7 6 2", "9 2", "R 9 8 5", "V 9 6", "9 5 4 3", "A V 10 5 4", "D 10 4", "8 3 2", "R V"],
-			enchere: ["-", "1C", "-", "2C", "2P", "-", "4P", " "],
-			entame: "4K",
-		},
-	};
+	let enr = {};
 
 	//*********************
 	// SESSION socket I/O
@@ -452,6 +442,16 @@
 				set: function (b) {
 					if (b) this.flags |= 1;
 					else this.flags &= ~1;
+					io.emit("upducfg", "flags", this.flags);
+				},
+			},
+			edit: {
+				get: function () {
+					return Boolean(this.flags & 2);
+				},
+				set: function (b) {
+					if (b) this.flags |= 2;
+					else this.flags &= ~2;
 					io.emit("upducfg", "flags", this.flags);
 				},
 			},
@@ -527,7 +527,7 @@
 		for (let i = 0; i < ar.length; i++) {
 			if (i % 4 == 0) st += "</tr><tr>";
 			st += '<td id="enc_' + i + '" oninput="editEnchere(' + i + ',this.innerText)" contenteditable="';
-			if (sw_edit.checked) {
+			if (session.choix.edit) {
 				st += 'true"';
 				if (i + 1 == ar.length) st += ' onblur="blurEnchere()"';
 				st += ">" + ar[i];
@@ -540,10 +540,10 @@
 					else if (v == "XX") st += "Surcontre";
 					else {
 						st += v[0];
-						if (v[1] == "P") st += '<img src="/images/pique.png" />';
+						if (v[1] == "P") st += '<img src="/images/Spades.png" />';
 						else if (v[1] == "C") st += '<img src="/images/coeur.png" />';
-						else if (v[1] == "K") st += '<img src="/images/carreau.png" />';
-						else if (v[1] == "T") st += '<img src="/images/trefle.png" />';
+						else if (v[1] == "K") st += '<img src="/images/Diamonds.png" />';
+						else if (v[1] == "T") st += '<img src="/images/Clubs.png" />';
 						else st += v.substr(1);
 					}
 				}
@@ -554,7 +554,7 @@
 		document.getElementById("tbe").innerHTML = st;
 		// entame
 		st = "";
-		if (sw_edit.checked) st = enr.jeu.entame;
+		if (session.choix.edit) st = enr.jeu.entame;
 		else if (enr.jeu.entame != "") {
 			const c1 = enr.jeu.entame[0];
 			if (c1 == "A") st += "As";
@@ -565,10 +565,10 @@
 			else st += c1;
 			st += " de ";
 			const c2 = enr.jeu.entame.substr(-1);
-			if (c2 == "P") st += '<img src="/images/pique.png" />';
+			if (c2 == "P") st += '<img src="/images/Spades.png" />';
 			else if (c2 == "C") st += '<img src="/images/coeur.png" />';
-			else if (c2 == "K") st += '<img src="/images/carreau.png" />';
-			else if (c2 == "T") st += '<img src="/images/trefle.png" />';
+			else if (c2 == "K") st += '<img src="/images/Diamonds.png" />';
+			else if (c2 == "T") st += '<img src="/images/Clubs.png" />';
 		}
 		entame.innerHTML = st;
 	}
@@ -577,7 +577,7 @@
 		return '<div class="main" ><img src="/images/' + img + '.png" /><span style="min-width: 5em" contenteditable="true" oninput="Info(\'\')" onblur="blurMain(' + idx + ',this)">' + AjouteBlancs(ar[idx]) + "</span></div>";
 	}
 	function MakeDonne(ar, idx) {
-		return GetHTMLmain("pique", ar, idx++) + GetHTMLmain("coeur", ar, idx++) + GetHTMLmain("carreau", ar, idx++) + GetHTMLmain("trefle", ar, idx++);
+		return GetHTMLmain("Spades", ar, idx++) + GetHTMLmain("coeur", ar, idx++) + GetHTMLmain("Diamonds", ar, idx++) + GetHTMLmain("Clubs", ar, idx++);
 	}
 
 	function ARDV2N(v) {
@@ -701,7 +701,20 @@
 		HideVoletGauche(this.checked);
 		session.choix.show_tree = this.checked;
 	});
-	//tree_sw.checked = false;
+
+	function SetElvisArbre(b) {
+		// tree: On ne peut déplacer les noeuds et jeux qu'en mode édition
+		if (!b) removeSelection();
+		// seuls les <span> jeux ont l'attribut 'draggable'. Les img sont draggable par nature
+		arbre.querySelectorAll("[draggable]").forEach((el) => {
+			el.setAttribute("draggable", b);
+			el.style.cursor = b ? "grab" : "pointer";
+		});
+		arbre.querySelectorAll("[contenteditable]").forEach((el) => {
+			el.setAttribute("contenteditable", b);
+		});
+		SetSelectorDisplay("#arbre .si_edit", b ? "flex" : "none");
+	}
 
 	function SetElvisEdit(b) {
 		if (session.choix.edit != b) SetChoix("edit", b);
@@ -711,6 +724,7 @@
 		});
 		SetSelectorDisplay(".si_edit", b ? "flex" : "none");
 		MakeEncheres(enr.jeu.enchere);
+		SetElvisArbre(b);
 	}
 
 	sw_edit.addEventListener("change", function () {
@@ -828,13 +842,24 @@
 		SetDirty(true);
 	});
 
-	etxt.addEventListener("input", function () {
-		enr.jeu.txt1 = this.innerText;
+	function img2PCKT(txt) {
+		return txt.replace(/<img src="\/images\/Diamonds.png" \/>/g, "&diamondsuit;").replace(/<img src="\/images\/Clubs.png" \/>/g, "&clubs;");
+	}
+
+	etxt.addEventListener("focus", function () {
+		this.innerHTML = enr.jeu.txt1;
+	});
+
+	etxt.addEventListener("blur", function () {
+		console.log(this.innerText);
+		enr.jeu.txt1 = this.innerHTML;
+		etxt.innerHTML = PCKT2img(enr.jeu.txt1);
+		console.log(PCKT2img(enr.jeu.txt1));
 		SetDirty(true);
 	});
 
 	jtxt.addEventListener("input", function () {
-		enr.jeu.txt2 = this.innerText;
+		enr.jeu.txt2 = img2PCKT2(this.innerText);
 		SetDirty(true);
 	});
 
@@ -976,7 +1001,9 @@
 	function AddJeux(ar) {
 		let st = "";
 		ar.forEach((el) => {
-			st += '<li id="j_' + el.id + '" onclick="clickJeu(event)">' + el.nom + "</li>";
+			st += '<li id="j_' + el.id + '" onclick="onJeuClick(event)" draggable="true"  ondragstart="onJeuDrag(event)">' + el.nom;
+			//st += '<img class="si_edit" src="/images/Hand_25px.png" id="jeux' + el.id + '" hlp="Sert à faire glisser le jeu vers un autre dossier ou la corbeille"/>';
+			st += "</li>";
 		});
 		return st;
 	}
@@ -985,7 +1012,9 @@
 		let st = "";
 		if (ar != undefined)
 			ar.forEach((el) => {
-				st += '<li><details open><summary ondragstart="onNodeDrag(event)" ondragenter="onDragEnter(this)" ondragleave="onDragLeave(this)" onDrop="onNodeDrop(event)" ><span id="node' + el.id + '" draggable="true">' + el.itm + "</span></summary>";
+				st += '<li><details open><summary ondragstart="onNodeDrag(event)" ondragenter="onDragEnter(this)" ondragleave="onDragLeave(this)" onDrop="onNodeDrop(event)" >';
+				st += '<span contenteditable onblur="onBlurNode(' + el.id + ',this.innerText)">' + el.itm + "</span>";
+				st += '<img class="si_edit" src="/images/Hand_25px.png" id="node' + el.id + '" hlp="Sert à faire glisser le dossier vers un autre dossier ou la corbeille (n\'efface pas les jeux)"/></summary>';
 				st += "<ul>" + AddChilds(el.childs) + AddJeux(el.jeux) + "</ul></details>";
 			});
 		return st;
@@ -995,8 +1024,8 @@
 		io.emit("get_tree", (r) => {
 			let st = '<ul class="tree">' + AddChilds(r.childs) + "<li><details open><summary>Non classés</summary><ul>" + AddJeux(r.jeux) + "</ul></details></li></ul>";
 			arbre.innerHTML = st;
-			SetSelectorDisplay("#volet_tree .si_edit", session.choix.edit ? "flex" : "none");
-
+			SetElvisArbre(session.choix.edit);
+			document.getElementsByTagNameNS;
 			document.querySelectorAll(".tree [hlp],.tree [alt]").forEach((itm) => {
 				itm.addEventListener("mouseover", (e) => {
 					console.log("mouseover");
@@ -1015,43 +1044,44 @@
 		for (const el of all_sel) el.classList.remove("tree_sel");
 	};
 
-	function clickJeu(e) {
-		e.stopPropagation();
-		e.preventDefault();
-		if (e.ctrlKey == false) {
-			removeSelection();
-			OpenID(Number(e.target.id.substr(2)));
-		} else e.target.classList.add("tree_sel");
-		//SelectObjet(e.target.id, e.shiftKey, e.ctrlKey);
-	}
-
-	function delNode(id) {
-		console.log("effacer arbre " + id);
-	}
-
 	arbre.addEventListener("dragover", (e) => {
 		if (session.choix.edit) e.preventDefault();
 	});
 
 	arbre.addEventListener("drop", (ev) => {
+		Info("");
 		ev.preventDefault();
 		console.log("arbre drop", ev.target.id);
 	});
 
 	node_trash.addEventListener("dragover", (ev) => {
 		ev.preventDefault();
+		let id = ev.dataTransfer.getData("application/internal");
+		console.log(id);
+		if (id.startsWith("j_")) Warning("Attention: Vous allez effacer une donne");
 	});
 
 	node_trash.addEventListener("drop", (ev) => {
+		Info("");
 		ev.preventDefault();
 		let id = ev.dataTransfer.getData("application/internal");
 		console.log(id);
 		if (id.startsWith("node")) {
-			SQL_run("DELETE FROM arbre WHERE id=" + id).then((r) => {
-				// les triggers effacent automatiquement les data2tree et les enfants
-				console.log(r);
-				MakeTree();
-			});
+			SQL_run("DELETE FROM arbre WHERE id=" + id.substr(4))
+				.then((r) => {
+					// les triggers effacent automatiquement les data2tree et les enfants
+					console.log(r);
+					MakeTree();
+				})
+				.catch((e) => Erreur(e));
+		} else if (id.startsWith("j_")) {
+			SQL_run("DELETE FROM donnes WHERE id=" + id.substr(2))
+				.then((r) => {
+					// les triggers effacent automatiquement les data2tree et les enfants
+					console.log(r);
+					MakeTree();
+				})
+				.catch((e) => Erreur(e));
 		}
 	});
 
@@ -1063,6 +1093,24 @@
 	function onDragLeave(el) {
 		el.style.color = "inherit";
 		el.style.fontWeight = "inherit";
+	}
+
+	function onJeuClick(e) {
+		console.log("onJeuClick");
+		e.stopPropagation();
+		e.preventDefault();
+		if (e.ctrlKey == false) {
+			removeSelection();
+			OpenID(Number(e.target.id.substr(2)));
+		} else e.target.classList.add("tree_sel");
+		//SelectObjet(e.target.id, e.shiftKey, e.ctrlKey);
+	}
+
+	function onJeuDrag(ev) {
+		console.log("onJeuDrag");
+		ev.dataTransfer.setData("application/internal", ev.target.id);
+		ev.dataTransfer.setData("text/plain", ev.target.id);
+		ev.dataTransfer.dropEffect = "move";
 	}
 
 	function onNodeDrag(ev) {
@@ -1090,6 +1138,24 @@
 		ev.dataTransfer.dropEffect = "copy";
 	}
 
+	async function onBlurNode(id_node, txt) {
+		try {
+			// récupérer le nom
+			const id = " WHERE id=" + id_node;
+			r = await SQL_get("SELECT itm FROM arbre" + id);
+			if (r.itm != txt) {
+				console.log(r, txt);
+				await SQL_run("UPDATE arbre SET itm=?" + id, txt);
+			}
+		} catch (e) {
+			Erreur(e);
+		}
+	}
+
+	function PCKT2img(txt) {
+		return txt.replace(/♦/g, '<img src="/images/Diamonds.png" />').replace(/♣/g, '<img src="/images/Clubs.png" />').replace(/♠/g, '<img src="/images/Spades.png" />').replace(/♥/g, '<img src="/images/coeur.png" />');
+	}
+
 	/****************************/
 	/*           START          */
 	/****************************/
@@ -1103,8 +1169,8 @@
 		SetVulnerable(jeu.vul);
 		ed_donneur.value = jeu.donneur;
 		SetElvisDonneur(jeu.donneur);
-		etxt.innerHTML = jeu.txt1;
-		jtxt.innerHTML = jeu.txt2;
+		etxt.innerHTML = PCKT2img(jeu.txt1);
+		jtxt.innerHTML = PCKT2img(jeu.txt2);
 	}
 
 	SetDirty(false);
