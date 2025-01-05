@@ -33,9 +33,10 @@ CREATE TABLE arbre (
   itm TEXT,
   pos INTEGER DEFAULT 0
 );
-
-INSERT INTO arbre VALUES (1,NULL,'Exemples',0);
-INSERT INTO arbre VALUES (2,NULL,'Autres exemples',1);
+INSERT INTO arbre VALUES (1,NULL,'Difficulté ⭐☆☆',0);
+INSERT INTO arbre VALUES (2,NULL,'Difficulté ⭐⭐☆',1);
+INSERT INTO arbre VALUES (3,NULL,'Difficulté ⭐⭐⭐',2);
+INSERT INTO arbre VALUES (4,NULL,'Autres exemples',3);
 
 CREATE TABLE data2tree (
   id_donne INTEGER,
@@ -72,7 +73,13 @@ INSERT INTO donnes (nom,data) VALUES ('Exemple 4', '{"donneur":"E","vul":"EW","e
 "txt2":"Est ne distingue pas de meilleure entame que l''As de Carreau, couleur énergiquement soutenue par son partenaire. Il continue Carreau, que le déclarant coupe au mort, avant de rentrer en main par le Roi de Coeur pour jouer Trèfle. Est bondit sur l''As et continue Carreau. Le mort à la demande du déclarant coupe, encaisse le Roi de Pique et poursuit par Roi de Trèfle et Trèfle coupé par Nord et surcoupé par Est. Est rejoue Coeur pour le Valet du mort et le déclarant, bloqué au mort, ne peut enlever les atouts et doit se résoudre à chuter d''une levée puisqu''il subit une nouvelle coupe à Trèfle.\n",
 "donne":["A6532","R76","865","42","V8","432","RDV103","D73","D109","D985","A742","A9","R74","AV10","9","RV10865"],
 "enchere":[" "," "," ","1K","2T","3K","-","-","X","-","4P"," "],"score":"-1 (50 N.S)"}');
-INSERT INTO data2tree VALUES (1,1);
-INSERT INTO data2tree VALUES (2,1);
-INSERT INTO data2tree VALUES (3,2);
+INSERT INTO donnes (nom,data) VALUES ('Donne n°5', '{"donneur":"N","vul":"-",
+"txt1":"<div>2♦ = Au moins quatre cartes à Carreau et de 6 à 10 S</div><div>3♥ = Barrage avec quatre atouts et de préférence un singleton.&nbsp;</div><div>Avec quatre atouts et 11-12 S, vous diriez 3♦ (cue-bid).</div>",
+"txt2":"Sud prend du Roi de Carreau et rejoue un petit Pique sous l''As, <br>Ouest passe le Roi, Sud ayant ouvert il a donc plus de chances de posséder l''As, coupe un Carreau, remonte dans sa main grâce à l''As de Coeur et coupe le dernier Carreau au mort.<br>&nbsp;Il concède donc en tout quatre levées : deux à Pique, le Roi de Carreau et l''As de Trèfle.<br>&nbsp;4♦ ne chutent que d''une levée grâce à la disposition favorable des Trèfles mais, en fit seulement neuvième et sans singleton, il est logique de ne pas surenchérir avec le jeu de Sud.<br><br>",
+"donne":["D86","32","D1073","A654","R95","AV1094","985","RD","V432","RD85","2","10873","A 10 7","7 6","A R V 6 4","V 9 2"],
+"enchere":[" "," ","-","-","1K","1C","2K","3C","-","-","-"," "],"entame":"","score":"EO 3♥="}');
+
+INSERT INTO data2tree VALUES (1,3);
+INSERT INTO data2tree VALUES (2,4);
+INSERT INTO data2tree VALUES (3,1);
 

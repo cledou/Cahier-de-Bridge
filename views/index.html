@@ -771,7 +771,6 @@
 	itm_export.addEventListener("click", () => {
 		closeMenu();
 		let jeu = JSON.stringify(enr.jeu).replace(/'/g, "''").replace('","txt1":', '",\n"txt1":').replace('","txt2":', '",\n"txt2":').replace('","donne":', '",\n"donne":').replace('],"enchere":', '],\n"enchere":');
-
 		let foo = "INSERT INTO donnes (nom,data) VALUES ('" + enr.nom + "', '" + jeu + "');\n";
 		console.log(foo);
 		navigator.clipboard.writeText(foo);
@@ -815,7 +814,7 @@
 					vul: "",
 					txt1: "",
 					txt2: "",
-					donne: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""],
+					donne: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""],
 					enchere: [" ", " ", " ", " "],
 					entame: " ",
 					score: " ",
@@ -881,6 +880,7 @@
 	});
 
 	etxt.addEventListener("blur", function () {
+		console.log(this.innerText);
 		if (enr.jeu.txt1 != this.innerText) {
 			enr.jeu.txt1 = this.innerText.trim();
 			SetDirty(true);
@@ -1054,10 +1054,10 @@
 		  les enfants peuvent aussi imbriquer cette structure
 		// ATTENTION: ontoggle se déclenche si 'open' dans le HTML de départ
 		*/
-	function AddJeux(ar) {
+	function AddJeux(ar, id_node) {
 		let st = "";
 		ar.forEach((el) => {
-			st += '<li id="j_' + el.id + '" onclick="onJeuClick(event)" draggable="true"  ondragstart="onJeuDrag(event)">' + el.nom;
+			st += '<li id="j_' + el.id + '" node="' + id_node + '" onclick="onJeuClick(event)" draggable="true"  ondragstart="onJeuDrag(event)" hlp="Clic: Ouvrir. ' + (session.choix.edit ? " Drag: Déplacer. Shift-drag: dupliquer le jeu dans un autre dossier" : "") + '" >' + el.nom;
 			//st += '<img class="si_edit" src="/images/Hand_25px.png" id="jeux' + el.id + '" hlp="Sert à faire glisser le jeu vers un autre dossier ou la corbeille"/>';
 			st += "</li>";
 		});
@@ -1069,22 +1069,21 @@
 		if (ar != undefined)
 			ar.forEach((el) => {
 				st += '<li><details open><summary ondragstart="onNodeDrag(event)" ondragenter="onDragEnter(this)" ondragleave="onDragLeave(this)" onDrop="onNodeDrop(event)" >';
-				st += '<span contenteditable onblur="onBlurNode(' + el.id + ',this.innerText)">' + el.itm + "</span>";
+				st += '<span contenteditable node="' + el.id + '" onblur="onBlurNode(' + el.id + ',this.innerText)">' + el.itm + "</span>";
 				st += '<img class="si_edit" src="/images/Hand_25px.png" id="node' + el.id + '" hlp="Sert à faire glisser le dossier vers un autre dossier ou la corbeille (n\'efface pas les jeux)"/></summary>';
-				st += "<ul>" + AddChilds(el.childs) + AddJeux(el.jeux) + "</ul></details>";
+				st += "<ul>" + AddChilds(el.childs) + AddJeux(el.jeux, el.id) + "</ul></details>";
 			});
 		return st;
 	}
 
 	function MakeTree() {
 		io.emit("get_tree", (r) => {
-			let st = '<ul class="tree">' + AddChilds(r.childs) + "<li><details open><summary>Non classés</summary><ul>" + AddJeux(r.jeux) + "</ul></details></li></ul>";
+			let st = '<ul class="tree">' + AddChilds(r.childs) + "<li><details open><summary>Non classés</summary><ul>" + AddJeux(r.jeux, 0) + "</ul></details></li></ul>";
 			arbre.innerHTML = st;
 			SetElvisArbre(session.choix.edit);
 			document.getElementsByTagNameNS;
 			document.querySelectorAll(".tree [hlp],.tree [alt]").forEach((itm) => {
 				itm.addEventListener("mouseover", (e) => {
-					console.log("mouseover");
 					e.stopPropagation();
 					Info(itm.getAttribute("hlp") || itm.getAttribute("alt"));
 				});
@@ -1102,12 +1101,6 @@
 
 	arbre.addEventListener("dragover", (e) => {
 		if (session.choix.edit) e.preventDefault();
-	});
-
-	arbre.addEventListener("drop", (ev) => {
-		Info("");
-		ev.preventDefault();
-		console.log("arbre drop", ev.target.id);
 	});
 
 	node_trash.addEventListener("dragover", (ev) => {
@@ -1152,7 +1145,6 @@
 	}
 
 	function onJeuClick(e) {
-		console.log("onJeuClick");
 		e.stopPropagation();
 		e.preventDefault();
 		if (e.ctrlKey == false) {
@@ -1163,10 +1155,24 @@
 	}
 
 	function onJeuDrag(ev) {
-		console.log("onJeuDrag");
 		ev.dataTransfer.setData("application/internal", ev.target.id);
 		ev.dataTransfer.setData("text/plain", ev.target.id);
 		ev.dataTransfer.dropEffect = "move";
+	}
+
+	// Rappel: node_org=0 si non-classé (jeu sans entrée dans la table data2tree)
+	async function onJeuDrop(id, node_dest, make_copy) {
+		const node_org = Number(document.getElementById(id).getAttribute("node"));
+		if (node_dest == null) node_dest = 0;
+		//console.log("Déplace " + id + "du node " + node_org + " au node " + node_dest);
+		try {
+			if (node_dest != 0 && (node_org == 0 || make_copy == true)) await SQL_run("INSERT INTO data2tree (id_donne,id_arbre) VALUES (" + id.substr(2) + "," + node_dest + ")");
+			else if (node_dest == 0) await SQL_run("DELETE FROM data2tree WHERE id_donne=" + id.substr(2) + " AND id_arbre=" + node_org);
+			else await SQL_run("UPDATE data2tree SET id_arbre=" + node_dest + " WHERE id_donne=" + id.substr(2) + " AND id_arbre=" + node_org);
+			MakeTree();
+		} catch (e) {
+			Erreur(e);
+		}
 	}
 
 	function onNodeDrag(ev) {
@@ -1175,6 +1181,13 @@
 		ev.dataTransfer.dropEffect = "move";
 	}
 
+	arbre.addEventListener("drop", (ev) => {
+		Info("");
+		ev.preventDefault();
+		let id = ev.dataTransfer.getData("application/internal");
+		if (id.startsWith("j_")) onJeuDrop(id, ev.target.getAttribute("node"), ev.shiftKey);
+	});
+
 	function onNodeDrop(ev) {
 		// id est toujours sous la forme 'nodexxx'
 		ev.preventDefault();
@@ -1182,10 +1195,13 @@
 		onDragLeave(ev.target.parentElement);
 		const dt = ev.dataTransfer;
 		let foo = dt.getData("application/internal");
-		let id = Number(ev.target.id.substr(4));
-		SQL_run("INSERT INTO arbre (id_parent,itm) VALUES (" + id + ",'Nouveau dossier')").then((r) => {
-			MakeTree();
-		});
+		console.log("onNodeDrop " + foo, ev.target);
+		if (foo.startsWith("j_")) onJeuDrop(foo, ev.target.getAttribute("node"), ev.shiftKey);
+		else if (foo.startsWith("node")) {
+			SQL_run("INSERT INTO arbre (id_parent,itm) VALUES (" + ev.target.id.substr(4) + ",'Nouveau dossier')").then((r) => {
+				MakeTree();
+			});
+		}
 	}
 
 	function onSubnodeDrag(ev) {
@@ -1210,12 +1226,13 @@
 
 	function PCKT2img(txt) {
 		if (txt == undefined) return "";
-		return txt.replace(/♦/g, '<img src="/images/Diamonds.png" />').replace(/♣/g, '<img src="/images/Clubs.png" />').replace(/♠/g, '<img src="/images/Spades.png" />').replace(/♥/g, '<img src="/images/coeur.png" />');
+		return txt.replace(/♦/g, '<img src="/images/Diamonds.png" />').replace(/♣/g, '<img src="/images/Clubs.png" />').replace(/♠/g, '<img src="/images/Spades.png" />').replace(/♥/g, '<img src="/images/coeur.png" />').replace(/\n/g, "<br />");
 	}
 
 	/****************************/
 	/*           START          */
 	/****************************/
+
 	function AfficheDonne(jeu) {
 		document.getElementById("nord").innerHTML = MakeDonne(jeu.donne, 0);
 		ouest.innerHTML = MakeDonne(jeu.donne, 4);
