@@ -257,6 +257,21 @@
 				box-sizing: border-box;
 				padding-bottom: 100px;
 			}
+			.ed_div {
+				width: 100%;
+				position: relative;
+				display: flex;
+				align-items: center;
+				flex-direction: row;
+				justify-content: space-between;
+			}
+			.cp_btn {
+				margin: 4px;
+				font-weight: bold;
+				font-size: 1.2em;
+				min-width: 24px;
+			}
+
 			@media print {
 				#volet_tree,
 				.menu,
@@ -313,6 +328,7 @@
 								<div class="level1">
 									<button class="itmh" id="itm_new"><img src="/images/create_30px.png" alt="Créer une nouvelle donne" />Créer une donne</button>
 									<button class="itmh si_un" alt="Sélectionner une donne existante" id="itm_open"><img src="/images/dossier.png" />Ouvrir une donne</button>
+									<button class="itmh si_un" alt="Exporter donne(s) au format SQL" id="itm_export"><img src="/images/Export.png" />Exporter donne(s) dans le presse-papier</button>
 									<button class="itmh si_dirty" onclick="onSave()" alt="Enregistrer les modifications"><img src="/images/save_30px.png" />Sauver les changements</button>
 									<!--
 									<button class="itmh si_un" alt="Effacer un état de la base de donnée" id="itm_del"><img src="/images/trash_30px.png" />Effacer un état</button>
@@ -329,8 +345,10 @@
 							<img src="/images/Unlock.png" class="si_chk" hlp="Interdir les modifications"
 						/></label>
 						<button onclick="PrintThis()"><img src="/images/print_30px.png" alt="Imprimer la donne" /></button>
+						<!--
 						<button class="undo" onclick="Undo()" disabled><img src="/images/undo_30px.png" alt="Revenir en arrière (ctrl-Z)" /></button>
 						<button class="redo" onclick="Redo()" disabled><img src="/images/redo_30px.png" alt="Annuler retour en arrière (shift-ctrl-Z)" /></button>
+						-->
 						<button class="si_dirty" onclick="onSave()"><img src="/images/save_30px.png" alt="Sauver les modifications" /></button>
 					</div>
 					<h1 class="titre" id="enr_nom" contenteditable="true" style="min-width: 3em; min-height: 1em"></h1>
@@ -353,24 +371,43 @@
 								<span><b>XX</b>:Surcontre</span>
 							</div>
 							<div id="etxt" contenteditable="true"></div>
-							<div class="flexH" style="align-self: flex-start">
-								Entame:
-								<label class="flexH" id="entame" contenteditable="true" style="min-width: 3em; min-height: 1em"></label>
+							<div class="ed_div">
+								<div class="flexH">
+									Entame:
+									<label class="flexH" id="entame" contenteditable="true" style="min-width: 3em; min-height: 1em"></label>
+								</div>
+								<div class="flexH">
+									Résultat:
+									<label class="flexH" id="score" contenteditable="true" style="min-width: 10em; min-height: 1em"></label>
+								</div>
 							</div>
-							<div class="si_edit flexH">
-								Vulnérable:
-								<select id="ed_vul">
-									<option value="-">Aucun</option>
-									<option value="NSEW">Tous</option>
-									<option value="NS">Nord Sud</option>
-									<option value="EW">Est Ouest</option></select
-								>&nbsp;&nbsp; Donneur:
-								<select id="ed_donneur">
-									<option value="N">Nord</option>
-									<option value="E">Est</option>
-									<option value="S">Sud</option>
-									<option value="W">Ouest</option>
-								</select>
+							<div class="si_edit ed_div">
+								<div class="flexH">
+									Vulnérable:
+									<select id="ed_vul">
+										<option value="-">Aucun</option>
+										<option value="NSEW">Tous</option>
+										<option value="NS">Nord Sud</option>
+										<option value="EW">Est Ouest</option>
+									</select>
+								</div>
+								<div class="flexH">
+									Copier
+									<button class="cp_btn" onclick="navigator.clipboard.writeText('♠')"><img src="/images/Spades.png" /></button>
+									<button class="cp_btn" onclick="navigator.clipboard.writeText('♥')"><img src="/images/coeur.png" /></button>
+									<button class="cp_btn" onclick="navigator.clipboard.writeText('♦')"><img src="/images/Diamonds.png" /></button>
+									<button class="cp_btn" onclick="navigator.clipboard.writeText('♣')"><img src="/images/Clubs.png" /></button>
+									<button class="cp_btn" onclick="navigator.clipboard.writeText('♠♥♦♣')"><img src="/images/Spades.png" /><img src="/images/coeur.png" /><img src="/images/Diamonds.png" /><img src="/images/Clubs.png" /></button>
+								</div>
+								<div class="flexH">
+									Donneur:
+									<select id="ed_donneur">
+										<option value="N">Nord</option>
+										<option value="E">Est</option>
+										<option value="S">Sud</option>
+										<option value="W">Ouest</option>
+									</select>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -402,6 +439,7 @@
 	const etxt = document.getElementById("etxt");
 	const jtxt = document.getElementById("jtxt");
 	const entame = document.getElementById("entame");
+	const score = document.getElementById("score");
 	const itm_new = document.getElementById("itm_new");
 	const enr_nom = document.getElementById("enr_nom");
 	const ouest = document.getElementById("ouest");
@@ -552,25 +590,6 @@
 		}
 		st += "</tr>";
 		document.getElementById("tbe").innerHTML = st;
-		// entame
-		st = "";
-		if (session.choix.edit) st = enr.jeu.entame;
-		else if (enr.jeu.entame != "") {
-			const c1 = enr.jeu.entame[0];
-			if (c1 == "A") st += "As";
-			else if (c1 == "R") st += "Roi";
-			else if (c1 == "D") st += "Dame";
-			else if (c1 == "V") st += "Valet";
-			else if (enr.jeu.entame.startsWith("10")) st += "10";
-			else st += c1;
-			st += " de ";
-			const c2 = enr.jeu.entame.substr(-1);
-			if (c2 == "P") st += '<img src="/images/Spades.png" />';
-			else if (c2 == "C") st += '<img src="/images/coeur.png" />';
-			else if (c2 == "K") st += '<img src="/images/Diamonds.png" />';
-			else if (c2 == "T") st += '<img src="/images/Clubs.png" />';
-		}
-		entame.innerHTML = st;
 	}
 
 	function GetHTMLmain(img, ar, idx) {
@@ -748,6 +767,16 @@
 			.catch((e) => Erreur(e));
 	});
 
+	const itm_export = document.getElementById("itm_export");
+	itm_export.addEventListener("click", () => {
+		closeMenu();
+		let jeu = JSON.stringify(enr.jeu).replace(/'/g, "''").replace('","txt1":', '",\n"txt1":').replace('","txt2":', '",\n"txt2":').replace('","donne":', '",\n"donne":').replace('],"enchere":', '],\n"enchere":');
+
+		let foo = "INSERT INTO donnes (nom,data) VALUES ('" + enr.nom + "', '" + jeu + "');\n";
+		console.log(foo);
+		navigator.clipboard.writeText(foo);
+	});
+
 	function GetCbxDonnes() {
 		return new Promise((resolve, reject) => {
 			SQL_all("SELECT id,nom FROM donnes ORDER BY nom")
@@ -789,6 +818,7 @@
 					donne: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""],
 					enchere: [" ", " ", " ", " "],
 					entame: " ",
+					score: " ",
 				},
 			},
 			(r) => {
@@ -847,25 +877,51 @@
 	}
 
 	etxt.addEventListener("focus", function () {
-		this.innerHTML = enr.jeu.txt1;
+		this.innerText = enr.jeu.txt1;
 	});
 
 	etxt.addEventListener("blur", function () {
-		console.log(this.innerText);
-		enr.jeu.txt1 = this.innerHTML;
+		if (enr.jeu.txt1 != this.innerText) {
+			enr.jeu.txt1 = this.innerText.trim();
+			SetDirty(true);
+		}
 		etxt.innerHTML = PCKT2img(enr.jeu.txt1);
-		console.log(PCKT2img(enr.jeu.txt1));
-		SetDirty(true);
 	});
 
-	jtxt.addEventListener("input", function () {
-		enr.jeu.txt2 = img2PCKT2(this.innerText);
-		SetDirty(true);
+	jtxt.addEventListener("focus", function () {
+		this.innerText = enr.jeu.txt2;
 	});
 
-	entame.addEventListener("input", function () {
-		enr.jeu.entame = this.innerText.toUpperCase();
-		SetDirty(true);
+	jtxt.addEventListener("blur", function () {
+		if (enr.jeu.txt2 != this.innerText) {
+			enr.jeu.txt2 = this.innerText.trim();
+			SetDirty(true);
+		}
+		jtxt.innerHTML = PCKT2img(enr.jeu.txt2);
+	});
+
+	entame.addEventListener("focus", function () {
+		this.innerText = enr.jeu.entame || "";
+	});
+
+	entame.addEventListener("blur", function () {
+		if (enr.jeu.entame != this.innerText) {
+			enr.jeu.entame = this.innerText.trim();
+			SetDirty(true);
+		}
+		entame.innerHTML = PCKT2img(enr.jeu.entame);
+	});
+
+	score.addEventListener("focus", function () {
+		this.innerText = enr.jeu.score || "";
+	});
+
+	score.addEventListener("blur", function () {
+		if (enr.jeu.score != this.innerText) {
+			enr.jeu.score = this.innerText.trim();
+			SetDirty(true);
+		}
+		score.innerHTML = PCKT2img(enr.jeu.score);
 	});
 
 	function editEnchere(i, val) {
@@ -1153,6 +1209,7 @@
 	}
 
 	function PCKT2img(txt) {
+		if (txt == undefined) return "";
 		return txt.replace(/♦/g, '<img src="/images/Diamonds.png" />').replace(/♣/g, '<img src="/images/Clubs.png" />').replace(/♠/g, '<img src="/images/Spades.png" />').replace(/♥/g, '<img src="/images/coeur.png" />');
 	}
 
@@ -1169,6 +1226,8 @@
 		SetVulnerable(jeu.vul);
 		ed_donneur.value = jeu.donneur;
 		SetElvisDonneur(jeu.donneur);
+		entame.innerHTML = PCKT2img(jeu.entame);
+		score.innerHTML = PCKT2img(jeu.score);
 		etxt.innerHTML = PCKT2img(jeu.txt1);
 		jtxt.innerHTML = PCKT2img(jeu.txt2);
 	}
