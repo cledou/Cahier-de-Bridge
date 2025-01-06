@@ -36,7 +36,8 @@ CREATE TABLE arbre (
 INSERT INTO arbre VALUES (1,NULL,'Difficulté ⭐☆☆',0);
 INSERT INTO arbre VALUES (2,NULL,'Difficulté ⭐⭐☆',1);
 INSERT INTO arbre VALUES (3,NULL,'Difficulté ⭐⭐⭐',2);
-INSERT INTO arbre VALUES (4,NULL,'Autres exemples',3);
+INSERT INTO arbre VALUES (4,NULL,'Grand chelem',3);
+INSERT INTO arbre VALUES (5,NULL,'Autres exemples',4);
 
 CREATE TABLE data2tree (
   id_donne INTEGER,
@@ -53,6 +54,7 @@ BEGIN
     DELETE FROM arbre WHERE id_parent = OLD.id;
     DELETE FROM data2tree WHERE id_arbre = OLD.id;
 END;
+
 INSERT INTO donnes (nom,data) VALUES ('Exemple 1', '{"donneur":"S","vul":"EW","entame":"4 de ♦",
 "txt1":"Est répond 2♥ au nom de ses 7HLD. Il est temps pour Sud, à qui il ne manquait qu''un point pour ouvrir, de se manifester. Nord, avec un singleton dans la couleur adverse et trois beaux honneurs, conclut à la manche.\n",
 "txt2":"Le déclarant appelle l''As de carreau puis le 2 de Coeur pour ouvrir sa coupe.\nPour battre la manche, Est doit plonger du Roi et rejouer Trèfle pour dégager Ouest dans la couleur.\nCelui-ci doit alors rejouer Carreau sans tirer son second honneur à Trèfle...\nGageons qu''une si belle défense ne sera que rarement trouvée à la table !",
@@ -76,10 +78,31 @@ INSERT INTO donnes (nom,data) VALUES ('Exemple 4', '{"donneur":"E","vul":"EW","e
 INSERT INTO donnes (nom,data) VALUES ('Donne n°5', '{"donneur":"N","vul":"-",
 "txt1":"<div>2♦ = Au moins quatre cartes à Carreau et de 6 à 10 S</div><div>3♥ = Barrage avec quatre atouts et de préférence un singleton.&nbsp;</div><div>Avec quatre atouts et 11-12 S, vous diriez 3♦ (cue-bid).</div>",
 "txt2":"Sud prend du Roi de Carreau et rejoue un petit Pique sous l''As, <br>Ouest passe le Roi, Sud ayant ouvert il a donc plus de chances de posséder l''As, coupe un Carreau, remonte dans sa main grâce à l''As de Coeur et coupe le dernier Carreau au mort.<br>&nbsp;Il concède donc en tout quatre levées : deux à Pique, le Roi de Carreau et l''As de Trèfle.<br>&nbsp;4♦ ne chutent que d''une levée grâce à la disposition favorable des Trèfles mais, en fit seulement neuvième et sans singleton, il est logique de ne pas surenchérir avec le jeu de Sud.<br><br>",
-"donne":["D86","32","D1073","A654","R95","AV1094","985","RD","V432","RD85","2","10873","A 10 7","7 6","A R V 6 4","V 9 2"],
+"donne":["D87","32","D1073","A654","R95","AV1094","985","RD","V432","RD85","2","10873","A106","76","ARV64","V92"],
 "enchere":[" "," ","-","-","1K","1C","2K","3C","-","-","-"," "],"entame":"","score":"EO 3♥="}');
+INSERT INTO donnes (nom,data) VALUES ('Donne n°6', '{"donneur":"E","vul":"NS",
+"txt1":"X = Quatre cartes à Coeur, au moins 7 H.\n3♠= Barrage.\n X = Belle main, trop beau pour dire 5♥.",
+"txt2":"Après l''As, Sud contre-attaque de la Dame de Carreau, une levée de chute.\n Très poissard, les points d''Ouest à Pique et à Carreau étant inutiles...\n Une levée de chute à 4♠X.",
+"donne":["10954","10864","A97","63","DV3","DV95","R63","1087","2","AR72","82","ARDV92","A R 8 7 6","3","D V 10 5 4","5 4"],
+"enchere":[" "," "," ","1T","1P","X","3P","X","4P","-","-","5C",""],"entame":"As ♠","score":"EO 5♥ -1"}');
+INSERT INTO donnes (nom,data) VALUES ('Donne n°7', '{"donneur":"S","vul":"NS",
+"txt1":"2♣ = Fort indéterminé.\n3♣ = Pour donner l''entame ou trouver une défense.\n6♣ = Gros fit à Pique, espoir de grand chelem et chicane à Trèfle.\n7♠ = Proposition acceptée !",
+"txt2":"Sud coupe l''entame Trèfle, joue deux tours d''atout et réclame treize levées sans effort.\nBravo si vous avez déclaré ce grand chelem en séquence compétitive !",
+"donne":["R954","D963","AD754","","63","752","863","DV1086","2","1084","1092","AR9732","ADV1087","ARV","RV","54"],
+"enchere":["2T","-","2K","3T","3P","5T","6T","-","7P","-","-","-",""],"entame":"D♣","score":"NS 7 ♠="}');
+INSERT INTO donnes (nom,data) VALUES ('Donne n°8', '{"donneur":"W","vul":"EW",
+"txt1":"3♣= Six belles cartes, 11-17 H.\n3♠ = Au nom du fit neuvième.\n3SA = Pour les gagner !",
+"txt2":"L''entame est prise de l''As et Nord encaisse ses neuf levées de tête, Est devant conserver précieusement au moins trois cartes à Coeur, sous peine d''offrir deux surlevées au déclarant.\nBon jugement de Nord, qui a su valoriser son As de Trèfle et ses honneurs \"de tête\".",
+"donne":["A106","R543","93","A754","RDV983","D8","A65","83","742","V1092","R8742","9","","A76","DV10","RDV1062"],
+"enchere":[" ","1P","-","2P","3T","3P","3SA","-","-","-",""],"entame":"♠2","score":"NS 3SA="}');
 
-INSERT INTO data2tree VALUES (1,3);
-INSERT INTO data2tree VALUES (2,4);
-INSERT INTO data2tree VALUES (3,1);
+
+INSERT INTO data2tree (id_donne,id_arbre) VALUES (1,3);
+INSERT INTO data2tree (id_donne,id_arbre) VALUES (2,5);
+INSERT INTO data2tree (id_donne,id_arbre) VALUES (3,1);
+INSERT INTO data2tree (id_donne,id_arbre) VALUES (5,2);
+INSERT INTO data2tree (id_donne,id_arbre) VALUES (6,1);
+INSERT INTO data2tree (id_donne,id_arbre) VALUES (7,3);
+INSERT INTO data2tree (id_donne,id_arbre) VALUES (7,4);
+INSERT INTO data2tree (id_donne,id_arbre) VALUES (8,1);
 
