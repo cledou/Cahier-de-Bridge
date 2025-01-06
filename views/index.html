@@ -698,7 +698,8 @@
 		let cnt_PCKT = Array(4).fill(0);
 		let not_done = 52;
 		for (let i = 0; i < donne.length; i++) {
-			const NOES = Math.floor(i / 13);
+			// 0..3 nord, 4..7 ouest 8..11 est 12..15 sud
+			const NOES = Math.floor(i / 4);
 			const ar = AjouteBlancs(donne[i]).split(" ");
 			for (let j = 0; j < ar.length; j++)
 				if (ar[j].trim().length > 0) {
@@ -718,6 +719,7 @@
 				}
 		}
 		// distri OK. Complétable ?
+		console.log(cnt_NOES, not_done);
 		if (not_done == 13)
 			for (let NOES = 0; NOES < 4; NOES++) {
 				console.log(cnt_NOES[NOES]);
