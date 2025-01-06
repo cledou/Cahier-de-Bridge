@@ -26,22 +26,26 @@ html {
 }
 
 .flexH,
-.flexV,
-.flexSA {
+.flexV {
 	position: relative;
 	display: flex;
 	align-items: center;
 }
-.flexH,
-.flexSA {
+.flexH {
 	flex-direction: row;
-}
-.flexSA {
-	justify-content: space-around;
 }
 
 .flexV {
 	flex-direction: column;
+}
+
+.PCS {
+	position: relative;
+	flex-direction: row;
+	display: flex;
+	align-items: center;
+	justify-content: space-around;
+	width: 100%;
 }
 
 .flexSB {

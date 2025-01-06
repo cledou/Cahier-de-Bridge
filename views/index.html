@@ -235,14 +235,16 @@
 				display: flex;
 				flex-direction: row;
 				align-items: center;
-				padding-right: 8px;
 			}
 			#volet_tree .find > input {
 				width: 100%;
 				height: 100%;
 			}
 			#volet_tree .find > img {
-				padding: 8px;
+				padding: 4px;
+			}
+			#del_rch {
+				cursor: pointer;
 			}
 			#volet_tree .icones {
 				margin-top: 0.5em;
@@ -271,7 +273,12 @@
 				font-size: 1.2em;
 				min-width: 24px;
 			}
-
+			.rch_txt {
+				font-weight: bolder;
+				color: blue;
+				background-color: whitesmoke;
+				border: blue 1px dashed;
+			}
 			@media print {
 				#volet_tree,
 				.menu,
@@ -310,9 +317,17 @@
 					<div class="find">
 						<img src="/images/Search.png" />
 						<input type="search" id="ed_find" hlp="Rechercher une donne, un mot dans les textes" />
+						<img src="/images/cancel_16px.png" id="del_rch" hlp="Effacer le champ de recherche" />
+					</div>
+					<div class="ed_div">
+						<input type="checkbox" id="chk_find" /><label for="chk_find">Rechercher seulement<br />dans les noms des jeux</label>
 					</div>
 					<div class="icones si_edit">
-						<img src="/images/subtree.png" alt="Déplacer cette icone sur l'arbre pour créer des nouveaux dossiers ou sous-dossiers" ondragstart="onSubnodeDrag(event)" />
+						<img
+							src="/images/subtree.png"
+							alt="Déplacer cette icone sur l'arbre pour créer des nouveaux dossiers ou sous-dossiers"
+							ondragstart="onSubnodeDrag(event)"
+						/>
 						<img id="node_trash" src="/images/trash_40px.png" draggable="false" alt="Faire glisser ici les dossiers ou jeux à effacer" />
 					</div>
 					<div id="arbre"></div>
@@ -324,17 +339,31 @@
 							<img src="/images/arrow_d.png" alt="Afficher/Cacher l'arbre de situation" />
 						</label>
 						<div class="menu2">
-							<div class="level0" style="background-image: url('/images/dossier.png')" hlp="Actions génériques sur une donne (ouvrir, sauver, copier...)">
+							<div
+								class="level0"
+								style="background-image: url('/images/dossier.png')"
+								hlp="Actions génériques sur une donne (ouvrir, sauver, copier...)"
+							>
 								<div class="level1">
-									<button class="itmh" id="itm_new"><img src="/images/create_30px.png" alt="Créer une nouvelle donne" />Créer une donne</button>
-									<button class="itmh si_un" alt="Sélectionner une donne existante" id="itm_open"><img src="/images/dossier.png" />Ouvrir une donne</button>
-									<button class="itmh si_un" alt="Exporter donne(s) au format SQL" id="itm_export"><img src="/images/Export.png" />Exporter donne(s) dans le presse-papier</button>
-									<button class="itmh si_dirty" onclick="onSave()" alt="Enregistrer les modifications"><img src="/images/save_30px.png" />Sauver les changements</button>
+									<button class="itmh" id="itm_new"
+										><img src="/images/create_30px.png" alt="Créer une nouvelle donne" />Créer une donne</button
+									>
+									<button class="itmh si_un" alt="Sélectionner une donne existante" id="itm_open"
+										><img src="/images/dossier.png" />Ouvrir une donne</button
+									>
+									<button class="itmh si_un" alt="Exporter donne(s) au format SQL" id="itm_export"
+										><img src="/images/Export.png" />Exporter donne(s) dans le presse-papier</button
+									>
+									<button class="itmh si_dirty" onclick="onSave()" alt="Enregistrer les modifications"
+										><img src="/images/save_30px.png" />Sauver les changements</button
+									>
 									<!--
 									<button class="itmh si_un" alt="Effacer un état de la base de donnée" id="itm_del"><img src="/images/trash_30px.png" />Effacer un état</button>
 									<button class="itmh si_open" alt="Enregistrer sous..." id="itm_save_as"><img src="/images/save_as_30px.png" />Faire une copie</button>
 									-->
-									<button class="itmh si_open" onclick="PrintThis()" alt="Imprimer"><img src="/images/print_30px.png" />Imprimer cette donne</button>
+									<button class="itmh si_open" onclick="PrintThis()" alt="Imprimer"
+										><img src="/images/print_30px.png" />Imprimer cette donne</button
+									>
 								</div>
 							</div>
 						</div>
@@ -364,11 +393,13 @@
 						</div>
 						<div class="encheres">
 							<h3>Enchères</h3>
-							<table id="tbe"></table>
-							<div class="si_edit flexSA">
-								<span><b>-</b>:Passe</span>
-								<span><b>X</b>:Contre</span>
-								<span><b>XX</b>:Surcontre</span>
+							<div class="flexV">
+								<table id="tbe"></table>
+								<div class="si_edit ed_div">
+									<div><b>-</b>:Passe</div>
+									<div><b>X</b>:Contre</div>
+									<div><b>XX</b>:Surcontre</div>
+								</div>
 							</div>
 							<div id="etxt" contenteditable="true"></div>
 							<div class="ed_div">
@@ -397,7 +428,10 @@
 									<button class="cp_btn" onclick="navigator.clipboard.writeText('♥')"><img src="/images/coeur.png" /></button>
 									<button class="cp_btn" onclick="navigator.clipboard.writeText('♦')"><img src="/images/Diamonds.png" /></button>
 									<button class="cp_btn" onclick="navigator.clipboard.writeText('♣')"><img src="/images/Clubs.png" /></button>
-									<button class="cp_btn" onclick="navigator.clipboard.writeText('♠♥♦♣')"><img src="/images/Spades.png" /><img src="/images/coeur.png" /><img src="/images/Diamonds.png" /><img src="/images/Clubs.png" /></button>
+									<button class="cp_btn" onclick="navigator.clipboard.writeText('♠♥♦♣')"
+										><img src="/images/Spades.png" /><img src="/images/coeur.png" /><img src="/images/Diamonds.png" /><img
+											src="/images/Clubs.png"
+									/></button>
 								</div>
 								<div class="flexH">
 									Donneur:
@@ -425,6 +459,10 @@
 </html>
 <script src="/socket.io/socket.io.min.js"></script>
 <script>
+	/*
+	 TODO: voir traduction avec gettext https://github.com/guillaumepotier/gettext.js/
+	 TODO: Undo/Redo
+	*/
 	//*********************
 	//  Variables globales
 	//*********************
@@ -493,6 +531,16 @@
 					io.emit("upducfg", "flags", this.flags);
 				},
 			},
+			chk_find: {
+				get: function () {
+					return Boolean(this.flags & 4);
+				},
+				set: function (b) {
+					if (b) this.flags |= 4;
+					else this.flags &= ~4;
+					io.emit("upducfg", "flags", this.flags);
+				},
+			},
 		});
 
 		if (session.choix.carets == undefined) session.choix.carets = "XXXXXXXXXXXXX";
@@ -516,6 +564,8 @@
 		});
 		tree_sw.checked = session.choix.show_tree;
 		HideVoletGauche(session.choix.show_tree);
+		chk_find.checked = session.choix.chk_find;
+		ed_find.value = session.choix.find || "";
 		OpenOrNew(); // asynchrone..
 	});
 
@@ -537,12 +587,13 @@
 		if (id == undefined) return false;
 		try {
 			const row = await SQL_get("SELECT * FROM donnes WHERE id=" + id);
-			enr.jeu = JSON.parse(row.data);
+			const foo = JSON.parse(row.data);
+			if (!VerifierDonne(foo.donne)) return false;
+			enr.jeu = foo;
 			enr.nom = row.nom || "Donne n°" + row.id;
 			enr.id = row.id;
 			enr_nom.innerText = enr.nom;
-			CompleteJeu(enr.jeu.donne);
-			AfficheDonne(enr.jeu);
+			AfficheDonne();
 			SetDirty(false);
 			if (session.choix.last_id != row.id) {
 				session.choix.last_id = row.id;
@@ -559,32 +610,33 @@
 	/****************************/
 	/*           STUFF          */
 	/****************************/
-
-	function MakeEncheres(ar) {
+	function MakeEncheres() {
 		let st = "<tr><th>Sud</th><th>Ouest</th><th>Nord</th><th>Est</th></tr>";
-		for (let i = 0; i < ar.length; i++) {
+		for (let i = 0; i < enr.jeu.enchere.length; i++) {
 			if (i % 4 == 0) st += "</tr><tr>";
-			st += '<td id="enc_' + i + '" oninput="editEnchere(' + i + ',this.innerText)" contenteditable="';
-			if (session.choix.edit) {
-				st += 'true"';
-				if (i + 1 == ar.length) st += ' onblur="blurEnchere()"';
-				st += ">" + ar[i];
-			} else {
-				st += 'false">';
-				const v = ar[i];
-				if (v != "") {
-					if (v == "-") st += "Passe";
-					else if (v == "X") st += "Contre";
-					else if (v == "XX") st += "Surcontre";
-					else {
-						st += v[0];
-						if (v[1] == "P") st += '<img src="/images/Spades.png" />';
-						else if (v[1] == "C") st += '<img src="/images/coeur.png" />';
-						else if (v[1] == "K") st += '<img src="/images/Diamonds.png" />';
-						else if (v[1] == "T") st += '<img src="/images/Clubs.png" />';
-						else st += v.substr(1);
-					}
-				}
+			const v = enr.jeu.enchere[i];
+			st +=
+				'<td id="enc_' +
+				i +
+				'" onfocus="this.innerText =\'' +
+				v +
+				'\'" contenteditable="' +
+				(session.choix.edit ? "true" : "false") +
+				'" onblur="blurEnchere(this.innerText,' +
+				i +
+				')" >';
+			if (v != "") {
+				if (v == "-") st += "Passe";
+				else if (v == "X") st += "Contre";
+				else if (v == "XX") st += "Surcontre";
+				else if (v[0] >= "1" && v[0] <= "7") {
+					st += v[0];
+					if (v[1] == "P" || v[1] == "♠") st += '<img src="/images/Spades.png" />';
+					else if (v[1] == "C" || v[1] == "♥") st += '<img src="/images/coeur.png" />';
+					else if (v[1] == "K" || v[1] == "♦") st += '<img src="/images/Diamonds.png" />';
+					else if (v[1] == "T" || v[1] == "♣") st += '<img src="/images/Clubs.png" />';
+					else st += v.substr(1);
+				} else st += v;
 			}
 			st += "</td>";
 		}
@@ -592,8 +644,32 @@
 		document.getElementById("tbe").innerHTML = st;
 	}
 
+	function blurEnchere(val, idx) {
+		if (val != enr.jeu.enchere[idx]) {
+			enr.jeu.enchere[idx] = val;
+			SetDirty(true);
+		}
+		idx++;
+		let next_el = "enc_" + idx;
+		if (idx >= enr.jeu.enchere.length) {
+			// ne pas ajouter d'enchère vide
+			if (val.trim().length == 0) next_el = "etxt";
+			else enr.jeu.enchere.push(" ");
+		}
+		MakeEncheres(); // toujours refaire le contenu pour convertir
+		document.getElementById(next_el).focus();
+	}
+
 	function GetHTMLmain(img, ar, idx) {
-		return '<div class="main" ><img src="/images/' + img + '.png" /><span style="min-width: 5em" contenteditable="true" oninput="Info(\'\')" onblur="blurMain(' + idx + ',this)">' + AjouteBlancs(ar[idx]) + "</span></div>";
+		return (
+			'<div class="main" ><img src="/images/' +
+			img +
+			'.png" /><span style="min-width: 5em" contenteditable="true" oninput="Info(\'\')" onblur="blurMain(' +
+			idx +
+			',this)">' +
+			AjouteBlancs(ar[idx]) +
+			"</span></div>"
+		);
 	}
 	function MakeDonne(ar, idx) {
 		return GetHTMLmain("Spades", ar, idx++) + GetHTMLmain("coeur", ar, idx++) + GetHTMLmain("Diamonds", ar, idx++) + GetHTMLmain("Clubs", ar, idx++);
@@ -613,40 +689,53 @@
 		if (n == 9) return "V";
 		return (n + 2).toString();
 	}
-	function MainManquante(donne) {
-		if (donne.length >= 16 && donne[12] == "" && donne[13] == "" && donne[14] == "" && donne[15] == "") donne.length = 12;
-		return donne.length == 12;
-	}
 
-	function CompleteJeu(donne) {
-		if (MainManquante(donne)) {
-			let jeu = new Array(52).fill(0);
-			for (let i = 0; i < 12; i++) {
-				const ar = AjouteBlancs(donne[i]).split(" ");
-				for (let j = 0; j < ar.length; j++) {
-					jeu[13 * (i % 4) + ARDV2N(ar[j])]++;
+	function VerifierDonne(donne) {
+		console.log(donne);
+		// retourne -1 si erreur de distribution, ou nbr cartes manquantes si distribution ok
+		let compte = new Array(52).fill(0);
+		let cnt_NOES = Array(4).fill(0);
+		let cnt_PCKT = Array(4).fill(0);
+		let not_done = 52;
+		for (let i = 0; i < donne.length; i++) {
+			const NOES = Math.floor(i / 13);
+			const ar = AjouteBlancs(donne[i]).split(" ");
+			for (let j = 0; j < ar.length; j++)
+				if (ar[j].trim().length > 0) {
+					const idx = 13 * (i % 4) + ARDV2N(ar[j]);
+					if (compte[idx] != 0) {
+						Erreur("Doublon: " + ar[j] + "♠♥♦♣"[i % 4]);
+						return false;
+					}
+					compte[idx]++;
+					if (cnt_NOES[NOES] == 13) {
+						const foo = ["Nord", "Ouest", "Est", "Sud"];
+						Erreur(foo[NOES] + " comporte déjà 13 cartes");
+						return false;
+					}
+					cnt_NOES[NOES]++;
+					not_done--;
 				}
-			}
-			// compter les manquants
-			let n = 0;
-			jeu.forEach((el) => {
-				if (el == 0) n++;
-			});
-			if (n == 13) {
-				let base = 0;
-				for (let i = 0; i < 4; i++) {
-					let foo = "";
-					for (let j = 0; j < 13; j++)
-						if (jeu[base + j] == 0) {
-							foo = N2ARDV(j) + " " + foo;
-						}
-					donne.push(foo.trim());
-					base += 13;
-				}
-				return true;
-			}
 		}
-		return false;
+		// distri OK. Complétable ?
+		if (not_done == 13)
+			for (let NOES = 0; NOES < 4; NOES++) {
+				console.log(cnt_NOES[NOES]);
+				if (cnt_NOES[NOES] == 0) {
+					let base = 0;
+					for (let i = 0; i < 4; i++) {
+						let foo = "";
+						for (let j = 0; j < 13; j++)
+							if (jeu[base + j] == 0) {
+								foo = N2ARDV(j) + " " + foo;
+							}
+						console.log(foo);
+						//donne[NOES * 4 + i] = foo;
+						base += 13;
+					}
+				}
+			}
+		return true;
 	}
 
 	var session = { choix: {} };
@@ -742,7 +831,7 @@
 			el.setAttribute("contenteditable", b);
 		});
 		SetSelectorDisplay(".si_edit", b ? "flex" : "none");
-		MakeEncheres(enr.jeu.enchere);
+		MakeEncheres();
 		SetElvisArbre(b);
 	}
 
@@ -770,7 +859,12 @@
 	const itm_export = document.getElementById("itm_export");
 	itm_export.addEventListener("click", () => {
 		closeMenu();
-		let jeu = JSON.stringify(enr.jeu).replace(/'/g, "''").replace('","txt1":', '",\n"txt1":').replace('","txt2":', '",\n"txt2":').replace('","donne":', '",\n"donne":').replace('],"enchere":', '],\n"enchere":');
+		let jeu = JSON.stringify(enr.jeu)
+			.replace(/'/g, "''")
+			.replace('","txt1":', '",\n"txt1":')
+			.replace('","txt2":', '",\n"txt2":')
+			.replace('","donne":', '",\n"donne":')
+			.replace('],"enchere":', '],\n"enchere":');
 		let foo = "INSERT INTO donnes (nom,data) VALUES ('" + enr.nom + "', '" + jeu + "');\n";
 		console.log(foo);
 		navigator.clipboard.writeText(foo);
@@ -924,20 +1018,6 @@
 		score.innerHTML = PCKT2img(enr.jeu.score);
 	});
 
-	function editEnchere(i, val) {
-		enr.jeu.enchere[i] = val.toUpperCase();
-		SetDirty(true);
-	}
-
-	function blurEnchere() {
-		const i = enr.jeu.enchere.length - 1;
-		if (i >= 0 && enr.jeu.enchere[i] != " ") {
-			enr.jeu.enchere.push(" ");
-			MakeEncheres(enr.jeu.enchere);
-			document.getElementById("enc_" + (i + 1)).focus();
-		}
-	}
-
 	function AjouteBlancs(val) {
 		// ajouter les espaces
 		let st = "";
@@ -972,10 +1052,10 @@
 		const st = RetireBlancs(val.innerText.toUpperCase());
 		if (enr.jeu.donne[idx] != st) {
 			enr.jeu.donne[idx] = st;
+			VerifierDonne(enr.jeu.donne);
 			SetDirty(true);
 		}
 		val.innerText = AjouteBlancs(st);
-		if (CompleteJeu(enr.jeu.donne)) sud.innerHTML = MakeDonne(enr.jeu.donne, 12);
 	}
 
 	/****************************/
@@ -1057,7 +1137,15 @@
 	function AddJeux(ar, id_node) {
 		let st = "";
 		ar.forEach((el) => {
-			st += '<li id="j_' + el.id + '" node="' + id_node + '" onclick="onJeuClick(event)" draggable="true"  ondragstart="onJeuDrag(event)" hlp="Clic: Ouvrir. ' + (session.choix.edit ? " Drag: Déplacer. Shift-drag: dupliquer le jeu dans un autre dossier" : "") + '" >' + el.nom;
+			st +=
+				'<li id="j_' +
+				el.id +
+				'" node="' +
+				id_node +
+				'" onclick="onJeuClick(event)" draggable="true"  ondragstart="onJeuDrag(event)" hlp="Clic: Ouvrir. ' +
+				(session.choix.edit ? " Drag: Déplacer. Shift-drag: dupliquer le jeu dans un autre dossier" : "") +
+				'" >' +
+				el.nom;
 			//st += '<img class="si_edit" src="/images/Hand_25px.png" id="jeux' + el.id + '" hlp="Sert à faire glisser le jeu vers un autre dossier ou la corbeille"/>';
 			st += "</li>";
 		});
@@ -1068,30 +1156,44 @@
 		let st = "";
 		if (ar != undefined)
 			ar.forEach((el) => {
-				st += '<li><details open><summary ondragstart="onNodeDrag(event)" ondragenter="onDragEnter(this)" ondragleave="onDragLeave(this)" onDrop="onNodeDrop(event)" >';
+				st +=
+					'<li><details open><summary ondragstart="onNodeDrag(event)" ondragenter="onDragEnter(this)" ondragleave="onDragLeave(this)" onDrop="DropOnNode(event)" >';
 				st += '<span contenteditable node="' + el.id + '" onblur="onBlurNode(' + el.id + ',this.innerText)">' + el.itm + "</span>";
-				st += '<img class="si_edit" src="/images/Hand_25px.png" id="node' + el.id + '" hlp="Sert à faire glisser le dossier vers un autre dossier ou la corbeille (n\'efface pas les jeux)"/></summary>';
+				st +=
+					'<img class="si_edit" src="/images/Hand_25px.png" id="node' +
+					el.id +
+					'" hlp="Sert à faire glisser le dossier vers un autre dossier ou la corbeille (n\'efface pas les jeux)"/></summary>';
 				st += "<ul>" + AddChilds(el.childs) + AddJeux(el.jeux, el.id) + "</ul></details>";
 			});
 		return st;
 	}
 
-	function MakeTree() {
-		io.emit("get_tree", (r) => {
-			let st = '<ul class="tree">' + AddChilds(r.childs) + "<li><details open><summary>Non classés</summary><ul>" + AddJeux(r.jeux, 0) + "</ul></details></li></ul>";
-			arbre.innerHTML = st;
-			SetElvisArbre(session.choix.edit);
-			document.getElementsByTagNameNS;
-			document.querySelectorAll(".tree [hlp],.tree [alt]").forEach((itm) => {
-				itm.addEventListener("mouseover", (e) => {
-					e.stopPropagation();
-					Info(itm.getAttribute("hlp") || itm.getAttribute("alt"));
-				});
-				itm.addEventListener("mouseout", (e) => {
-					Info("");
-				});
+	function SetEventTree() {
+		SetElvisArbre(session.choix.edit);
+		document.querySelectorAll(".tree [hlp],.tree [alt]").forEach((itm) => {
+			itm.addEventListener("mouseover", (e) => {
+				e.stopPropagation();
+				Info(itm.getAttribute("hlp") || itm.getAttribute("alt"));
+			});
+			itm.addEventListener("mouseout", (e) => {
+				Info("");
 			});
 		});
+	}
+
+	function MakeTree() {
+		Info("");
+		if (ed_find.value.trim() != "") MakeRecherche();
+		else
+			io.emit("get_tree", (r) => {
+				arbre.innerHTML =
+					'<ul class="tree">' +
+					AddChilds(r.childs) +
+					"<li><details open><summary>Non classés</summary><ul>" +
+					AddJeux(r.jeux, 0) +
+					"</ul></details></li></ul>";
+				SetEventTree();
+			});
 	}
 
 	const all_sel = arbre.getElementsByClassName("tree_sel"); // en temps réel
@@ -1166,7 +1268,8 @@
 		if (node_dest == null) node_dest = 0;
 		//console.log("Déplace " + id + "du node " + node_org + " au node " + node_dest);
 		try {
-			if (node_dest != 0 && (node_org == 0 || make_copy == true)) await SQL_run("INSERT INTO data2tree (id_donne,id_arbre) VALUES (" + id.substr(2) + "," + node_dest + ")");
+			if (node_dest != 0 && (node_org == 0 || make_copy == true))
+				await SQL_run("INSERT INTO data2tree (id_donne,id_arbre) VALUES (" + id.substr(2) + "," + node_dest + ")");
 			else if (node_dest == 0) await SQL_run("DELETE FROM data2tree WHERE id_donne=" + id.substr(2) + " AND id_arbre=" + node_org);
 			else await SQL_run("UPDATE data2tree SET id_arbre=" + node_dest + " WHERE id_donne=" + id.substr(2) + " AND id_arbre=" + node_org);
 			MakeTree();
@@ -1185,22 +1288,40 @@
 		Info("");
 		ev.preventDefault();
 		let id = ev.dataTransfer.getData("application/internal");
+		console.log("drop on arbre " + id);
 		if (id.startsWith("j_")) onJeuDrop(id, ev.target.getAttribute("node"), ev.shiftKey);
+		else if (id.startsWith("node")) unLinkNode(id.substr(4));
 	});
 
-	function onNodeDrop(ev) {
+	async function unLinkNode(id) {
+		try {
+			await SQL_run("UPDATE arbre SET id_parent=NULL WHERE id=" + id);
+			MakeTree();
+		} catch (e) {
+			Erreur(e);
+		}
+	}
+
+	async function DropOnNode(ev) {
 		// id est toujours sous la forme 'nodexxx'
+		const node_dest = ev.target.getAttribute("node");
 		ev.preventDefault();
 		ev.stopPropagation();
 		onDragLeave(ev.target.parentElement);
 		const dt = ev.dataTransfer;
 		let foo = dt.getData("application/internal");
-		console.log("onNodeDrop " + foo, ev.target);
-		if (foo.startsWith("j_")) onJeuDrop(foo, ev.target.getAttribute("node"), ev.shiftKey);
-		else if (foo.startsWith("node")) {
-			SQL_run("INSERT INTO arbre (id_parent,itm) VALUES (" + ev.target.id.substr(4) + ",'Nouveau dossier')").then((r) => {
+		console.log("DropOnNode " + foo, node_dest);
+		try {
+			if (foo.startsWith("j_")) onJeuDrop(foo, node_dest, ev.shiftKey);
+			else if (foo == "subnode") {
+				await SQL_run("INSERT INTO arbre (id_parent,itm) VALUES (" + node_dest + ",'Nouveau dossier')");
 				MakeTree();
-			});
+			} else if (foo.startsWith("node")) {
+				await SQL_run("UPDATE arbre SET id_parent=" + node_dest + " WHERE id=" + foo.substr(4));
+				MakeTree();
+			}
+		} catch (e) {
+			Erreur(e);
 		}
 	}
 
@@ -1226,28 +1347,79 @@
 
 	function PCKT2img(txt) {
 		if (txt == undefined) return "";
-		return txt.replace(/♦/g, '<img src="/images/Diamonds.png" />').replace(/♣/g, '<img src="/images/Clubs.png" />').replace(/♠/g, '<img src="/images/Spades.png" />').replace(/♥/g, '<img src="/images/coeur.png" />').replace(/\n/g, "<br />");
+		const rch = ed_find.value.trim();
+		if (rch != "") txt = txt.replace(new RegExp(rch, "ig"), '<span class="rch_txt">' + rch + "</span>");
+		return txt
+			.replace(/♦/g, '<img src="/images/Diamonds.png" />')
+			.replace(/♣/g, '<img src="/images/Clubs.png" />')
+			.replace(/♠/g, '<img src="/images/Spades.png" />')
+			.replace(/♥/g, '<img src="/images/coeur.png" />')
+			.replace(/\n/g, "<br />");
+	}
+
+	/****************************/
+	/*        RECHERCHER        */
+	/****************************/
+	const ed_find = document.getElementById("ed_find");
+	const chk_find = document.getElementById("chk_find");
+
+	chk_find.addEventListener("change", function () {
+		session.choix.chk_find = this.checked;
+		MakeTree();
+	});
+
+	const onRchChg = (val) => {
+		session.choix.find = val;
+		io.emit("upducfg", "find", val);
+		MakeTree();
+	};
+
+	ed_find.addEventListener("input", function () {
+		onRchChg(this.value);
+	});
+
+	document.getElementById("del_rch").addEventListener("click", function () {
+		ed_find.value = "";
+		onRchChg("");
+		AfficheTextes();
+	});
+
+	function MakeRecherche() {
+		const like = " LIKE '%" + ed_find.value.replace(/'/g, "''") + "%'";
+		let stm = "SELECT id,nom FROM donnes WHERE nom" + like;
+		if (!chk_find.checked) stm += " OR data" + like;
+		SQL_all(stm)
+			.then((r) => {
+				arbre.innerHTML = '<ul class="tree">' + "<li><details open><summary>Résultat</summary><ul>" + AddJeux(r, 0) + "</ul></details></li></ul>";
+				SetEventTree();
+				if (r.length == 0) Warning("Pas de résultats");
+				else if (r.findIndex((el) => el.id == session.choix.last_id) == -1) OpenID(r[0].id);
+				else AfficheTextes();
+			})
+			.catch((e) => Erreur(e));
 	}
 
 	/****************************/
 	/*           START          */
 	/****************************/
-
-	function AfficheDonne(jeu) {
-		document.getElementById("nord").innerHTML = MakeDonne(jeu.donne, 0);
-		ouest.innerHTML = MakeDonne(jeu.donne, 4);
-		document.getElementById("est").innerHTML = MakeDonne(jeu.donne, 8);
-		sud.innerHTML = MakeDonne(jeu.donne, 12);
-		SetElvisEdit(session.choix.edit || false);
-		ed_vul.value = jeu.vul;
-		SetVulnerable(jeu.vul);
-		ed_donneur.value = jeu.donneur;
-		SetElvisDonneur(jeu.donneur);
-		entame.innerHTML = PCKT2img(jeu.entame);
-		score.innerHTML = PCKT2img(jeu.score);
-		etxt.innerHTML = PCKT2img(jeu.txt1);
-		jtxt.innerHTML = PCKT2img(jeu.txt2);
+	function AfficheTextes() {
+		entame.innerHTML = PCKT2img(enr.jeu.entame);
+		score.innerHTML = PCKT2img(enr.jeu.score);
+		etxt.innerHTML = PCKT2img(enr.jeu.txt1);
+		jtxt.innerHTML = PCKT2img(enr.jeu.txt2);
 	}
 
+	function AfficheDonne() {
+		document.getElementById("nord").innerHTML = MakeDonne(enr.jeu.donne, 0);
+		ouest.innerHTML = MakeDonne(enr.jeu.donne, 4);
+		document.getElementById("est").innerHTML = MakeDonne(enr.jeu.donne, 8);
+		sud.innerHTML = MakeDonne(enr.jeu.donne, 12);
+		SetElvisEdit(session.choix.edit || false);
+		ed_vul.value = enr.jeu.vul;
+		SetVulnerable(enr.jeu.vul);
+		ed_donneur.value = enr.jeu.donneur;
+		SetElvisDonneur(enr.jeu.donneur);
+		AfficheTextes();
+	}
 	SetDirty(false);
 </script>
