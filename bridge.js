@@ -230,8 +230,9 @@ socketio.on("connection", (client) => {
 	/* AVEC CALLBACK */
 	/*****************/
 	function AddTreeNode(node, id_parent) {
-		if (node.jeux == undefined) node.jeux = db.prepare("SELECT d.id,d.nom FROM data2tree t LEFT JOIN donnes d ON d.id==t.id_donne WHERE t.id_arbre" + id_parent).all();
-		node.childs = db.prepare("SELECT id,itm FROM arbre WHERE id_parent" + id_parent).all();
+		if (node.jeux == undefined)
+			node.jeux = db.prepare("SELECT d.id,d.nom FROM data2tree t LEFT JOIN donnes d ON d.id==t.id_donne WHERE t.id_arbre" + id_parent).all();
+		node.childs = db.prepare("SELECT id,itm,pos FROM arbre WHERE id_parent" + id_parent + " ORDER BY pos").all();
 		node.childs.forEach((el) => {
 			AddTreeNode(el, "=" + el.id);
 		});
@@ -291,7 +292,8 @@ socketio.on("connection", (client) => {
 				let info = {};
 				let enr = db.prepare("SELECT id,hash,LENGTH(hash) AS pwl FROM users WHERE id=?").get(id);
 				if (enr == undefined) throw new Error("Erreur dans les identifiants");
-				else if ((old_val != "" || (enr.hash != undefined && enr.pwl != 0)) && bcrypt.compareSync(old_val, enr.hash) == false) throw new Error("Ancien mot de passe incorrect");
+				else if ((old_val != "" || (enr.hash != undefined && enr.pwl != 0)) && bcrypt.compareSync(old_val, enr.hash) == false)
+					throw new Error("Ancien mot de passe incorrect");
 				else if (new_val != "")
 					bcrypt.hash(new_val, 10, function (err, hash) {
 						if (err) throw new Error("Hash:" + err.message);
