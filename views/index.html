@@ -304,18 +304,21 @@
 					display: none;
 				}
 				#print_this {
-					position: relative;
+					position: absolute;
 					display: block;
 					box-sizing: inherit;
 				}
 				.titre {
 					border-radius: 10px;
 					border: 1px solid black;
+					align-self: center;
 				}
 				.pagebreak {
 					position: relative;
 					clear: both;
 					page-break-after: always;
+					height: 100%;
+					align-items: center;
 				}
 			}
 			@media (width <= 890px) {
@@ -1509,7 +1512,7 @@
 	}
 
 	function PrintDonne(nom, jeu) {
-		let st = '<h1 class="titre pagebreak">' + nom + "</h1>";
+		let st = '<div class="pagebreak"><h1 class="titre">' + nom + "</h1>";
 		st += '<div class="donne">';
 		st += '<div class="cartes">';
 		st += '<div class="NS nord">' + MakeDonne(jeu.donne, 0) + "</div>";
@@ -1527,7 +1530,7 @@
 		st += "<div>" + PCKT2img(jeu.txt1) + "</div>";
 		st += '<div class="ed_div"><div class="flexH">Entame:<label class="flexH">' + PCKT2img(jeu.entame) + "</label></div>";
 		st += '<div class="flexH">Résultat:<label class="flexH" >' + PCKT2img(jeu.score) + "</label></div></div>";
-		return st + '</div></div><h3 class="titre">Jeu de la carte</h3><div>' + PCKT2img(jeu.txt2) + "</div>";
+		return st + '</div></div><h3 class="titre">Jeu de la carte</h3><div>' + PCKT2img(jeu.txt2) + "</div></div>";
 	}
 
 	async function PrintThis() {
