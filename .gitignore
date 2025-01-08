@@ -1,3 +1,6 @@
 .vscode/numbered-bookmarks.json
 node_modules/*
 package-lock.json
+torii.tlp
+test.html
+renew.txt

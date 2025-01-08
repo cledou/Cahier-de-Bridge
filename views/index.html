@@ -272,7 +272,7 @@
 				display: flex;
 				align-items: center;
 				flex-direction: row;
-				justify-content: space-between;
+				justify-content: space-around;
 			}
 			.cp_btn {
 				margin: 4px;
@@ -290,6 +290,11 @@
 				display: none;
 			}
 
+			@media (width <= 890px) {
+				.donne {
+					flex-direction: column-reverse;
+				}
+			}
 			@media print {
 				body {
 					position: relative;
@@ -304,32 +309,41 @@
 					display: none;
 				}
 				#print_this {
-					position: absolute;
 					display: block;
-					box-sizing: inherit;
 				}
-				.titre {
+				h1 {
+					padding: 0.2em;
 					border-radius: 10px;
-					border: 1px solid black;
+					border: 3px solid black;
+					text-align: center;
+					width: fit-content;
 					align-self: center;
+					margin-bottom: 0.5em;
+				}
+				h3 {
+					border-bottom: 2px dashed blue;
+					text-align: center;
+					width: fit-content;
+					align-self: center;
+					margin-bottom: 0.5em;
 				}
 				.pagebreak {
+					display: flex;
+					flex-direction: column;
 					position: relative;
+					z-index: 2;
+					box-sizing: inherit;
 					clear: both;
 					page-break-after: always;
-					height: 100%;
-					align-items: center;
 				}
-			}
-			@media (width <= 890px) {
 				.donne {
-					flex-direction: column-reverse;
+					flex-direction: column;
 				}
 			}
 		</style>
 	</head>
 	<body>
-		<div id="print_this"></div>
+		<span id="print_this"></span>
 		<div class="modalBackground" id="sel_donne">
 			<div class="modalWnd">
 				<span class="puclose">&times;</span>
@@ -1512,12 +1526,19 @@
 	}
 
 	function PrintDonne(nom, jeu) {
-		let st = '<div class="pagebreak"><h1 class="titre">' + nom + "</h1>";
+		let st = '<div class="pagebreak"><h1>' + nom + "</h1>";
 		st += '<div class="donne">';
 		st += '<div class="cartes">';
 		st += '<div class="NS nord">' + MakeDonne(jeu.donne, 0) + "</div>";
 		st += '<div class="OE ouest">' + MakeDonne(jeu.donne, 4) + "</div>";
-		st += '<div class="centre"><div class="vulnerable"></div></div>';
+		st += '<div class="centre"><div class="vulnerable';
+		if (enr.jeu.vul.startsWith("NS")) st += " NSred";
+		if (enr.jeu.vul.endsWith("EW")) st += " EWred";
+		if (enr.jeu.donneur == "N") st += " d_nord";
+		else if (enr.jeu.donneur == "S") st += " d_sud";
+		else if (enr.jeu.donneur == "E") st += " d_est";
+		else if (enr.jeu.donneur == "W") st += " d_ouest";
+		st += '"></div></div>';
 		st += '<div class="OE est">' + MakeDonne(jeu.donne, 8) + "</div>";
 		st += '<div class="NS sud">' + MakeDonne(jeu.donne, 12) + "</div>";
 		st += "</div>";
@@ -1527,15 +1548,15 @@
 			st += "<td>" + getEnchereSt(jeu.enchere[i]) + "</td>";
 		}
 		st += "</tr></table></div>";
-		st += "<div>" + PCKT2img(jeu.txt1) + "</div>";
+		st += "<div>" + PCKT2img(jeu.txt1) + "</div></div></div>";
 		st += '<div class="ed_div"><div class="flexH">Entame:<label class="flexH">' + PCKT2img(jeu.entame) + "</label></div>";
 		st += '<div class="flexH">Résultat:<label class="flexH" >' + PCKT2img(jeu.score) + "</label></div></div>";
-		return st + '</div></div><h3 class="titre">Jeu de la carte</h3><div>' + PCKT2img(jeu.txt2) + "</div></div>";
+		return st + "<h3>Jeu de la carte</h3><div>" + PCKT2img(jeu.txt2) + "</div></div>";
 	}
 
 	async function PrintThis() {
 		closeMenu();
-		let st = '<div class="flexV">' + PrintDonne(enr.nom, enr.jeu);
+		let st = PrintDonne(enr.nom, enr.jeu);
 		let ar = [];
 		for (let el of all_sel) {
 			const id = Number(el.id.substr(2));
@@ -1551,7 +1572,8 @@
 			}
 		}
 		// ar contient les id des jeux sélectionnés en dehors de celui en cours
-		print_this.innerHTML = st + "</div>";
+		print_this.innerHTML = st;
+		navigator.clipboard.writeText(print_this.innerHTML);
 		window.print();
 		print_this.innerHTML = "";
 	}
