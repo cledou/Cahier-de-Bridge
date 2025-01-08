@@ -391,25 +391,32 @@
 								hlp="Actions génériques sur une donne (ouvrir, sauver, copier...)"
 							>
 								<div class="level1">
-									<button class="itmh" id="itm_new"
-										><img src="/images/create_30px.png" alt="Créer une nouvelle donne" />Créer une donne</button
-									>
-									<button class="itmh si_un" alt="Sélectionner une donne existante" id="itm_open"
-										><img src="/images/dossier.png" />Ouvrir une donne</button
-									>
-									<button class="itmh si_un" alt="Exporter donne(s) au format SQL" id="itm_export"
-										><img src="/images/Export.png" />Exporter donne(s) dans le presse-papier</button
-									>
-									<button class="itmh si_dirty" onclick="onSave()" alt="Enregistrer les modifications"
-										><img src="/images/save_30px.png" />Sauver les changements</button
-									>
+									<button class="itmh" id="itm_new">
+										<img src="/images/create_30px.png" alt="Créer une nouvelle donne" />Créer une donne
+									</button>
+									<button class="itmh si_un" alt="Sélectionner une donne existante" id="itm_open">
+										<img src="/images/dossier.png" />Ouvrir une donne
+									</button>
+									<button class="itmh" alt="Exporter donne(s) au format SQL" id="itm_export">
+										<img src="/images/Export.png" />Exporter donne(s) dans le presse-papier
+									</button>
+									<button class="itmh si_dirty" onclick="onSave()" alt="Enregistrer les modifications">
+										<img src="/images/save_30px.png" />Sauver les changements
+									</button>
+									<input type="file" style="display: none" id="btn_bkp" />
+									<button class="itmh si_admin" onclick="onBkp()" alt="Sauvegarder la base de donnée dans un backup">
+										<img src="/images/database_export_30px.png" />Sauvegarde
+									</button>
+									<button class="itmh si_admin" onclick="onRestore()" alt="Restaurer la base de donnée depuis une sauvegarde">
+										<img src="/images/database_export_30px.png" />Restauration
+									</button>
 									<!--
 									<button class="itmh si_un" alt="Effacer un état de la base de donnée" id="itm_del"><img src="/images/trash_30px.png" />Effacer un état</button>
 									<button class="itmh si_open" alt="Enregistrer sous..." id="itm_save_as"><img src="/images/save_as_30px.png" />Faire une copie</button>
 									-->
-									<button class="itmh si_open" onclick="PrintThis()" alt="Imprimer"
-										><img src="/images/print_30px.png" />Imprimer cette donne</button
-									>
+									<button class="itmh si_open" onclick="PrintThis()" alt="Imprimer">
+										<img src="/images/print_30px.png" />Imprimer cette donne
+									</button>
 								</div>
 							</div>
 						</div>
@@ -612,6 +619,7 @@
 		chk_find.checked = session.choix.chk_find;
 		ed_find.value = session.choix.find || "";
 		OpenOrNew(); // asynchrone..
+		console.log(session);
 	});
 
 	async function OpenOrNew() {
@@ -621,6 +629,7 @@
 	async function OpenOneDonne() {
 		try {
 			const r = await SQL_get("SELECT id FROM donnes LIMIT 1");
+			DisableSelector(".si_un", r == undefined);
 			return r && OpenID(r.id);
 		} catch (e) {
 			Erreur(e);
@@ -632,6 +641,7 @@
 		if (id == undefined) return false;
 		try {
 			const row = await SQL_get("SELECT * FROM donnes WHERE id=" + id);
+			if (row == undefined) return false;
 			const foo = JSON.parse(row.data);
 			if (!VerifierDonne(foo.donne)) return false;
 			enr.jeu = foo;
@@ -645,6 +655,7 @@
 				io.emit("upducfg", "last_id", row.id);
 			}
 			MakeTree();
+			DisableSelector(".si_un", false);
 			return true;
 		} catch (e) {
 			Erreur(e);
@@ -894,18 +905,47 @@
 			.catch((e) => Erreur(e));
 	});
 
-	const itm_export = document.getElementById("itm_export");
-	itm_export.addEventListener("click", () => {
-		closeMenu();
-		let jeu = JSON.stringify(enr.jeu)
+	function GetSelJeu() {
+		let ar = [];
+		if (session.choix.show_tree)
+			for (let el of all_sel) {
+				const id = Number(el.id.substr(2));
+				if (id != enr.id && ar.indexOf(id) == -1) ar.push(id); // pour éviter les doublons
+			}
+		return ar;
+	}
+
+	function GetExportSQL(nom, jeu) {
+		const st = JSON.stringify(jeu)
 			.replace(/'/g, "''")
 			.replace('","txt1":', '",\n"txt1":')
 			.replace('","txt2":', '",\n"txt2":')
 			.replace('","donne":', '",\n"donne":')
 			.replace('],"enchere":', '],\n"enchere":');
-		let foo = "INSERT INTO donnes (nom,data) VALUES ('" + enr.nom + "', '" + jeu + "');\n";
-		console.log(foo);
-		navigator.clipboard.writeText(foo);
+		return "INSERT INTO donnes (nom,data) VALUES ('" + nom + "', '" + st + "');\n";
+	}
+
+	async function GetSelExportSQL() {
+		let st = GetExportSQL(enr.nom, enr.jeu);
+		const ar = GetSelJeu();
+		for (let id of ar) {
+			try {
+				const row = await SQL_get("SELECT * FROM donnes WHERE id=" + id);
+				st += GetExportSQL(row.nom, JSON.parse(row.data));
+			} catch (e) {
+				Erreur(e);
+			}
+		}
+		return { n: ar.length + 1, st: st };
+	}
+
+	const itm_export = document.getElementById("itm_export");
+	itm_export.addEventListener("click", () => {
+		closeMenu();
+		GetSelExportSQL().then((obj) => {
+			navigator.clipboard.writeText(obj.st);
+			Info("" + obj.n + " donnes copiés dans le presse-papier");
+		});
 	});
 
 	function GetCbxDonnes() {
@@ -1180,10 +1220,11 @@
 				el.id +
 				'" node="' +
 				id_node +
-				'" onclick="onJeuClick(event)" draggable="true"  ondragstart="onJeuDrag(event)" hlp="Clic: Ouvrir. ' +
-				(session.choix.edit ? " Drag: Déplacer. Shift-drag: dupliquer le jeu dans un autre dossier" : "") +
+				'" onclick="onJeuClick(event)" draggable="true"  ondragstart="onJeuDrag(event)" hlp="' +
+				(session.choix.edit ? "Drag: Déplacer. Shift-drag: dupliquer le jeu dans un autre dossier. " : "") +
+				(el.id == enr.id ? '" class="tree_sel' : "Clic: Ouvrir.") +
 				'" >' +
-				el.nom;
+				(el.nom || "Donne n°" + el.id);
 			//st += '<img class="si_edit" src="/images/Hand_25px.png" id="jeux' + el.id + '" hlp="Sert à faire glisser le jeu vers un autre dossier ou la corbeille"/>';
 			st += "</li>";
 		});
@@ -1290,6 +1331,7 @@
 	const all_sel = arbre.getElementsByClassName("tree_sel"); // en temps réel
 	const removeSelection = () => {
 		for (const el of all_sel) el.classList.remove("tree_sel");
+		arbre.querySelectorAll("#j_" + enr.id).forEach((el) => el.classList.add("tree_sel"));
 	};
 
 	arbre.addEventListener("dragover", (e) => {
@@ -1321,7 +1363,7 @@
 				.then((r) => {
 					// les triggers effacent automatiquement les data2tree et les enfants
 					console.log(r);
-					MakeTree();
+					if (id.substr(2) != enr.id || OpenOrNew()) MakeTree();
 				})
 				.catch((e) => Erreur(e));
 		}
@@ -1525,6 +1567,10 @@
 		AfficheTextes();
 	}
 
+	//*********************
+	//     Print Stuff
+	//*********************
+
 	function PrintDonne(nom, jeu) {
 		let st = '<div class="pagebreak"><h1>' + nom + "</h1>";
 		st += '<div class="donne">';
@@ -1532,12 +1578,12 @@
 		st += '<div class="NS nord">' + MakeDonne(jeu.donne, 0) + "</div>";
 		st += '<div class="OE ouest">' + MakeDonne(jeu.donne, 4) + "</div>";
 		st += '<div class="centre"><div class="vulnerable';
-		if (enr.jeu.vul.startsWith("NS")) st += " NSred";
-		if (enr.jeu.vul.endsWith("EW")) st += " EWred";
-		if (enr.jeu.donneur == "N") st += " d_nord";
-		else if (enr.jeu.donneur == "S") st += " d_sud";
-		else if (enr.jeu.donneur == "E") st += " d_est";
-		else if (enr.jeu.donneur == "W") st += " d_ouest";
+		if (jeu.vul.startsWith("NS")) st += " NSred";
+		if (jeu.vul.endsWith("EW")) st += " EWred";
+		if (jeu.donneur == "N") st += " d_nord";
+		else if (jeu.donneur == "S") st += " d_sud";
+		else if (jeu.donneur == "E") st += " d_est";
+		else if (jeu.donneur == "W") st += " d_ouest";
 		st += '"></div></div>';
 		st += '<div class="OE est">' + MakeDonne(jeu.donne, 8) + "</div>";
 		st += '<div class="NS sud">' + MakeDonne(jeu.donne, 12) + "</div>";
@@ -1557,24 +1603,26 @@
 	async function PrintThis() {
 		closeMenu();
 		let st = PrintDonne(enr.nom, enr.jeu);
-		let ar = [];
-		for (let el of all_sel) {
-			const id = Number(el.id.substr(2));
-			if (id != enr.id && ar.indexOf(id) == -1) {
-				ar.push(id); // pour éviter les doublons
-				try {
-					const row = await SQL_get("SELECT * FROM donnes WHERE id=" + id);
-					const foo = JSON.parse(row.data);
-					if (VerifierDonne(foo.donne)) st += PrintDonne(row.nom || "Donne n°" + row.id, foo);
-				} catch (e) {
-					Erreur(e);
-				}
+		let ar = GetSelJeu();
+		for (let id of ar)
+			try {
+				const row = await SQL_get("SELECT * FROM donnes WHERE id=" + id);
+				const foo = JSON.parse(row.data);
+				if (VerifierDonne(foo.donne)) st += PrintDonne(row.nom || "Donne n°" + row.id, foo);
+			} catch (e) {
+				Erreur(e);
 			}
-		}
 		// ar contient les id des jeux sélectionnés en dehors de celui en cours
 		print_this.innerHTML = st;
-		navigator.clipboard.writeText(print_this.innerHTML);
+		//navigator.clipboard.writeText(print_this.innerHTML);
 		window.print();
 		print_this.innerHTML = "";
 	}
+
+	//*********************
+	//  Backup - Restore
+	//*********************
+	function onBkp() {}
+
+	function onRestore() {}
 </script>

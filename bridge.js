@@ -167,6 +167,7 @@ socketio.on("connection", (client) => {
 	if (session.user == undefined) {
 		let foo = db.prepare("SELECT * FROM users WHERE nom=?").get(app_config.user);
 		if (foo == undefined) foo = db.prepare("SELECT * FROM users ORDER BY id LIMIT 1").get();
+		session.multiposte = app_config.multiposte;
 		session.user = {
 			id: foo.id,
 			nom: foo.nom,
