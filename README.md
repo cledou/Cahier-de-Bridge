@@ -21,9 +21,7 @@ et au milieu une zone d'affichage qui permet de voir les données éventuellemen
 ![Barres des menus](./doc/saisie.png)
 
 Commençons donc par la barre de menu:
-|--------|-------|
 | Bouton | Usage |
-|--------|-------|
+|:-:|---|
 |![Barres des menus](./images/arrow_d.png)| ouvrir et fermer l'arbre de navigation |
 |![Barres des menus](./images/dossier.png)| Gérer les jeux |
-|--------|-----------------------------------------------|
