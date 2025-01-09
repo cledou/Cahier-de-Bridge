@@ -52,13 +52,20 @@ Allez sur la page Github consacrée à mon application [Cahier de Bridge](https:
 
 ## Exemple 2: Installation sur une plateforme Linux type Debian
 
-### Vérification de l'existant
+### Installation (ou mise à jour) du gestionnaire de paquets
 
-### Installation du gestionnaire de paquets
+`sudo apt install -y nodejs`
 
 ### Installation des sources
 
+`git clone git@github.com:cledou/bridge-notebbok.git`
+
 ### Pré-compilation des sources
+
+`sudo rm package-lock.json`
+`sudo npm install`
+
+Prendre un café, thé ou autre en attendant le message de fin (6mn sur mon Rockpi4)
 
 ### Lancement du programme
 
