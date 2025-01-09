@@ -29,9 +29,13 @@ Fort heureusement, la plupart des étapes sont assez simple à réaliser.
 ### Installation de Node.Js et du gestionnaire de paquets NPM (inclu dans Node.JS)
 
 Comme cette étape n'est pas spécifique à mon application, et plutôt que réécrire ce que beaucoup de personnes ont fait avant moi, je vous invite à consulter les nombreux articles sur le sujet.
+
 Par exemple: [Installation de NPM](https://kinsta.com/fr/blog/comment-installer-node-js/)
+
 Lien direct vers le paquet d'installation: [Node.Js et NPM pour machine 32 bits](https://nodejs.org/dist/v22.13.0/node-v22.13.0-x64.msi)
+
 Lien direct vers le paquet d'installation: [Node.Js et NPM pour machine 64 bits](https://nodejs.org/dist/v22.13.0/node-v22.13.0-x86.msi)
+
 Vous trouverez d'autres configurations plus rares sur [le site de Node.JS](https://nodejs.org/fr/download)
 
 ### Installation des sources

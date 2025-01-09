@@ -1,6 +1,6 @@
 {
 	"name": "bridge-notebook",
-	"description": "Gestion d'un bloc-note de données de bridge",
+	"description": "Gestion d'un éditeur de mains de bridge",
 	"version": "1.0.0",
 	"main": "bridge.js",
 	"dependencies": {
@@ -21,8 +21,23 @@
 		"socket.io-express-session": "^0.1.3",
 		"sqlite3": "^5.1.6"
 	},
-	"keywords": [],
+	"keywords": [
+		"Cartes",
+		"Jeu de bridge",
+		"Pique",
+		"Coeur",
+		"Carreaux",
+		"Trèfle",
+		"Spades",
+		"Hearts",
+		"Diamonds",
+		"Clubs"
+	],
 	"author": "Alexandre GESP",
-	"license": "Privée",
+	"license": "MIT",
+	"scripts": {
+		"build": "npm install",
+		"test": "node bridge.js"
+	},
 	"private": true
 }
