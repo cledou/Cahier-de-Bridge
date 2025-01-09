@@ -24,5 +24,6 @@ Commençons donc par la barre de menu:
 |--------|-------|
 | Bouton | Usage |
 |--------|-------|
-|![Barres des menus](./images/android-chrome-192x192.png)| ouvrir et fermer l'arbre de navigation |
+|![Barres des menus](./images/arrow_d.png)| ouvrir et fermer l'arbre de navigation |
 |![Barres des menus](./images/dossier.png)| Gérer les jeux |
+|--------|-----------------------------------------------|
