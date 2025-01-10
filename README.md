@@ -27,4 +27,5 @@ A la date de Janvier 2025, l'application est fonctionnelle et utilisable en mode
 -   [ ] Tutoriels vidéos
 
 [Informations sur l'installation](./install.md)
+
 [Prise en main du logiciel](./interface.md)
