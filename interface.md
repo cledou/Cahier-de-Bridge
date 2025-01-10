@@ -29,13 +29,14 @@ et au milieu une zone d'affichage qui permet de voir les données éventuellemen
 
 ## Interactions en mode édition ![Mode édition](./images/Unlock.png)
 
-![Mode édition](./doc/editer.png)
-
 En plus des actions ci-dessus, vous pouvez:
 
 ### Dans la zone centrale (édition des jeux)
 
+![Mode édition](./doc/editer.png)
+
 -   Cliquer directement sur une distribution, un commentaire, le titre de jeu, pour les modifier. Une fine bordure grise encadre les contenus éditables.
+-   Pour modifier le nom d'un jeu, cliquez dans le titre en haut de la zone de saisie. ![titre](./doc/titre.png)
 -   Dans la zone des enchères, vous pouvez utiliser
     -   P C K T comme raccourcis pour Pique Coeur Carreau Trèfle.
     -   X pour 'Contre'
@@ -67,4 +68,4 @@ Les modifications se font ensentiellement par Glisser-Lâcher ('Drag & Drop') av
 
 -   Pour placer un jeu dans plusieurs dossier, appuyez sur la touche MAJ ('Shift'), et le faire glisser à l'endroit désiré pour la copie.
 
--   NOTE: Pour modifier le nom d'un jeu, cliquez dans le titre en haut de la zone de saisie.
+-   NOTE: Pour modifier le nom d'un jeu, cliquez dans le titre en haut de la zone de saisie. ![titre](./doc/titre.png)
