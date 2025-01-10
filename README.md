@@ -67,8 +67,11 @@ En plus des actions ci-dessus, vous pouvez:
     -   X pour 'Contre'
     -   XX pour 'Surcontre'
     -   Le signe '-' pour 'Passe'
+    -   Exemple: [Exempel1](./doc/enchere1.png) [Exempel1](./doc/enchere2.png)
 
 Les boutons ![Boutons](./doc/boutons.png) permettent de copier dans le presse-papier les caractères **♠ ♥ ♦ ♣** pour ensuite, avec ctrl-v, les coller dans votre texte.
+
+Lorsque vous créez une nouvelle donne, un automatisme complète le jeu s'il reste 13 cartes à attribuer sur un des joueurs (généralement Sud).
 
 **N'oubliez pas de sauvegarder vos modifications.**
 
@@ -80,9 +83,9 @@ Les modifications se font ensentiellement par Glisser-Lâcher ('Drag & Drop') av
 
 -   Faire glisser l'image ![Arborescence](./images/subtree.png) sous les dossier, dans la zone 'Non-classés' pour créer un dossier
 
--   Faire glisser un dossier ou un sous-dossier VERS l'image ![Poubelle](./images/Trash.png) pour effacer un dossier. **CECI N'EFFACE PAS LE CONTENU DU DOSSIER**. Les jeux contenus dans le dossier effacé sont déplacés vers son parent ou vers la zone 'Non-classés'
+-   Faire glisser un dossier ou un sous-dossier VERS l'image ![Poubelle](./images/trash_40px.png) pour effacer un dossier. **CECI N'EFFACE PAS LE CONTENU DU DOSSIER**. Les jeux contenus dans le dossier effacé sont déplacés vers son parent ou vers la zone 'Non-classés'
 
--   Faire glisser un jeu vers l'image ![Poubelle](./images/Trash.png) **EFFACE CE JEU**. Cette opération est irréversible. Un mécanisme 'Undo-redo' est prévu dans la roadmap.
+-   Faire glisser un jeu vers l'image ![Poubelle](./images/trash_40px.png) **EFFACE CE JEU**. Cette opération est irréversible. Un mécanisme 'Undo-redo' est prévu dans la roadmap.
 
 -   Cliquez dans le nom du dossier pour le modifier
 
