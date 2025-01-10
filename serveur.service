@@ -1,9 +1,0 @@
-[Unit]
-Description=Lancer le serveur Web
-
-[Service]
-ExecStart=node /home/torii/aikido.js
-WorkingDirectory=/home/torii
-
-[Install]
-WantedBy=multi-user.target

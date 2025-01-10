@@ -72,6 +72,14 @@ Note: Le port utilisé (3005 par défaut) est défini dans le [fichier de config
 
 ### Création d'un raccourci vers le bureau
 
+Modifiez le raccourci fourni dans le package, ou créez le votre, et placez-le sur votre bureau:
+
+Cible: "C:\Program Files\nodejs\node.exe" "bridge.js"
+
+Démarrer dans: C:\Users\....mon_dossier_d_installation....
+
+![Raccourci](./doc/link.png)
+
 ## Exemple 2: Installation sur une plateforme Linux type Debian
 
 ### Installation (ou mise à jour) du gestionnaire de paquets
