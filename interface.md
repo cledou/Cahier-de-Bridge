@@ -29,6 +29,8 @@ et au milieu une zone d'affichage qui permet de voir les données éventuellemen
 
 ## Interactions en mode édition ![Mode édition](./images/Unlock.png)
 
+![Mode édition](./doc/editer.png)
+
 En plus des actions ci-dessus, vous pouvez:
 
 ### Dans la zone centrale (édition des jeux)
