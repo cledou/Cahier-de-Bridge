@@ -1,5 +1,5 @@
 {
-	"name": "bridge-notebook",
+	"name": "cahier-de-bridge",
 	"description": "Gestion d'un éditeur de mains de bridge",
 	"version": "1.0.0",
 	"main": "bridge.js",

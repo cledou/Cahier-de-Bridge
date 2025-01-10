@@ -64,7 +64,7 @@ Dans le terminal, tapez
 
 Sous Windows, ceci lancera aussi le navigateur Web sur la page d'accueil
 
-![Exemple de lancement du serveur réussi](./doc/lancement.png)
+![Exemple de lancement du serveur réussi](doc/lancement.png)
 
 Se connecter par la suite sur la [page locale](http://localhost:3005/) pour ré-ouvrir la page d'accueil
 
