@@ -47,6 +47,7 @@ Allez sur la page Github consacrée à mon application [Cahier de Bridge](https:
 [Ouvrir un terminal sous Windows 10-11](https://lecrabeinfo.net/ouvrir-et-utiliser-le-terminal-windows-sur-windows-11-10.html)
 
 `sudo npm install`
+
 Cette étape dépend beaucoup du matériel et des logiciels déjà installés sur votre ordinateur. Le serveur SQL, en particulier, demande la présence d'un compilateur C/C++.
 
 Normalement, le gestionnaire de paquet devrait gérer correctement la compilation. En cas de problème à cette étape, vérifiez que vous êtes bien en mode 'Administrateur', et que vous avez les droits d'écrire dans les dossiers système.
@@ -54,9 +55,12 @@ Normalement, le gestionnaire de paquet devrait gérer correctement la compilatio
 ### Lancement du programme
 
 Dans le terminal, tapez
+
 `node bridge`
+
 Sous Windows, ceci lancera aussi le navigateur Web sur la page d'accueil
-[Exemple de lancement du serveur réussi](./doc/lancement.png)
+
+![Exemple de lancement du serveur réussi](./doc/lancement.png)
 
 Se connecter par la suite sur la [page locale](http://localhost:3005/) pour ré-ouvrir la page d'accueil
 
