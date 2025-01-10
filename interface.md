@@ -17,6 +17,12 @@ A gauche un arbre de navigation qui permet de classer les jeux et rechercher une
 et au milieu une zone d'affichage qui permet de voir les données éventuellement de les éditer les modifier
 ![Zone de saisie](./doc/saisie.png)
 
+Enfin, en bas de l'écran, se trouve une barre de status, qui
+
+-   réagit au passage de la souris sur les commandes en donnant des informations détaillées
+-   Indique qu'une action s'est bien déroulée
+-   ou au contraire qu'une erreur est détecté: ![Erreur](./doc/status.png)
+
 ## Interactions en mode consultation ![Mode consultation](./images/Lock.png)
 
 -   Cliquez dans la barre de recherche pour sélectionner un jeu par son nom ou par son contenu
