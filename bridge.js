@@ -123,7 +123,14 @@ if (dir_sep == "") {
 	dir_sep == "/";
 }
 
-const db_filename = __dirname + dir_sep + "bridge.db";
+let db_dir = __dirname + dir_sep + "db" + dir_sep;
+try {
+	fs.statSync(db_dir);
+} catch (e) {
+	if (e.code == "ENOENT") fs.mkdirSync(db_dir);
+}
+
+const db_filename = db_dir + "bridge.db";
 // tester existence database et patchs
 try {
 	const b = fs.existsSync(db_filename);
@@ -368,6 +375,19 @@ socketio.on("connection", (client) => {
 				const contenu = JSON.stringify(enr.jeu);
 				if (enr.id == undefined) cb(db.prepare("INSERT INTO donnes (nom,data) VALUES (?,?)").run(enr.nom, contenu));
 				else cb(db.prepare("UPDATE donnes set nom=?,data=? WHERE id=?").run(enr.nom, contenu, enr.id));
+			} catch (err) {
+				cb({ err: err.message });
+			}
+	});
+
+	client.on("bkp", (cb) => {
+		if (db == undefined) cb({ err: "Session fermée. Reconnectez-vous" });
+		else
+			try {
+				const d = new Date();
+				session.bkp = "bridge " + d.toISOString().substring(0, 10) + ".bkp";
+				db.backup(db_dir + session.bkp);
+				cb("/public/db/" + session.bkp);
 			} catch (err) {
 				cb({ err: err.message });
 			}

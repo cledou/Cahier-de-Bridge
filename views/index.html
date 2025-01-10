@@ -404,11 +404,11 @@
 										<img src="/images/save_30px.png" />Sauver les changements
 									</button>
 									<input type="file" style="display: none" id="btn_bkp" />
-									<a href="/public/bridge.db">Télécharger</a>
+									<a class="hide_me" id="bkp_lnk" href="/public/bridge.db">Télécharger</a>
 									<button class="itmh si_admin" onclick="onBkp()" alt="Sauvegarder la base de donnée dans un backup">
 										<img src="/images/database_export_30px.png" />Sauvegarde
 									</button>
-									<button class="itmh si_admin" onclick="onRestore()" alt="Restaurer la base de donnée depuis une sauvegarde">
+									<button class="itmh si_admin to_do" onclick="onRestore()" alt="Restaurer la base de donnée depuis une sauvegarde">
 										<img src="/images/database_export_30px.png" />Restauration
 									</button>
 									<!--
@@ -420,6 +420,18 @@
 									</button>
 								</div>
 							</div>
+							<div
+								class="level0"
+								style="background-image: url('/images/link_30px.png')"
+								hlp="Liens en relations avec ce logiciel (aide, mise à jour..)"
+							>
+								<div class="level1">
+									<a href="https://github.com/cledou/Cahier-de-Bridge/blob/main/interface.md">Aide à la saisie</a>
+									<a href="https://github.com/cledou/Cahier-de-Bridge/blob/main/install.md">Installation</a>
+									<a href="https://github.com/cledou/Cahier-de-Bridge/discussions">Forum</a>
+									<a href="https://github.com/cledou/Cahier-de-Bridge/issues">Rapport de bugs</a>
+								</div>
+							</div>
 						</div>
 						<div style="width: 90%"></div>
 						<!-- repousser menuD à droite-->
@@ -428,10 +440,10 @@
 							<img src="/images/Unlock.png" class="si_chk" hlp="Interdir les modifications"
 						/></label>
 						<button onclick="PrintThis()"><img src="/images/print_30px.png" alt="Imprimer la donne" /></button>
-						<!--
-						<button class="undo" onclick="Undo()" disabled><img src="/images/undo_30px.png" alt="Revenir en arrière (ctrl-Z)" /></button>
-						<button class="redo" onclick="Redo()" disabled><img src="/images/redo_30px.png" alt="Annuler retour en arrière (shift-ctrl-Z)" /></button>
-						-->
+						<button class="to_do undo" onclick="Undo()" disabled><img src="/images/undo_30px.png" alt="Revenir en arrière (ctrl-Z)" /></button>
+						<button class="to_do redo" onclick="Redo()" disabled
+							><img src="/images/redo_30px.png" alt="Annuler retour en arrière (shift-ctrl-Z)"
+						/></button>
 						<button class="si_dirty" onclick="onSave()"><img src="/images/save_30px.png" alt="Sauver les modifications" /></button>
 					</div>
 					<h1 class="titre" id="enr_nom" contenteditable="true" style="min-width: 3em; min-height: 1em"></h1>
@@ -1623,7 +1635,17 @@
 	//*********************
 	//  Backup - Restore
 	//*********************
-	function onBkp() {}
+	const bkp_lnk = document.getElementById("bkp_lnk");
+	function onBkp() {
+		io.emit("bkp", (r) => {
+			if (r.err) Erreur(r.err);
+			else {
+				console.log(r);
+				bkp_lnk.setAttribute("href", r);
+				bkp_lnk.click();
+			}
+		});
+	}
 
 	function onRestore() {}
 </script>

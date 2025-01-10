@@ -4,3 +4,4 @@ package-lock.json
 torii.tlp
 test.html
 renew.txt
+db/*

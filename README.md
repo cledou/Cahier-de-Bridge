@@ -25,6 +25,7 @@ A la date de Janvier 2025, l'application est fonctionnelle et utilisable en mode
 -   [ ] Contrôle d'accès multi-utilisateurs
 -   [ ] Undo-Redo (Possibilité d'annuler une action)
 -   [ ] Tutoriels vidéos
+-   [ ] Version anglaise
 
 [Informations sur l'installation](./install.md)
 

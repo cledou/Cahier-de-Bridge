@@ -39,5 +39,5 @@
 		"build": "npm install",
 		"test": "node bridge.js"
 	},
-	"private": true
+	"private": false
 }

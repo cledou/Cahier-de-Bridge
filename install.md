@@ -40,7 +40,7 @@ Vous trouverez d'autres configurations plus rares sur [le site de Node.JS](https
 
 ### Installation des sources
 
-Allez sur la page Github consacrée à mon application [Cahier de Bridge](https://github.com/cledou/Bridge-virginie)
+Allez sur la page Github consacrée à mon application [Cahier de Bridge](https://github.com/cledou/Cahier-de-Bridge)
 
 Ce logiciel **ne requière pas** d'être installé dans les dossiers de programmes exécutables. Ce sont des scripts, et les véritables logiciels qui traitent les scripts sont déjà installés dans votre ordinateur.
 

@@ -56,7 +56,8 @@ html {
 	justify-content: space-between;
 }
 
-.hide_me {
+.hide_me,
+.to_do {
 	display: none;
 }
 
