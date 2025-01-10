@@ -2,7 +2,7 @@
 
 Ce logiciel est open source et vous pouvez l'installer sur différents systèmes d'exploitation: Windows, Linux, etc...
 Par défaut, il s'installe en mode mono-utilisateur, c'est-à-dire que vous serez la seule personne à utiliser ce logiciel.
-Après l'installation, il suffit de modifier une ligne dans le fichier de configuration pour passer en mode multi-utilisateurs avec contrôle d'accès.
+
 La technologie utilisée par cette application est du type Client-Serveur:
 
 -   On installe un programme 'Serveur' qui tourne en permanence sur votre ordinateur ou un serveur dédié sur un réseau (Internet ou local)
@@ -13,9 +13,9 @@ Dans le cas le plus simple, et le plus fréquent, les deux processus tournent su
 L'installation du logiciel suit toujours les mêmes étapes quelle que soit la plateforme ou la configuration utilisée:
 
 1. Installation du logiciel 'serveur' Node.Js qui va lire et exécuter les scripts constituant l'application.
-2. Récupération des sources sur la plate-forme Github
+2. Récupération des sources sur la plate-forme Github ou via un gestionnaire de paquets
 3. Pré-compilation des sources sur votre machine ou votre serveur pour obtenir des 'modules' optimisés pour votre matériel.
-4. Optionnel: Modifier le fichier de configuration en fonction des fonctionnalités requises (multi-utilisateur, contrôle d'accès, base de donnée sur une clé USB, etc..)
+4. Optionnel: Modifier le fichier de configuration en fonction des fonctionnalités requises (multi-utilisateur, contrôle d'accès, etc..)
 5. Lancement du programme 'serveur' sur votre machine.
 6. Lancement d'un navigateur internet qui va se connecter au 'serveur' et afficher l'application
 
@@ -48,6 +48,15 @@ Allez sur la page Github consacrée à mon application [Cahier de Bridge](https:
 
 ### Lancement du programme
 
+Dans le terminal, tapez
+`node bridge`
+Sous Windows, ceci lancera aussi le navigateur Web sur la page d'accueil
+[Exemple de lancement du serveur réussi](./doc/lancement.png)
+
+Se connecter par la suite sur la [page locale](http://localhost:3005/) pour ré-ouvrir la page d'accueil
+
+Note: Le port utilisé (3005 par défaut) est défini dans le [fichier de configuration](./config.json)
+
 ### Création d'un raccourci vers le bureau
 
 ## Exemple 2: Installation sur une plateforme Linux type Debian
@@ -69,4 +78,13 @@ Prendre un café, thé ou autre en attendant le message de fin (6mn sur mon Rock
 
 ### Lancement du programme
 
-### Création d'un raccourci vers le bureau
+`node bridge`
+
+Se connecter ensuite sur la [page locale](http://localhost:3005/)
+
+### installer le serveur comme service du système
+
+`sed 's,$PWD,'"$PWD"/',g' --in-place cahier.service`
+`sudo mv cahier.service /etc/systemd/system/`
+`sudo systemctl enable cahier.service`
+`sudo systemctl daemon-reload`

@@ -1,0 +1,9 @@
+[Unit]
+Description=Lancer le serveur Web de l'éditeur de bridge
+
+[Service]
+ExecStart=node cahier.js
+WorkingDirectory=$PWD
+
+[Install]
+WantedBy=multi-user.target

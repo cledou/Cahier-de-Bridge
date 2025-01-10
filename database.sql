@@ -11,15 +11,19 @@ CREATE TABLE users (
   nom  VARCHAR(64),
   email VARCHAR(64),
   hash VARCHAR(60),
+  reset_hash VARCHAR(60),
+  reset_validity DATETIME,
   choix TEXT DEFAULT '{"flags": 1}',
+  binette BLOB,
   admin BOOLEAN DEFAULT FALSE,
   can_add BOOLEAN DEFAULT FALSE,
   can_edit BOOLEAN DEFAULT FALSE,
-  can_delete BOOLEAN DEFAULT FALSE
+  can_delete BOOLEAN DEFAULT FALSE,
+  can_restore BOOLEAN DEFAULT FALSE
 );
 
 INSERT INTO users (id,nom) VALUES (1,'Anonyme');
-INSERT INTO users (id,nom,admin,can_add,can_edit,can_delete) VALUES (2,'Administrateur',true,true,true,true);
+INSERT INTO users (id,nom,admin,can_add,can_edit,can_delete,can_restore) VALUES (2,'Administrateur',true,true,true,true,true);
 
 CREATE TABLE donnes (
   id INTEGER PRIMARY KEY,
