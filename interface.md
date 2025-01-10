@@ -14,6 +14,7 @@ Vous remarquez en haut une barre de menu
 
 A gauche un arbre de navigation qui permet de classer les jeux et rechercher une ou plusieurs donnes
 ![Arbre](./doc/arbre.png)
+
 et au milieu une zone d'affichage qui permet de voir les données éventuellement de les éditer les modifier
 ![Zone de saisie](./doc/saisie.png)
 
