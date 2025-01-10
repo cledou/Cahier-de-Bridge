@@ -2,7 +2,7 @@
 
 ## Introduction
 
-![Vue générale en mode lecture](./doc/general.png)
+![Vue générale en mode lecture](doc/general.png)
 J'ai écrit ce logiciel Open-source suite à une demande de ma sœur qui enseigne le bridge à des débutants. Elle utilise un cahier pour noter les donnes qu'elle commente avec ses élèves et passe beaucoup de temps à transcrire ses notes manuscrites en support de cours.
 J'ai donc créé cette application pour qu'elle puisse:
 

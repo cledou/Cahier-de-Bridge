@@ -3,7 +3,7 @@
 Après [installation](./install.md) du logiciel vous vous retrouvez devant l'écran ci-dessus.
 
 Vous remarquez en haut une barre de menu
-![Barres des menus](./doc/menus.png)
+![Barres des menus](doc/menus.png)
 | Bouton | Usage |
 |:-:|---|
 |![Barres des menus](./images/arrow_d.png)| ouvrir et fermer l'arbre de navigation |
@@ -13,16 +13,16 @@ Vous remarquez en haut une barre de menu
 |![Sauver](./images/save_30px.png)| Sauvegarder les modifications |
 
 A gauche un arbre de navigation qui permet de classer les jeux et rechercher une ou plusieurs donnes
-![Arbre](./doc/arbre.png)
+![Arbre](doc/arbre.png)
 
 et au milieu une zone d'affichage qui permet de voir les données éventuellement de les éditer les modifier
-![Zone de saisie](./doc/saisie.png)
+![Zone de saisie](doc/saisie.png)
 
 Enfin, en bas de l'écran, se trouve une barre de status, qui
 
 -   réagit au passage de la souris sur les commandes en donnant des informations détaillées
 -   Indique qu'une action s'est bien déroulée
--   ou au contraire qu'une erreur est détecté: ![Erreur](./doc/status.png)
+-   ou au contraire qu'une erreur est détecté: ![Erreur](doc/status.png)
 
 ## Interactions en mode consultation ![Mode consultation](./images/Lock.png)
 
@@ -40,18 +40,18 @@ En plus des actions ci-dessus, vous pouvez:
 
 ### Dans la zone centrale (édition des jeux)
 
-![Mode édition](./doc/editer.png)
+![Mode édition](doc/editer.png)
 
 -   Cliquer directement sur une distribution, un commentaire, le titre de jeu, pour les modifier. Une fine bordure grise encadre les contenus éditables.
--   Pour modifier le nom d'un jeu, cliquez dans le titre en haut de la zone de saisie. ![titre](./doc/titre.png)
+-   Pour modifier le nom d'un jeu, cliquez dans le titre en haut de la zone de saisie. ![titre](doc/titre.png)
 -   Dans la zone des enchères, vous pouvez utiliser
     -   P C K T comme raccourcis pour Pique Coeur Carreau Trèfle.
     -   X pour 'Contre'
     -   XX pour 'Surcontre'
     -   Le signe '-' pour 'Passe'
-    -   Exemple: ![Exemple 1](./doc/enchere1.png) ![Exemple 2](./doc/enchere2.png)
+    -   Exemple: ![Exemple 1](doc/enchere1.png) ![Exemple 2](doc/enchere2.png)
 
-Les boutons ![Boutons](./doc/boutons.png) permettent de copier dans le presse-papier les caractères **♠ ♥ ♦ ♣** pour ensuite, avec ctrl-v, les coller dans votre texte.
+Les boutons ![Boutons](doc/boutons.png) permettent de copier dans le presse-papier les caractères **♠ ♥ ♦ ♣** pour ensuite, avec ctrl-v, les coller dans votre texte.
 
 Lorsque vous créez une nouvelle donne, un automatisme complète le jeu s'il reste 13 cartes à attribuer sur un des joueurs (généralement Sud).
 
@@ -75,4 +75,4 @@ Les modifications se font ensentiellement par Glisser-Lâcher ('Drag & Drop') av
 
 -   Pour placer un jeu dans plusieurs dossier, appuyez sur la touche MAJ ('Shift'), et le faire glisser à l'endroit désiré pour la copie.
 
--   NOTE: Pour modifier le nom d'un jeu, cliquez dans le titre en haut de la zone de saisie. ![titre](./doc/titre.png)
+-   NOTE: Pour modifier le nom d'un jeu, cliquez dans le titre en haut de la zone de saisie. ![titre](doc/titre.png)

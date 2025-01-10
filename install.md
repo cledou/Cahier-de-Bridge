@@ -78,7 +78,7 @@ Cible: "C:\Program Files\nodejs\node.exe" "bridge.js"
 
 Démarrer dans: C:\Users\....mon_dossier_d_installation....
 
-![Raccourci](./doc/link.png)
+![Raccourci](doc/link.png)
 
 ## Exemple 2: Installation sur une plateforme Linux type Debian
 
