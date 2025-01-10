@@ -9,12 +9,20 @@ J'ai donc créé cette application pour qu'elle puisse:
 3. Les imprimer
 4. Et même éventuellement les partager en ligne avec ses élèves.
 
-A la date de Janvier 2025, l'application est fonctionnelle et utilisable en mode mono-utilisateur. La roadmap est la suivante: -[x] Editeur de mains de bridge -[x] Classement dans un arbre de sélection -[x] Editeur de l'arborescence de tri -[x] Impression des mains -[x] Sauvegarde de mains au format SQL -[x] Sauvegarde de la base de donnée -[x] Mise en ligne sur Github et npm
--[] Fichiers d'aide (en cours..)
--[] Restauration de la base
--[] Contrôle d'accès multi-utilisateurs
--[] Undo-Redo (Possibilité d'annuler une action)
--[] Tutoriels vidéos
+A la date de Janvier 2025, l'application est fonctionnelle et utilisable en mode mono-utilisateur. La roadmap est la suivante:
+
+-   [x] Editeur de mains de bridge
+-   [x] Classement dans un arbre de sélection
+-   [x] Editeur de l'arborescence de tri
+-   [x] Impression des mains
+-   [x] Sauvegarde de mains au format SQL
+-   [x] Sauvegarde de la base de donnée
+-   [x] Mise en ligne sur Github et npm
+-   [ ] Fichiers d'aide (en cours..)
+-   [ ] Restauration de la base
+-   [ ] Contrôle d'accès multi-utilisateurs
+-   [ ] Undo-Redo (Possibilité d'annuler une action)
+-   [ ] Tutoriels vidéos
 
 Après [installation](./install.md) du logiciel vous vous retrouvez devant l'écran ci-dessus.
 Vous remarquez en haut une barre de menu

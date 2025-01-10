@@ -46,6 +46,11 @@ Allez sur la page Github consacrée à mon application [Cahier de Bridge](https:
 
 [Ouvrir un terminal sous Windows 10-11](https://lecrabeinfo.net/ouvrir-et-utiliser-le-terminal-windows-sur-windows-11-10.html)
 
+`sudo npm install`
+Cette étape dépend beaucoup du matériel et des logiciels déjà installés sur votre ordinateur. Le serveur SQL, en particulier, demande la présence d'un compilateur C/C++.
+
+Normalement, le gestionnaire de paquet devrait gérer correctement la compilation. En cas de problème à cette étape, vérifiez que vous êtes bien en mode 'Administrateur', et que vous avez les droits d'écrire dans les dossiers système.
+
 ### Lancement du programme
 
 Dans le terminal, tapez
@@ -72,6 +77,7 @@ Note: Le port utilisé (3005 par défaut) est défini dans le [fichier de config
 ### Pré-compilation des sources
 
 `sudo rm package-lock.json`
+
 `sudo npm install`
 
 Prendre un café, thé ou autre en attendant le message de fin (6mn sur mon Rockpi4)
@@ -85,6 +91,9 @@ Se connecter ensuite sur la [page locale](http://localhost:3005/)
 ### installer le serveur comme service du système
 
 `sed 's,$PWD,'"$PWD"/',g' --in-place cahier.service`
+
 `sudo mv cahier.service /etc/systemd/system/`
+
 `sudo systemctl enable cahier.service`
+
 `sudo systemctl daemon-reload`
