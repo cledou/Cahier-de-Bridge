@@ -31,6 +31,9 @@ Vous remarquez en haut une barre de menu
 |:-:|---|
 |![Barres des menus](./images/arrow_d.png)| ouvrir et fermer l'arbre de navigation |
 |![Barres des menus](./images/dossier.png)| Gérer les jeux |
+|![Accès éditeur](./images/Unlock.png.png)| **IMPORTANT:** Bascule entre le mode 'Édition' et le mode 'Consultation' |
+|![Imprimer](./images/print_30px.png)| Imprimer la main affichée, ou les mains sélectionnées dans l'arbre par ctrl-clic |
+|![Sauver](./images/save_30px.png)| Sauvegarder les modifications |
 
 A gauche un arbre de navigation qui permet de classer les jeux et rechercher une ou plusieurs donnes
 ![Barres des menus](./doc/arbre.png)

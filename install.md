@@ -42,13 +42,17 @@ Vous trouverez d'autres configurations plus rares sur [le site de Node.JS](https
 
 Allez sur la page Github consacrée à mon application [Cahier de Bridge](https://github.com/cledou/Bridge-virginie)
 
+Ce logiciel **ne requière pas** d'être installé dans les dossiers de programmes exécutables. Ce sont des scripts, et les véritables logiciels qui traitent les scripts sont déjà installés dans votre ordinateur.
+
+Donc vous pouvez installer les sources dans un sous-dossier de 'Mes Documents'.
+
 ### Pré-compilation des sources
 
 [Ouvrir un terminal sous Windows 10-11](https://lecrabeinfo.net/ouvrir-et-utiliser-le-terminal-windows-sur-windows-11-10.html)
 
 `sudo npm install`
 
-Cette étape dépend beaucoup du matériel et des logiciels déjà installés sur votre ordinateur. Le serveur SQL, en particulier, demande la présence d'un compilateur C/C++.
+Cette étape dépend beaucoup du matériel et des logiciels déjà installés sur votre ordinateur. Le gestionnaire de la base de données SQL, en particulier, demande la présence d'un compilateur C/C++.
 
 Normalement, le gestionnaire de paquet devrait gérer correctement la compilation. En cas de problème à cette étape, vérifiez que vous êtes bien en mode 'Administrateur', et que vous avez les droits d'écrire dans les dossiers système.
 
