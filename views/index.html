@@ -369,11 +369,7 @@
 						<input type="checkbox" id="chk_find" /><label for="chk_find">Rechercher seulement<br />dans les noms des jeux</label>
 					</div>
 					<div class="icones si_edit">
-						<img
-							src="/images/subtree.png"
-							alt="Déplacer cette icone sur l'arbre pour créer des nouveaux dossiers ou sous-dossiers"
-							ondragstart="onSubnodeDrag(event)"
-						/>
+						<img src="/images/subtree.png" alt="Déplacer cette icone sur l'arbre pour créer des nouveaux dossiers ou sous-dossiers" ondragstart="onSubnodeDrag(event)" />
 						<img id="node_trash" src="/images/trash_40px.png" draggable="false" alt="Faire glisser ici les dossiers ou jeux à effacer" />
 					</div>
 					<div id="arbre"></div>
@@ -385,46 +381,24 @@
 							<img src="/images/arrow_d.png" alt="Afficher/Cacher l'arbre de situation" />
 						</label>
 						<div class="menu2">
-							<div
-								class="level0"
-								style="background-image: url('/images/dossier.png')"
-								hlp="Actions génériques sur une donne (ouvrir, sauver, copier...)"
-							>
+							<div class="level0" style="background-image: url('/images/dossier.png')" hlp="Actions génériques sur une donne (ouvrir, sauver, copier...)">
 								<div class="level1">
-									<button class="itmh" id="itm_new">
-										<img src="/images/create_30px.png" alt="Créer une nouvelle donne" />Créer une donne
-									</button>
-									<button class="itmh si_un" alt="Sélectionner une donne existante" id="itm_open">
-										<img src="/images/dossier.png" />Ouvrir une donne
-									</button>
-									<button class="itmh" alt="Exporter donne(s) au format SQL" id="itm_export">
-										<img src="/images/Export.png" />Exporter donne(s) dans le presse-papier
-									</button>
-									<button class="itmh si_dirty" onclick="onSave()" alt="Enregistrer les modifications">
-										<img src="/images/save_30px.png" />Sauver les changements
-									</button>
+									<button class="itmh" id="itm_new"><img src="/images/create_30px.png" alt="Créer une nouvelle donne" />Créer une donne</button>
+									<button class="itmh si_un" alt="Sélectionner une donne existante" id="itm_open"><img src="/images/dossier.png" />Ouvrir une donne</button>
+									<button class="itmh" alt="Exporter donne(s) au format SQL" id="itm_export"><img src="/images/Export.png" />Exporter donne(s) dans le presse-papier</button>
+									<button class="itmh si_dirty" onclick="onSave()" alt="Enregistrer les modifications"><img src="/images/save_30px.png" />Sauver les changements</button>
 									<input type="file" style="display: none" id="btn_bkp" />
 									<a class="hide_me" id="bkp_lnk" href="/public/bridge.db">Télécharger</a>
-									<button class="itmh si_admin" onclick="onBkp()" alt="Sauvegarder la base de donnée dans un backup">
-										<img src="/images/database_export_30px.png" />Sauvegarde
-									</button>
-									<button class="itmh si_admin to_do" onclick="onRestore()" alt="Restaurer la base de donnée depuis une sauvegarde">
-										<img src="/images/database_export_30px.png" />Restauration
-									</button>
+									<button class="itmh si_admin" onclick="onBkp()" alt="Sauvegarder la base de donnée dans un backup"><img src="/images/database_export_30px.png" />Sauvegarde</button>
+									<button class="itmh si_admin to_do" onclick="onRestore()" alt="Restaurer la base de donnée depuis une sauvegarde"><img src="/images/database_export_30px.png" />Restauration</button>
 									<!--
 									<button class="itmh si_un" alt="Effacer un état de la base de donnée" id="itm_del"><img src="/images/trash_30px.png" />Effacer un état</button>
 									<button class="itmh si_open" alt="Enregistrer sous..." id="itm_save_as"><img src="/images/save_as_30px.png" />Faire une copie</button>
 									-->
-									<button class="itmh si_open" onclick="PrintThis()" alt="Imprimer">
-										<img src="/images/print_30px.png" />Imprimer cette donne
-									</button>
+									<button class="itmh si_open" onclick="PrintThis()" alt="Imprimer"><img src="/images/print_30px.png" />Imprimer cette donne</button>
 								</div>
 							</div>
-							<div
-								class="level0"
-								style="background-image: url('/images/link_30px.png')"
-								hlp="Liens en relations avec ce logiciel (aide, mise à jour..)"
-							>
+							<div class="level0" style="background-image: url('/images/link_30px.png')" hlp="Liens en relations avec ce logiciel (aide, mise à jour..)">
 								<div class="level1">
 									<a href="https://github.com/cledou/Cahier-de-Bridge/blob/main/interface.md">Aide à la saisie</a>
 									<a href="https://github.com/cledou/Cahier-de-Bridge/blob/main/install.md">Installation</a>
@@ -441,9 +415,7 @@
 						/></label>
 						<button onclick="PrintThis()"><img src="/images/print_30px.png" alt="Imprimer la donne" /></button>
 						<button class="to_do undo" onclick="Undo()" disabled><img src="/images/undo_30px.png" alt="Revenir en arrière (ctrl-Z)" /></button>
-						<button class="to_do redo" onclick="Redo()" disabled
-							><img src="/images/redo_30px.png" alt="Annuler retour en arrière (shift-ctrl-Z)"
-						/></button>
+						<button class="to_do redo" onclick="Redo()" disabled><img src="/images/redo_30px.png" alt="Annuler retour en arrière (shift-ctrl-Z)" /></button>
 						<button class="si_dirty" onclick="onSave()"><img src="/images/save_30px.png" alt="Sauver les modifications" /></button>
 					</div>
 					<h1 class="titre" id="enr_nom" contenteditable="true" style="min-width: 3em; min-height: 1em"></h1>
@@ -494,10 +466,7 @@
 									<button class="cp_btn" onclick="navigator.clipboard.writeText('♥')"><img src="/images/coeur.png" /></button>
 									<button class="cp_btn" onclick="navigator.clipboard.writeText('♦')"><img src="/images/Diamonds.png" /></button>
 									<button class="cp_btn" onclick="navigator.clipboard.writeText('♣')"><img src="/images/Clubs.png" /></button>
-									<button class="cp_btn" onclick="navigator.clipboard.writeText('♠♥♦♣')"
-										><img src="/images/Spades.png" /><img src="/images/coeur.png" /><img src="/images/Diamonds.png" /><img
-											src="/images/Clubs.png"
-									/></button>
+									<button class="cp_btn" onclick="navigator.clipboard.writeText('♠♥♦♣')"><img src="/images/Spades.png" /><img src="/images/coeur.png" /><img src="/images/Diamonds.png" /><img src="/images/Clubs.png" /></button>
 								</div>
 								<div class="flexH">
 									Donneur:
@@ -634,6 +603,23 @@
 		OpenOrNew(); // asynchrone..
 		console.log(session);
 	});
+	io.on("info", function (msg) {
+		Info(msg);
+	});
+	io.on("alert", function (msg) {
+		Erreur(msg);
+	});
+	io.on("warn", function (msg) {
+		Warning(msg);
+	});
+	io.onAny((event, p1, p2, p3, p4, p5) => {
+		if (p5 != undefined) console.log("IO WEB->", event, p1, p2, p3, p4, p5);
+		else if (p4 != undefined) console.log("IO WEB->", event, p1, p2, p3, p4);
+		else if (p3 != undefined) console.log("IO WEB->", event, p1, p2, p3.toString().substring(0, 20));
+		else if (p2 != undefined) console.log("IO WEB->", event, p1, p2);
+		else if (p1 != undefined) console.log("IO WEB->", event, p1);
+		else console.log("IO WEB->", event);
+	});
 
 	async function OpenOrNew() {
 		if (!(await OpenID(session.choix.last_id)) && !(await OpenOneDonne())) itm_new.click();
@@ -702,18 +688,7 @@
 		for (let i = 0; i < enchere.length; i++) {
 			if (i % 4 == 0) st += "</tr><tr>";
 			const v = enchere[i];
-			st +=
-				'<td id="enc_' +
-				i +
-				'" onfocus="this.innerText =\'' +
-				v +
-				'\'" contenteditable="' +
-				(session.choix.edit ? "true" : "false") +
-				'" onblur="blurEnchere(this.innerText,' +
-				i +
-				')" >' +
-				getEnchereSt(v) +
-				"</td>";
+			st += '<td id="enc_' + i + '" onfocus="this.innerText =\'' + v + '\'" contenteditable="' + (session.choix.edit ? "true" : "false") + '" onblur="blurEnchere(this.innerText,' + i + ')" >' + getEnchereSt(v) + "</td>";
 		}
 		st += "</tr>";
 		return st;
@@ -736,15 +711,7 @@
 	}
 
 	function GetHTMLmain(img, ar, idx) {
-		return (
-			'<div class="main" ><img src="/images/' +
-			img +
-			'.png" /><span style="min-width: 5em" contenteditable="true" oninput="Info(\'\')" onblur="blurMain(' +
-			idx +
-			',this)">' +
-			AjouteBlancs(ar[idx]) +
-			"</span></div>"
-		);
+		return '<div class="main" ><img src="/images/' + img + '.png" /><span style="min-width: 5em" contenteditable="true" oninput="Info(\'\')" onblur="blurMain(' + idx + ',this)">' + AjouteBlancs(ar[idx]) + "</span></div>";
 	}
 	function MakeDonne(ar, idx) {
 		return GetHTMLmain("Spades", ar, idx++) + GetHTMLmain("coeur", ar, idx++) + GetHTMLmain("Diamonds", ar, idx++) + GetHTMLmain("Clubs", ar, idx++);
@@ -929,12 +896,7 @@
 	}
 
 	function GetExportSQL(nom, jeu) {
-		const st = JSON.stringify(jeu)
-			.replace(/'/g, "''")
-			.replace('","txt1":', '",\n"txt1":')
-			.replace('","txt2":', '",\n"txt2":')
-			.replace('","donne":', '",\n"donne":')
-			.replace('],"enchere":', '],\n"enchere":');
+		const st = JSON.stringify(jeu).replace(/'/g, "''").replace('","txt1":', '",\n"txt1":').replace('","txt2":', '",\n"txt2":').replace('","donne":', '",\n"donne":').replace('],"enchere":', '],\n"enchere":');
 		return "INSERT INTO donnes (nom,data) VALUES ('" + nom + "', '" + st + "');\n";
 	}
 
@@ -1228,16 +1190,7 @@
 	function AddJeux(ar, id_node) {
 		let st = "";
 		ar.forEach((el) => {
-			st +=
-				'<li id="j_' +
-				el.id +
-				'" node="' +
-				id_node +
-				'" onclick="onJeuClick(event)" draggable="true"  ondragstart="onJeuDrag(event)" hlp="' +
-				(session.choix.edit ? "Drag: Déplacer. Shift-drag: dupliquer le jeu dans un autre dossier. " : "") +
-				(el.id == enr.id ? '" class="tree_sel' : "Clic: Ouvrir.") +
-				'" >' +
-				(el.nom || "Donne n°" + el.id);
+			st += '<li id="j_' + el.id + '" node="' + id_node + '" onclick="onJeuClick(event)" draggable="true"  ondragstart="onJeuDrag(event)" hlp="' + (session.choix.edit ? "Drag: Déplacer. Shift-drag: dupliquer le jeu dans un autre dossier. " : "") + (el.id == enr.id ? '" class="tree_sel' : "Clic: Ouvrir.") + '" >' + (el.nom || "Donne n°" + el.id);
 			//st += '<img class="si_edit" src="/images/Hand_25px.png" id="jeux' + el.id + '" hlp="Sert à faire glisser le jeu vers un autre dossier ou la corbeille"/>';
 			st += "</li>";
 		});
@@ -1250,27 +1203,11 @@
 		const ar_max = ar.length - 1;
 		ar.forEach((el, idx) => {
 			if (idx != el.pos) SQL_run("UPDATE arbre SET pos=? WHERE id=?", [idx, id]).catch((e) => Erreur(e));
-			st +=
-				'<li><details open><summary ondragstart="onNodeDrag(event)" ondragenter="onDragEnter(this)" ondragleave="onDragLeave(this)" onDrop="DropOnNode(event)" >';
+			st += '<li><details open><summary ondragstart="onNodeDrag(event)" ondragenter="onDragEnter(this)" ondragleave="onDragLeave(this)" onDrop="DropOnNode(event)" >';
 			st += '<span contenteditable node="' + el.id + '" onblur="onBlurNode(' + el.id + ',this.innerText)">' + el.itm + "</span>";
-			st +=
-				'<img class="si_edit" src="/images/Hand_25px.png" id="node' +
-				el.id +
-				'" hlp="Sert à faire glisser le dossier vers un autre dossier ou la corbeille (n\'efface pas les jeux)"/>';
-			if (idx > 0)
-				st +=
-					'<img class="si_edit" src="/images/up_25px.png" onclick="UpNode(event,' +
-					el.id +
-					"," +
-					el.pos +
-					' )" hlp="Remonter ce dossier dans la liste"/>';
-			if (idx < ar_max)
-				st +=
-					'<img class="si_edit" src="/images/down_25px.png" onclick="DownNode(event,' +
-					el.id +
-					"," +
-					el.pos +
-					')" hlp="Descendre ce dossier dans la liste"/>';
+			st += '<img class="si_edit" src="/images/Hand_25px.png" id="node' + el.id + '" hlp="Sert à faire glisser le dossier vers un autre dossier ou la corbeille (n\'efface pas les jeux)"/>';
+			if (idx > 0) st += '<img class="si_edit" src="/images/up_25px.png" onclick="UpNode(event,' + el.id + "," + el.pos + ' )" hlp="Remonter ce dossier dans la liste"/>';
+			if (idx < ar_max) st += '<img class="si_edit" src="/images/down_25px.png" onclick="DownNode(event,' + el.id + "," + el.pos + ')" hlp="Descendre ce dossier dans la liste"/>';
 			st += "</summary><ul>" + AddChilds(el.childs) + AddJeux(el.jeux, el.id) + "</ul></details>";
 		});
 		return st;
@@ -1322,16 +1259,10 @@
 	}
 
 	function MakeTree(selector) {
-		Info("");
 		if (ed_find.value.trim() != "") MakeRecherche();
 		else
 			io.emit("get_tree", (r) => {
-				arbre.innerHTML =
-					'<ul class="tree">' +
-					AddChilds(r.childs) +
-					"<li><details open><summary>Non classés</summary><ul>" +
-					AddJeux(r.jeux, 0) +
-					"</ul></details></li></ul>";
+				arbre.innerHTML = '<ul class="tree">' + AddChilds(r.childs) + "<li><details open><summary>Non classés</summary><ul>" + AddJeux(r.jeux, 0) + "</ul></details></li></ul>";
 				SetEventTree();
 				if (selector != undefined) {
 					const el = arbre.querySelector(selector);
@@ -1414,8 +1345,7 @@
 		if (node_dest == null) node_dest = 0;
 		//console.log("Déplace " + id + "du node " + node_org + " au node " + node_dest);
 		try {
-			if (node_dest != 0 && (node_org == 0 || make_copy == true))
-				await SQL_run("INSERT INTO data2tree (id_donne,id_arbre) VALUES (" + id.substr(2) + "," + node_dest + ")");
+			if (node_dest != 0 && (node_org == 0 || make_copy == true)) await SQL_run("INSERT INTO data2tree (id_donne,id_arbre) VALUES (" + id.substr(2) + "," + node_dest + ")");
 			else if (node_dest == 0) await SQL_run("DELETE FROM data2tree WHERE id_donne=" + id.substr(2) + " AND id_arbre=" + node_org);
 			else await SQL_run("UPDATE data2tree SET id_arbre=" + node_dest + " WHERE id_donne=" + id.substr(2) + " AND id_arbre=" + node_org);
 			MakeTree();
@@ -1507,12 +1437,7 @@
 		if (txt == undefined) return "";
 		const rch = ed_find.value.trim();
 		if (rch != "") txt = txt.replace(new RegExp(rch, "ig"), '<span class="rch_txt">' + rch + "</span>");
-		return txt
-			.replace(/♦/g, '<img src="/images/Diamonds.png" />')
-			.replace(/♣/g, '<img src="/images/Clubs.png" />')
-			.replace(/♠/g, '<img src="/images/Spades.png" />')
-			.replace(/♥/g, '<img src="/images/coeur.png" />')
-			.replace(/\n/g, "<br />");
+		return txt.replace(/♦/g, '<img src="/images/Diamonds.png" />').replace(/♣/g, '<img src="/images/Clubs.png" />').replace(/♠/g, '<img src="/images/Spades.png" />').replace(/♥/g, '<img src="/images/coeur.png" />').replace(/\n/g, "<br />");
 	}
 
 	/****************************/

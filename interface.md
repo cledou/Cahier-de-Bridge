@@ -8,7 +8,8 @@ Vous remarquez en haut une barre de menu
 |:-:|---|
 |![Barres des menus](./images/arrow_d.png)| ouvrir et fermer l'arbre de navigation |
 |![Barres des menus](./images/dossier.png)| Gérer les jeux |
-|![Accès éditeur](./images/Unlock.png)| **IMPORTANT:** Bascule entre le mode 'Édition' et le mode 'Consultation' |
+|![Links](./images/link_30px.png)| Liens vers des pages d'aide |
+|![Accès éditeur](./images/Unlock.png)| <span style="color:red">**IMPORTANT:**</span> Bascule entre le mode 'Édition' et le mode 'Consultation' |
 |![Imprimer](./images/print_30px.png)| Imprimer la main affichée, ou les mains sélectionnées dans l'arbre par ctrl-clic |
 |![Sauver](./images/save_30px.png)| Sauvegarder les modifications |
 
