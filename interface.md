@@ -1,4 +1,4 @@
-## Description de l'interface
+# Description de l'interface
 
 Après [installation](./install.md) du logiciel vous vous retrouvez devant l'écran ci-dessus.
 
@@ -9,7 +9,7 @@ Vous remarquez en haut une barre de menu
 |![Barres des menus](./images/arrow_d.png)| ouvrir et fermer l'arbre de navigation |
 |![Barres des menus](./images/dossier.png)| Gérer les jeux |
 |![Links](./images/link_30px.png)| Liens vers des pages d'aide |
-|![Accès éditeur](./images/Unlock.png)| :heavy_plus_sign:IMPORTANT::heavy_plus_sign: Bascule entre le mode 'Édition' et le mode 'Consultation' |
+|![Accès éditeur](./images/Unlock.png)| :heavy_plus_sign:**IMPORTANT**:heavy_plus_sign: Bascule entre le mode 'Édition' et le mode 'Consultation' |
 |![Imprimer](./images/print_30px.png)| Imprimer la main affichée, ou les mains sélectionnées dans l'arbre par ctrl-clic |
 |![Sauver](./images/save_30px.png)| Sauvegarder les modifications |
 

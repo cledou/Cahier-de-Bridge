@@ -30,3 +30,5 @@ A la date de Janvier 2025, l'application est fonctionnelle et utilisable en mode
 [Informations sur l'installation](./install.md)
 
 [Prise en main du logiciel](./interface.md)
+
+Vous pouvez me payer un café ou des croquettes pour le chat sur [ma page Tipeee](https://fr.tipeee.com/createur-open-source/)
