@@ -46,13 +46,23 @@ Ce logiciel **ne requière pas** d'être installé dans les dossiers de programm
 
 Donc vous pouvez installer les sources dans un sous-dossier de 'Mes Documents'.
 
-### Pré-compilation des sources
-
 [Ouvrir un terminal sous Windows 10-11](https://lecrabeinfo.net/ouvrir-et-utiliser-le-terminal-windows-sur-windows-11-10.html)
 
-`sudo npm install`
+-   Méthode 1:
 
-Cette étape dépend beaucoup du matériel et des logiciels déjà installés sur votre ordinateur. Le gestionnaire de la base de données SQL, en particulier, demande la présence d'un compilateur C/C++.
+    -   Se placer dans un dossier de votre ordinateur, idéalement 'Mes Documents'. `cd C:\Users\Public\Documents`
+    -   Dans le terminal, entrer `git clone https://github.com/cledou/Cahier-de-Bridge.git`
+    -   Se placer dans le nouveau dossier qui vient d'être créé: `cd Cahier-de-Bridge`
+
+-   Méthode 2:
+    -   Récupérer l'[archive](https://github.com/cledou/Cahier-de-Bridge/archive/refs/heads/main.zip) sur le site, et la décompresser avec les outils de Windows dans un dossier, idéalement 'Mes Documents'
+    -   ![Unzip](doc/unzip.png)
+    -   Se placer dans le nouveau dossier qui vient d'être créé par la décompression: `cd Cahier-de-Bridge-main`
+
+### Pré-compilation des sources
+
+-   Se placer dans le dossier contenant les sources (voir plus haut)
+-   `npm install`
 
 Normalement, le gestionnaire de paquet devrait gérer correctement la compilation. En cas de problème à cette étape, vérifiez que vous êtes bien en mode 'Administrateur', et que vous avez les droits d'écrire dans les dossiers système.
 
@@ -84,19 +94,17 @@ Démarrer dans: C:\Users\....mon_dossier_d_installation....
 
 ### Installation (ou mise à jour) du gestionnaire de paquets
 
-`sudo apt install -y nodejs`
+`sudo apt install -y nodejs git`
 
 ### Installation des sources
 
-`git clone git@github.com:cledou/bridge-notebbok.git`
+Dans le terminal, entrer `git clone https://github.com/cledou/Cahier-de-Bridge.git`
 
 ### Pré-compilation des sources
 
-`sudo rm package-lock.json`
+`sudo npm ci`
 
-`sudo npm install`
-
-Prendre un café, thé ou autre en attendant le message de fin (6mn sur mon Rockpi4)
+Prendre un café, thé ou autre en attendant le message de fin (6mn sur un Rockpi4)
 
 ### Lancement du programme
 
