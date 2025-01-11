@@ -602,7 +602,7 @@
 		chk_find.checked = session.choix.chk_find;
 		ed_find.value = session.choix.find || "";
 		OpenOrNew(); // asynchrone..
-		console.log(session);
+		//console.log(session);
 	});
 	io.on("info", function (msg) {
 		Info(msg);
@@ -614,6 +614,7 @@
 		Warning(msg);
 	});
 	io.onAny((event, p1, p2, p3, p4, p5) => {
+		return;
 		if (p5 != undefined) console.log("IO WEB->", event, p1, p2, p3, p4, p5);
 		else if (p4 != undefined) console.log("IO WEB->", event, p1, p2, p3, p4);
 		else if (p3 != undefined) console.log("IO WEB->", event, p1, p2, p3.toString().substring(0, 20));
@@ -1028,7 +1029,7 @@
 	});
 
 	etxt.addEventListener("blur", function () {
-		console.log(this.innerText);
+		//console.log(this.innerText);
 		if (enr.jeu.txt1 != this.innerText) {
 			enr.jeu.txt1 = this.innerText.trim();
 			SetDirty(true);
@@ -1215,7 +1216,7 @@
 	}
 
 	async function renumerote(id, pos) {
-		console.log("renum", id, pos);
+		//console.log("renum", id, pos);
 		try {
 			await SQL_run("UPDATE arbre SET pos=? WHERE id=?", [pos - 1, id]);
 		} catch (e) {
@@ -1286,7 +1287,7 @@
 	node_trash.addEventListener("dragover", (ev) => {
 		ev.preventDefault();
 		let id = ev.dataTransfer.getData("application/internal");
-		console.log(id);
+		//console.log(id);
 		if (id.startsWith("j_")) Warning("Attention: Vous allez effacer une donne");
 	});
 
@@ -1294,12 +1295,12 @@
 		Info("");
 		ev.preventDefault();
 		let id = ev.dataTransfer.getData("application/internal");
-		console.log(id);
+		//console.log(id);
 		if (id.startsWith("node")) {
 			SQL_run("DELETE FROM arbre WHERE id=" + id.substr(4))
 				.then((r) => {
 					// les triggers effacent automatiquement les data2tree et les enfants
-					console.log(r);
+					//console.log(r);
 					MakeTree();
 				})
 				.catch((e) => Erreur(e));
@@ -1307,7 +1308,7 @@
 			SQL_run("DELETE FROM donnes WHERE id=" + id.substr(2))
 				.then((r) => {
 					// les triggers effacent automatiquement les data2tree et les enfants
-					console.log(r);
+					//console.log(r);
 					if (id.substr(2) != enr.id || OpenOrNew()) MakeTree();
 				})
 				.catch((e) => Erreur(e));
@@ -1365,7 +1366,7 @@
 		Info("");
 		ev.preventDefault();
 		let id = ev.dataTransfer.getData("application/internal");
-		console.log("drop on arbre " + id);
+		//console.log("drop on arbre " + id);
 		if (id.startsWith("j_")) onJeuDrop(id, ev.target.getAttribute("node"), ev.shiftKey);
 		else if (id.startsWith("node")) unLinkNode(id.substr(4));
 		else if (id.startsWith("subnode")) AddNode();
@@ -1384,7 +1385,7 @@
 		try {
 			let pos = await SQL_get("SELECT MAX(pos)+1 as n FROM arbre");
 			let r = await SQL_run("INSERT INTO arbre (itm,pos) VALUES ('Nouveau dossier',?)", pos.n || 0);
-			console.log(r);
+			//console.log(r);
 			MakeTree('details [node="' + r.lastInsertRowid + '"]');
 		} catch (e) {
 			Erreur(e);
@@ -1399,7 +1400,7 @@
 		onDragLeave(ev.target.parentElement);
 		const dt = ev.dataTransfer;
 		let foo = dt.getData("application/internal");
-		console.log("DropOnNode " + foo, node_dest);
+		//console.log("DropOnNode " + foo, node_dest);
 		try {
 			if (foo.startsWith("j_")) onJeuDrop(foo, node_dest, ev.shiftKey);
 			else if (foo == "subnode") {
@@ -1426,7 +1427,7 @@
 			const id = " WHERE id=" + id_node;
 			r = await SQL_get("SELECT itm FROM arbre" + id);
 			if (r.itm != txt) {
-				console.log(r, txt);
+				//console.log(r, txt);
 				await SQL_run("UPDATE arbre SET itm=?" + id, txt);
 			}
 		} catch (e) {
@@ -1566,7 +1567,7 @@
 		io.emit("bkp", (r) => {
 			if (r.err) Erreur(r.err);
 			else {
-				console.log(r);
+				//console.log(r);
 				bkp_lnk.setAttribute("href", r);
 				bkp_lnk.click();
 			}

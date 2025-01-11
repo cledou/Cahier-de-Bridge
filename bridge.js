@@ -56,6 +56,23 @@ app.use(
 );
 app.use(express.json());
 
+// récupérer la configuration
+const config_filename = __dirname + "/config.json";
+if (fs.existsSync(config_filename)) {
+	//file exists
+	//onsole.log('file ' + config_filename + ' exists');
+	try {
+		let s = fs.readFileSync(config_filename);
+		if (s != "{}") {
+			app_config = JSON.parse(s);
+			if (app_config.port != undefined) app.set("port", app_config.port);
+		}
+	} catch (e) {
+		console.error("Parsing error 130", e);
+		exit(-1);
+	}
+} else console.log(config_filename + " introuvable. A créer");
+
 //*******************************
 // Initialisation de la session
 //*******************************
@@ -66,7 +83,7 @@ var session = Session({
 	name: "sid",
 	saveUninitialized: false,
 	resave: false,
-	secret: "WqiZvuvVsIV1zmzJQeYUgINqXYe",
+	secret: app_config.hash || "blablabla",
 	cookie: {
 		maxAge: 1000 * 60 * 60 * 2,
 		sameSite: true,
@@ -79,7 +96,6 @@ socketio.use(ios(session));
 app.use(session);
 
 var nbr_clients = 0;
-var config_filename = __dirname + "/config.json";
 var app_config = {};
 
 //*********************************
@@ -95,22 +111,6 @@ try {
 } catch (error) {
 	throw error.message;
 }
-
-// récupérer la configuration
-if (fs.existsSync(config_filename)) {
-	//file exists
-	//onsole.log('file ' + config_filename + ' exists');
-	try {
-		let s = fs.readFileSync(config_filename);
-		if (s != "{}") {
-			app_config = JSON.parse(s);
-			if (app_config.port != undefined) app.set("port", app_config.port);
-		}
-	} catch (e) {
-		console.error("Parsing error 130", e);
-		exit(-1);
-	}
-} else console.log(config_filename + " introuvable. A créer");
 
 // récupérer le séparateur dossier (win ou linux)
 let dir_sep = "";
