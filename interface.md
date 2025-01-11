@@ -54,9 +54,11 @@ En plus des actions ci-dessus, vous pouvez:
 
 Les boutons ![Boutons](doc/boutons.png) permettent de copier dans le presse-papier les caractères **♠ ♥ ♦ ♣** pour ensuite, avec ctrl-v, les coller dans votre texte.
 
+Lorsque vous remplissez une couleur, les espaces seront automatiquement ajoutés par le logiciel: AR105 -> A R 10 5
+
 Lorsque vous créez une nouvelle donne, un automatisme complète le jeu s'il reste 13 cartes à attribuer sur un des joueurs (généralement Sud).
 
-**N'oubliez pas de sauvegarder vos modifications.**
+![Sauver](./images/save_30px.png) **N'oubliez pas de sauvegarder vos modifications.** ![Sauver](./images/save_30px.png)
 
 ### Dans la zone de tri à gauche (édition de l'arbre)
 
