@@ -130,37 +130,34 @@ try {
 	if (e.code == "ENOENT") fs.mkdirSync(db_dir);
 }
 
-const db_filename = db_dir + "bridge.db";
-// tester existence database et patchs
-try {
-	const b = fs.existsSync(db_filename);
-	let db = new sqlite3(db_filename, { readonly: false });
-	if (!b) {
-		console.log("Créer la base " + db_filename);
-		// chercher fichier base
-		let init_file = __dirname + dir_sep + "database.sql";
-		if (!fs.existsSync(init_file)) {
-			console.error("Fichier manquant:" + init_file);
+const db_def_filename = "bridge.db";
+let db_list = [];
+// lister les bases de données. Attention ! Fonction asynchrone..
+fs.readdir(db_dir, function (err, files) {
+	//handling error
+	if (err) {
+		console.error("Impossible de lire db", err);
+		process.exit();
+	} else
+		files.forEach((f) => {
+			if ((f.endsWith(".db") || f.endsWith(".bkp")) && BaseOk(f)) db_list.push(f);
+		});
+	if (db_list.length == 0)
+		try {
+			let db = new sqlite3(db_dir + db_def_filename, { readonly: false });
+			console.log("Créer la base " + db_def_filename);
+			// chercher fichier base
+			let init_file = __dirname + dir_sep + "database.sql";
+			if (!fs.existsSync(init_file)) throw new Error("NTBS: Fichier " + init_file + " manquant");
+			else MakePatch(db, init_file);
+			db.close();
+			if (BaseOk(db_def_filename)) db_list.push(db_def_filename);
+			else throw new Error("NTBS: Database " + db_def_filename + " non conforme");
+		} catch (err) {
+			console.error("NTBS 162", err);
 			process.exit();
-		} else MakePatch(db, init_file);
-	}
-	// patchs
-	let version = Number(db.prepare("SELECT paramValue FROM parametres WHERE paramName='VERSION_BASE'").get().paramValue);
-	let found = true;
-	while (found) {
-		let fn = "patch" + version + "vers" + (version + 1) + ".sql";
-		//console.log('Cherche ' + fn);
-		found = fs.existsSync(fn);
-		if (found) {
-			MakePatch(db, fn);
-			version += 1;
 		}
-	}
-	console.log("Database version " + version + " est prête");
-	db.close();
-} catch (err) {
-	console.error("NTBS 162", err);
-}
+});
 
 //*******************
 //    Socket.io
@@ -169,7 +166,7 @@ try {
 //
 socketio.on("connection", (client) => {
 	let session = client.handshake.session;
-	let db = new sqlite3(db_filename, { readonly: false });
+	let db = new sqlite3(db_dir + db_def_filename, { readonly: false });
 	session.dirty = false;
 	if (session.user == undefined) {
 		let foo = db.prepare("SELECT * FROM users WHERE nom=?").get(app_config.user);
@@ -195,7 +192,7 @@ socketio.on("connection", (client) => {
 	console.log(session.user.nom + " est connecté.");
 	client.on("session", () => {
 		client.emit("session", session);
-		client.emit("info", "Database utilisée: " + db_filename.substring(db_filename.lastIndexOf(dir_sep)));
+		client.emit("info", "Database utilisée: " + db_def_filename);
 	});
 
 	client.on("disconnect", function () {
@@ -498,4 +495,36 @@ function MakePatch(db, fn) {
 			}
 		}
 	});
+}
+
+function BaseOk(f) {
+	// f existe forcément
+	let ok = true;
+	let db = new sqlite3(db_dir + f, { readonly: false });
+	try {
+		// patchs
+		let foo = db.prepare("SELECT * FROM parametres WHERE paramName='VERSION_BASE'").get();
+		if (foo == undefined) {
+			ok = false;
+			console.error("NTBS: Base sans paramètres", f);
+		} else {
+			let version = foo.paramValue;
+			let found = true;
+			while (found) {
+				let fn = "patch" + version + "vers" + (version + 1) + ".sql";
+				//console.log('Cherche ' + fn);
+				found = fs.existsSync(fn);
+				if (found) {
+					MakePatch(db, fn);
+					version += 1;
+				}
+			}
+			console.log("Database " + f + " version " + version + " est OK");
+		}
+		db.close();
+	} catch (err) {
+		console.error("Base not ok", f, err);
+		ok = false;
+	}
+	return ok;
 }
