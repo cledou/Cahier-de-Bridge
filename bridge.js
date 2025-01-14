@@ -119,6 +119,12 @@ try {
 	if (e.code == "ENOENT") fs.mkdirSync(db_dir);
 }
 
+const dir_upload = __dirname + dir_sep + "upload";
+if (!fs.existsSync(dir_upload)) {
+	console.log("Créer le dossier " + dir_upload);
+	fs.mkdirSync(dir_upload);
+}
+
 const db_def_filename = "bridge.db";
 let db_list = [];
 // lister les bases de données. Attention ! Fonction asynchrone..
@@ -153,9 +159,10 @@ fs.readdir(db_dir, function (err, files) {
 //*******************
 // Chaque fois qu'une page web est affichée, 'connection' ouvre un nouveau socket.
 //
-const SESSION_RELOAD_INTERVAL = 600 * 1000;
+const SESSION_RELOAD_INTERVAL = 10 * 60 * 1000;
 
 io.on("connection", (socket) => {
+	const files_to_remove = [];
 	const session = socket.request.session;
 	console.log(session);
 	// timeout si inactif...
@@ -163,10 +170,8 @@ io.on("connection", (socket) => {
 		socket.request.session.reload((err) => {
 			if (err) {
 				// forces the client to reconnect
-				socket.emit("warning", "Session inactive");
+				socket.emit("alert", "Echec reload");
 				socket.conn.close();
-				// you can also use socket.disconnect(), but in that case the client
-				// will not try to reconnect
 			}
 		});
 	}, SESSION_RELOAD_INTERVAL);
@@ -175,6 +180,9 @@ io.on("connection", (socket) => {
 	let db_name = db_def_filename;
 	session.dirty = session.user == undefined;
 
+	function BaseOpenable(nom) {
+		return nom != undefined && db_list.indexOf(nom) != -1;
+	}
 	function OpenBase(nom_user) {
 		console.log("Openbase", db_name, nom_user);
 		if (db != undefined) db.close();
@@ -199,9 +207,9 @@ io.on("connection", (socket) => {
 	}
 
 	// passons aux choses sérieuses
-	if (session.choix != undefined && session.choix.db != undefined && db_list.indexOf(session.choix.db) != -1) db_name = session.choix.db;
+	if (session.choix != undefined && BaseOpenable(session.choix.db)) db_name = session.choix.db;
 	OpenBase(session.user ? session.user.nom : app_config.user);
-	if (session.choix.db != undefined && session.choix.db != "" && session.choix.db != db_name) {
+	if (BaseOpenable(session.choix.db) && session.choix.db != db_name) {
 		db_name = session.choix.db;
 		OpenBase(session.user.nom);
 	}
@@ -242,6 +250,11 @@ io.on("connection", (socket) => {
 			if (db.inTransaction) db.prepare("ROLLBACK").run();
 			db.close();
 			db = undefined;
+		}
+		/* Effacer les fichiers uploadés */
+		for (let path of files_to_remove) {
+			console.log("Remove " + path);
+			fs.unlinkSync(path);
 		}
 	});
 
@@ -401,6 +414,38 @@ io.on("connection", (socket) => {
 				cb({ err: err.message });
 			}
 	});
+	socket.on("export", (ar, cb) => {
+		console.log("export", ar);
+		if (db == undefined) cb({ err: "Session fermée. Reconnectez-vous" });
+		else
+			try {
+				let st = "";
+				let nom = "";
+				for (let id of ar) {
+					const row = db.prepare("SELECT * FROM donnes WHERE id=" + id).get();
+					if (nom != "") nom += ",";
+					nom += row.nom;
+					st +=
+						"INSERT INTO donnes (nom,data) VALUES ('" +
+						row.nom +
+						"', '" +
+						row.data
+							.replace(/'/g, "''")
+							.replace('", "txt1":', '",\n"txt1":')
+							.replace('", "txt2":', '",\n"txt2":')
+							.replace('", "donne":', '",\n"donne":')
+							.replace('], "enchere":', '],\n"enchere":') +
+						"');\n";
+				}
+				nom += ".sql";
+				const fn = dir_upload + dir_sep + nom;
+				fs.writeFileSync(fn, st);
+				cb({ fn: "/public/upload/" + nom });
+				//files_to_remove.push(fn);
+			} catch (e) {
+				cb({ err: err.message });
+			}
+	});
 
 	socket.on("bkp", (cb) => {
 		if (db == undefined) cb({ err: "Session fermée. Reconnectez-vous" });
@@ -410,10 +455,12 @@ io.on("connection", (socket) => {
 				session.bkp = "bridge " + d.toISOString().substring(0, 10) + ".bkp";
 				db.backup(db_dir + session.bkp);
 				cb("/public/db/" + session.bkp);
+				files_to_remove.push(db_dir + session.bkp);
 			} catch (err) {
 				cb({ err: err.message });
 			}
 	});
+
 	socket.on("restore", (file, cb) => {
 		if (db == undefined) cb({ err: "Session fermée. Reconnectez-vous" });
 		else
@@ -570,11 +617,11 @@ function BaseOk(f) {
 			ok = false;
 			console.error("NTBS: Base sans paramètres", f);
 		} else {
-			let version = foo.paramValue;
+			let version = Number(foo.paramValue);
 			let found = true;
 			while (found) {
 				let fn = "patch" + version + "vers" + (version + 1) + ".sql";
-				//console.log('Cherche ' + fn);
+				//console.log("Cherche " + fn);
 				found = fs.existsSync(fn);
 				if (found) {
 					MakePatch(db, fn);
@@ -596,13 +643,7 @@ function BaseOk(f) {
 //*******************
 let storage = multer.diskStorage({
 	destination: (req, file, callback) => {
-		/// créer dossier uploads si besoin
-		const foo = __dirname + dir_sep + "upload";
-		if (!fs.existsSync(foo)) {
-			console.log("Créer le dossier " + foo);
-			fs.mkdirSync(foo);
-		}
-		callback(null, foo); // set upload directory on local system.
+		callback(null, dir_upload); // set upload directory on local system.
 	},
 	filename: (req, file, callback) => {
 		callback(null, req.body.nom == undefined ? file.originalname : req.body.nom);

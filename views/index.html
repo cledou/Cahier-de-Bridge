@@ -434,6 +434,7 @@
 										<button class="itmh si_admin" onclick="onRestore()" alt="Restaurer la base de donnée depuis une sauvegarde">
 											<img src="/images/database_restore_24px.png" />Restauration
 										</button>
+										<input type="file" class="hide_me" id="get_export" />
 										<button class="itmh" hlp="Exporter donne(s) au format SQL via le presse-papier" id="itm_export">
 											<img src="/images/export_24px.png" />Exporter donne(s) dans le presse-papier
 										</button>
@@ -977,7 +978,7 @@
 	});
 
 	function GetSelJeu() {
-		let ar = [];
+		let ar = [enr.id];
 		if (session.choix.show_tree)
 			for (let el of all_sel) {
 				const id = Number(el.id.substr(2));
@@ -999,6 +1000,7 @@
 	async function GetSelExportSQL() {
 		let st = GetExportSQL(enr.nom, enr.jeu);
 		const ar = GetSelJeu();
+		io.emit("export", ar);
 		for (let id of ar) {
 			try {
 				const row = await SQL_get("SELECT * FROM donnes WHERE id=" + id);
@@ -1013,10 +1015,17 @@
 	const itm_export = document.getElementById("itm_export");
 	itm_export.addEventListener("click", () => {
 		closeMenu();
-		GetSelExportSQL().then((obj) => {
+		io.emit("export", GetSelJeu(), (r) => {
+			if (r.err) Erreur(r.err);
+			else {
+				bkp_lnk.setAttribute("href", r.fn);
+				bkp_lnk.click();
+			}
+		});
+		/* GetSelExportSQL().then((obj) => {
 			navigator.clipboard.writeText(obj.st);
 			Info("" + obj.n + " donnes copiés dans le presse-papier");
-		});
+		});*/
 	});
 
 	function GetCbxDonnes() {
