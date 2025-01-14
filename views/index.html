@@ -418,23 +418,30 @@
 										><img src="/images/create_30px.png" alt="Créer une nouvelle donne" />Créer une donne</button
 									>
 									<button class="itmh si_un" alt="Sélectionner une donne existante" id="itm_open"
-										><img src="/images/dossier.png" />Ouvrir une donne</button
-									>
-									<button class="itmh" alt="Exporter donne(s) au format SQL" id="itm_export"
-										><img src="/images/Export.png" />Exporter donne(s) dans le presse-papier</button
-									>
+										><img src="/images/dossier.png" />Ouvrir une donne
+									</button>
 									<button class="itmh si_dirty" onclick="onSave()" alt="Enregistrer les modifications"
 										><img src="/images/save_30px.png" />Sauver les changements</button
 									>
-									<input type="file" style="display: none" id="btn_bkp" />
-									<a class="hide_me" id="bkp_lnk" href="/public/bridge.db">Télécharger</a>
-									<button class="itmh si_admin" onclick="onBkp()" alt="Sauvegarder la base de donnée dans un backup">
-										<img src="/images/database_export_30px.png" />Sauvegarde
-									</button>
-									<input type="file" class="hide_me" id="get_bkp" />
-									<button class="itmh si_admin to_do" onclick="onRestore()" alt="Restaurer la base de donnée depuis une sauvegarde">
-										<img src="/images/database_export_30px.png" />Restauration
-									</button>
+									<details hlp="Gestion des données: sauver, restaurer, ajouter, choisir base...">
+										<summary><img src="/images/database_30px.png" />Base de donnée</summary>
+										<input type="file" style="display: none" id="btn_bkp" />
+										<a class="hide_me" id="bkp_lnk" href="/public/bridge.db">Télécharger</a>
+										<button class="itmh si_admin" onclick="onBkp()" alt="Sauvegarder la base de donnée dans un backup">
+											<img src="/images/database_export_24px.png" />Sauvegarde
+										</button>
+										<input type="file" class="hide_me" id="get_bkp" />
+										<button class="itmh si_admin" onclick="onRestore()" alt="Restaurer la base de donnée depuis une sauvegarde">
+											<img src="/images/database_restore_24px.png" />Restauration
+										</button>
+										<button class="itmh" hlp="Exporter donne(s) au format SQL via le presse-papier" id="itm_export">
+											<img src="/images/export_24px.png" />Exporter donne(s) dans le presse-papier
+										</button>
+										<input type="file" class="hide_me" id="get_import" />
+										<label for="get_import" class="itmh si_admin" onclick="onImport()" hlp="Importer des donnes depuis un fichier SQL">
+											<img src="/images/import_24px.png" />Importer donne(s)
+										</label>
+									</details>
 									<button class="itmh si_open" onclick="PrintThis()" alt="Imprimer"
 										><img src="/images/print_30px.png" />Imprimer cette donne</button
 									>
