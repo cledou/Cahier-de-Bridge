@@ -164,7 +164,7 @@ const SESSION_RELOAD_INTERVAL = 10 * 60 * 1000;
 io.on("connection", (socket) => {
 	const files_to_remove = [];
 	const session = socket.request.session;
-	console.log(session);
+	//console.log(session);
 	// timeout si inactif...
 	const timer = setInterval(() => {
 		socket.request.session.reload((err) => {
@@ -184,7 +184,7 @@ io.on("connection", (socket) => {
 		return nom != undefined && db_list.indexOf(nom) != -1;
 	}
 	function OpenBase(nom_user) {
-		console.log("Openbase", db_name, nom_user);
+		//console.log("Openbase", db_name, nom_user);
 		if (db != undefined) db.close();
 		db = new sqlite3(db_dir + db_name, { readonly: false });
 		let foo = db.prepare("SELECT * FROM users WHERE nom=?").get(nom_user || app_config.user);
@@ -252,10 +252,7 @@ io.on("connection", (socket) => {
 			db = undefined;
 		}
 		/* Effacer les fichiers uploadés */
-		for (let path of files_to_remove) {
-			console.log("Remove " + path);
-			fs.unlinkSync(path);
-		}
+		for (let path of files_to_remove) if (fs.existsSync(path)) fs.unlinkSync(path);
 	});
 
 	socket.onAny((event, p1, p2, p3, p4, p5) => {
@@ -415,7 +412,7 @@ io.on("connection", (socket) => {
 			}
 	});
 	socket.on("export", (ar, cb) => {
-		console.log("export", ar);
+		//console.log("export", ar);
 		if (db == undefined) cb({ err: "Session fermée. Reconnectez-vous" });
 		else
 			try {
@@ -440,11 +437,19 @@ io.on("connection", (socket) => {
 				nom += ".sql";
 				const fn = dir_upload + dir_sep + nom;
 				fs.writeFileSync(fn, st);
+				files_to_remove.push(fn);
 				cb({ fn: "/public/upload/" + nom });
-				//files_to_remove.push(fn);
 			} catch (e) {
 				cb({ err: err.message });
 			}
+	});
+
+	socket.on("import", (fn, cb) => {
+		if (db == undefined) cb("Session fermée. Reconnectez-vous");
+		else {
+			files_to_remove.push(fn);
+			cb(MakePatch(db, fn));
+		}
 	});
 
 	socket.on("bkp", (cb) => {
@@ -454,8 +459,8 @@ io.on("connection", (socket) => {
 				const d = new Date();
 				session.bkp = "bridge " + d.toISOString().substring(0, 10) + ".bkp";
 				db.backup(db_dir + session.bkp);
-				cb("/public/db/" + session.bkp);
 				files_to_remove.push(db_dir + session.bkp);
+				cb("/public/db/" + session.bkp);
 			} catch (err) {
 				cb({ err: err.message });
 			}
@@ -583,27 +588,29 @@ function onErreurServer(e) {
 }
 
 function MakePatch(db, fn) {
-	console.log("MakePatch", fn);
-	let rawdata = fs.readFileSync(fn);
-	let lignes = rawdata.toString().split("\n");
-	let stm = "";
-	let bloc = false;
-	lignes.forEach((el) => {
-		let lig = el.replace("\r", "");
-		if (!(lig.startsWith("#") || lig.startsWith("//"))) {
-			stm += lig + " ";
-			if (lig == "BEGIN") bloc = true;
-			else if (lig.startsWith("END")) bloc = false;
-			if (!bloc && lig.endsWith(";")) {
-				try {
+	try {
+		console.log("MakePatch", fn);
+		let rawdata = fs.readFileSync(fn);
+		let lignes = rawdata.toString().split("\n");
+		let stm = "";
+		let bloc = false;
+		lignes.forEach((el) => {
+			let lig = el.replace("\r", "");
+			if (!(lig.startsWith("#") || lig.startsWith("//"))) {
+				stm += lig + " ";
+				if (lig == "BEGIN") bloc = true;
+				else if (lig.startsWith("END")) bloc = false;
+				if (!bloc && lig.endsWith(";")) {
 					db.prepare(stm).run();
 					stm = "";
-				} catch (e) {
-					console.error(e.message);
 				}
 			}
-		}
-	});
+		});
+		return "OK";
+	} catch (e) {
+		console.error(e.message);
+		return e.message;
+	}
 }
 
 function BaseOk(f) {

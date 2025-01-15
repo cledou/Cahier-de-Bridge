@@ -13,6 +13,7 @@
 		<link rel="stylesheet" href="/css/tree.css" />
 		<link rel="stylesheet" href="/css/menu.css" />
 		<link rel="stylesheet" href="/css/modal.css" />
+		<link rel="stylesheet" href="/css/hamburger.css" />
 		<style type="text/css">
 			body {
 				box-sizing: border-box;
@@ -230,9 +231,10 @@
 			#volet_tree {
 				display: block;
 				position: relative;
-				min-width: 200px;
+				min-width: 220px;
 				background-color: whitesmoke;
 				box-sizing: border-box;
+				z-index: 2;
 			}
 			#volet_tree.hide_me {
 				display: none;
@@ -407,6 +409,12 @@
 						<label for="tree_sw">
 							<img src="/images/arrow_d.png" alt="Afficher/Cacher l'arbre de situation" />
 						</label>
+						<button class="hamburger" type="button" aria-label="Toggle navigation" aria-expanded="false" onclick="toggleNav()">
+							<span></span>
+							<span></span>
+							<span></span>
+						</button>
+
 						<div class="menu2">
 							<div
 								class="level0"
@@ -414,38 +422,41 @@
 								hlp="Actions génériques sur une donne (ouvrir, sauver, copier...)"
 							>
 								<div class="level1">
-									<button class="itmh" id="itm_new"
-										><img src="/images/create_30px.png" alt="Créer une nouvelle donne" />Créer une donne</button
-									>
-									<button class="itmh si_un" alt="Sélectionner une donne existante" id="itm_open"
-										><img src="/images/dossier.png" />Ouvrir une donne
+									<button class="itmh" id="itm_new">
+										<img src="/images/create_30px.png" alt="Créer une nouvelle donne" />Créer une donne
 									</button>
-									<button class="itmh si_dirty" onclick="onSave()" alt="Enregistrer les modifications"
-										><img src="/images/save_30px.png" />Sauver les changements</button
-									>
+									<button class="itmh si_un" alt="Sélectionner une donne existante" id="itm_open">
+										<img src="/images/dossier.png" />Ouvrir une donne
+									</button>
+									<button class="itmh si_dirty" onclick="onSave()" alt="Enregistrer les modifications">
+										<img src="/images/save_30px.png" />Sauver les changements
+									</button>
 									<details hlp="Gestion des données: sauver, restaurer, ajouter, choisir base...">
 										<summary><img src="/images/database_30px.png" />Base de donnée</summary>
 										<input type="file" style="display: none" id="btn_bkp" />
-										<a class="hide_me" id="bkp_lnk" href="/public/bridge.db">Télécharger</a>
-										<button class="itmh si_admin" onclick="onBkp()" alt="Sauvegarder la base de donnée dans un backup">
+										<a class="hide_me" id="bkp_lnk" href="/public/bridge.db" download>Télécharger</a>
+										<button class="itmh si_admin" onclick="onBkp()" hlp="Sauvegarder la base de donnée dans un backup">
 											<img src="/images/database_export_24px.png" />Sauvegarde
 										</button>
 										<input type="file" class="hide_me" id="get_bkp" />
-										<button class="itmh si_admin" onclick="onRestore()" alt="Restaurer la base de donnée depuis une sauvegarde">
+										<button class="itmh si_admin" onclick="onRestore()" hlp="Restaurer la base de donnée depuis une sauvegarde">
 											<img src="/images/database_restore_24px.png" />Restauration
 										</button>
+										<button class="itmh si_admin si_dbs" onclick="onOpenDB()" hlp="Choisir la base de donnée à ouvrir">
+											<img src="/images/database_view_24px.png" />Sélectionner une base de donnée
+										</button>
 										<input type="file" class="hide_me" id="get_export" />
-										<button class="itmh" hlp="Exporter donne(s) au format SQL via le presse-papier" id="itm_export">
-											<img src="/images/export_24px.png" />Exporter donne(s) dans le presse-papier
+										<button class="itmh" hlp="Exporter donne(s) au format SQL. ctrl-clic pour sélectionner plusieurs" id="itm_export">
+											<img src="/images/export_24px.png" />Exporter donne(s)
 										</button>
 										<input type="file" class="hide_me" id="get_import" />
-										<label for="get_import" class="itmh si_admin" onclick="onImport()" hlp="Importer des donnes depuis un fichier SQL">
+										<label for="get_import" class="itmh si_admin" hlp="Importer des donnes depuis un fichier SQL">
 											<img src="/images/import_24px.png" />Importer donne(s)
 										</label>
 									</details>
-									<button class="itmh si_open" onclick="PrintThis()" alt="Imprimer"
-										><img src="/images/print_30px.png" />Imprimer cette donne</button
-									>
+									<button class="itmh si_open" onclick="PrintThis()" alt="Imprimer">
+										<img src="/images/print_30px.png" />Imprimer cette donne
+									</button>
 								</div>
 							</div>
 							<div
@@ -650,23 +661,19 @@
 		});
 
 		if (session.choix.carets == undefined) session.choix.carets = "XXXXXXXXXXXXX";
-		document.querySelectorAll(".caret").forEach((caret, idx) => {
+		document.querySelectorAll(".level1 summary").forEach((caret, idx) => {
 			while (session.choix.carets.length <= idx) session.choix.carets += "X";
 			console.assert(idx < session.choix.carets.length);
 			caret.addEventListener("click", function () {
-				// parentElement inclu l'élément lui-même
-				this.parentElement.querySelector(".nested").classList.toggle("active");
-				this.classList.toggle("caret-down");
+				//console.log("click details " + idx, caret);
 				// En js, string est inmutable
 				let ar = session.choix.carets.split("");
 				ar[idx] = ar[idx] == "X" ? "-" : "X";
 				session.choix.carets = ar.join("");
 				io.emit("upducfg", "carets", session.choix.carets);
 			});
-			if (session.choix.carets[idx] == "X") {
-				caret.parentElement.querySelector(".nested").classList.add("active");
-				caret.classList.add("caret-down");
-			}
+			if (session.choix.carets[idx] == "X") caret.parentElement.setAttribute("open", true);
+			else caret.parentElement.removeAttribute("open");
 		});
 		tree_sw.checked = session.choix.show_tree;
 		HideVoletGauche(session.choix.show_tree);
@@ -987,31 +994,7 @@
 		return ar;
 	}
 
-	function GetExportSQL(nom, jeu) {
-		const st = JSON.stringify(jeu)
-			.replace(/'/g, "''")
-			.replace('","txt1":', '",\n"txt1":')
-			.replace('","txt2":', '",\n"txt2":')
-			.replace('","donne":', '",\n"donne":')
-			.replace('],"enchere":', '],\n"enchere":');
-		return "INSERT INTO donnes (nom,data) VALUES ('" + nom + "', '" + st + "');\n";
-	}
-
-	async function GetSelExportSQL() {
-		let st = GetExportSQL(enr.nom, enr.jeu);
-		const ar = GetSelJeu();
-		io.emit("export", ar);
-		for (let id of ar) {
-			try {
-				const row = await SQL_get("SELECT * FROM donnes WHERE id=" + id);
-				st += GetExportSQL(row.nom, JSON.parse(row.data));
-			} catch (e) {
-				Erreur(e);
-			}
-		}
-		return { n: ar.length + 1, st: st };
-	}
-
+	const bkp_lnk = document.getElementById("bkp_lnk");
 	const itm_export = document.getElementById("itm_export");
 	itm_export.addEventListener("click", () => {
 		closeMenu();
@@ -1022,10 +1005,23 @@
 				bkp_lnk.click();
 			}
 		});
-		/* GetSelExportSQL().then((obj) => {
-			navigator.clipboard.writeText(obj.st);
-			Info("" + obj.n + " donnes copiés dans le presse-papier");
-		});*/
+	});
+
+	const get_import = document.getElementById("get_import");
+	get_import.addEventListener("change", () => {
+		closeMenu();
+		Info("Importation de " + get_import.files[0].name + " en cours...");
+		SendFile(get_import.files[0], "upload", get_import.files[0].name)
+			.then((r) => {
+				console.log(r);
+				io.emit("import", r.fn, (foo) => {
+					if (foo == "OK") {
+						MakeTree();
+						OK("L'importation s'est bien passée");
+					} else Erreur(foo);
+				});
+			})
+			.catch((e) => Erreur(e));
 	});
 
 	function GetCbxDonnes() {
@@ -1302,7 +1298,7 @@
 				id_node +
 				'" onclick="onJeuClick(event)" draggable="true"  ondragstart="onJeuDrag(event)" hlp="' +
 				(session.choix.edit ? "Drag: Déplacer. Shift-drag: dupliquer le jeu dans un autre dossier. " : "") +
-				(el.id == enr.id ? '" class="tree_sel' : "Clic: Ouvrir.") +
+				(el.id == enr.id ? "ID:" + el.id + '" class="tree_sel' : "Clic: Ouvrir (ID: " + el.id + ")") +
 				'" >' +
 				(el.nom || "Donne n°" + el.id);
 			//st += '<img class="si_edit" src="/images/Hand_25px.png" id="jeux' + el.id + '" hlp="Sert à faire glisser le jeu vers un autre dossier ou la corbeille"/>';
@@ -1701,7 +1697,6 @@
 	//*********************
 	//  Backup - Restore
 	//*********************
-	const bkp_lnk = document.getElementById("bkp_lnk");
 	function onBkp() {
 		closeMenu();
 		io.emit("bkp", (r) => {
@@ -1773,5 +1768,16 @@
 			};
 			xhr.send(formData);
 		});
+	}
+	//*********************
+	//  Responsive design
+	//*********************
+	const hamburger = document.querySelector(".hamburger");
+	function toggleNav() {
+		closeMenu();
+		hamburger.classList.toggle("open");
+		menu2.classList.toggle("open");
+		const foo = hamburger.getAttribute("aria-expanded") === "true" ? "false" : "true";
+		hamburger.setAttribute("aria-expanded", foo);
 	}
 </script>

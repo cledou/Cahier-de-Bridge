@@ -243,12 +243,14 @@ ul.ff_btns input:not([type="number"]) {
 		position: absolute;
 		flex-direction: column;
 		top: 50px;
-		transform: translate(-100%);
+		transform: translate(-120%);
 		transition: none;
 		height: max-content;
 		transition: transform 0.3s ease-out;
 		background-color: inherit;
+		z-index: 1;
 	}
+
 	.level0 {
 		height: 50px;
 	}
