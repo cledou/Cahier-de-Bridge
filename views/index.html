@@ -619,12 +619,8 @@
 	// SESSION socket I/O
 	//*********************
 	function SetSessionFlag(f, b) {
-		// console.log("SetSessionFlag", f, b);
-		const foo = b ? (mesChoix.flags |= f) : (mesChoix.flags &= ~f);
-		if (foo != mesChoix.flags) {
-			mesChoix.flags = foo;
-			io.emit("upducfg", "flags", foo);
-		}
+		const foo = b ? mesChoix.flags | f : mesChoix.flags & ~f;
+		if (foo != mesChoix.flags) SetChoix("flags", foo);
 	}
 
 	// connect -> session -> get_dims -> liste_donnes -> loadDonne OU nouvelle donne
@@ -680,8 +676,7 @@
 				// En js, string est inmutable
 				let ar = mesChoix.carets.split("");
 				ar[idx] = ar[idx] == "X" ? "-" : "X";
-				mesChoix.carets = ar.join("");
-				io.emit("upducfg", "carets", mesChoix.carets);
+				SetChoix("carets", ar.join(""));
 			});
 			if (mesChoix.carets[idx] == "X") caret.parentElement.setAttribute("open", true);
 			else caret.parentElement.removeAttribute("open");
@@ -756,10 +751,7 @@
 			enr_nom.innerText = enr.nom;
 			AfficheDonne();
 			SetDirty(false);
-			if (mesChoix.last_id != row.id) {
-				mesChoix.last_id = row.id;
-				io.emit("upducfg", "last_id", row.id);
-			}
+			if (mesChoix.last_id != row.id) SetChoix("last_id", row.id);
 			MakeTree();
 			DisableSelector(".si_un", false);
 			return true;
@@ -902,6 +894,7 @@
 
 	function SetChoix(nom, val) {
 		mesChoix[nom] = val;
+		io.emit("upducfg", nom, val);
 	}
 
 	function SQL(id, stm, p) {
@@ -950,8 +943,6 @@
 					el1.classList.remove("open");
 				});
 				if (!foo) e.target.classList.add("open");
-				//mesChoix.open = idx;
-				//io.emit("upducfg", "etats", mesChoix);
 			}
 		});
 	});
@@ -1616,8 +1607,7 @@
 	});
 
 	const onRchChg = (val) => {
-		mesChoix.find = val;
-		io.emit("upducfg", "find", val);
+		SetChoix("find", val);
 		MakeTree();
 	};
 
@@ -1774,9 +1764,9 @@
 
 	function openDB() {
 		console.log(cbx_db.value);
-		io.emit("open_db", cbx_db.value, (r) => {
-			if (r != "OK") Erreur(r); // le reste par reload..
-		});
+		SetChoix("db", cbx_db.value);
+		window.location.reload();
+		//io.emit("open_db", cbx_db.value, (r) => {			if (r != "OK") Erreur(r); // le reste par reload..		});
 	}
 
 	function SendFile(f, dest, nom) {

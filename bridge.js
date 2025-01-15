@@ -356,6 +356,7 @@ io.on("connection", (socket) => {
 	});
 
 	socket.on("upducfg", (nom, valeur) => {
+		console.log("upd user config", nom, valeur);
 		let b = false;
 		if (typeof valeur == "object") b = JSON.stringify(session.user.choix[nom]) === JSON.stringify(valeur);
 		else b = session.user.choix[nom] == valeur;
