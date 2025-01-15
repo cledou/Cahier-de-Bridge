@@ -381,6 +381,15 @@
 				<button onclick="CloseModalWnd(); OpenBKP()">Restaurer</button>
 			</div>
 		</div>
+		<div class="modalBackground" id="sel_db">
+			<div class="modalWnd">
+				<span class="puclose">&times;</span>
+				<!-- Modal Content -->
+				<h1>Sélectionnez la base de donnée à ouvrir</h1>
+				<select id="cbx_db"></select>
+				<button onclick="CloseModalWnd(); openDB()">Ouvrir</button>
+			</div>
+		</div>
 
 		<div id="container" onclick="closeMenu()">
 			<div id="volets">
@@ -442,7 +451,7 @@
 										<button class="itmh si_admin" onclick="onRestore()" hlp="Restaurer la base de donnée depuis une sauvegarde">
 											<img src="/images/database_restore_24px.png" />Restauration
 										</button>
-										<button class="itmh si_admin si_dbs" onclick="onOpenDB()" hlp="Choisir la base de donnée à ouvrir">
+										<button class="itmh si_admin si_dbs" onclick="OpenModalWnd('sel_db')" hlp="Choisir la base de donnée à ouvrir">
 											<img src="/images/database_view_24px.png" />Sélectionner une base de donnée
 										</button>
 										<input type="file" class="hide_me" id="get_export" />
@@ -574,8 +583,9 @@
 	//*********************
 	var io = io.connect(location.host);
 	var session;
+	var mesChoix;
 
-	const volet_tree = document.getElementById("volet_tree"); // lié à session.choix.show_tree
+	const volet_tree = document.getElementById("volet_tree"); // lié à mesChoix.show_tree
 	const arbre = document.getElementById("arbre");
 	const node_trash = document.getElementById("node_trash");
 	const tree_sw = document.getElementById("tree_sw");
@@ -587,6 +597,7 @@
 	const itm_new = document.getElementById("itm_new");
 	const enr_nom = document.getElementById("enr_nom");
 	const print_this = document.getElementById("print_this");
+	const cbx_db = document.getElementById("cbx_db");
 	const ShowHide = (id, b) => {
 		document.getElementById(id).style.opacity = b ? "1.0" : "0";
 	};
@@ -609,9 +620,9 @@
 	//*********************
 	function SetSessionFlag(f, b) {
 		// console.log("SetSessionFlag", f, b);
-		const foo = b ? (session.choix.flags |= f) : (session.choix.flags &= ~f);
-		if (foo != session.choix.flags) {
-			session.choix.flags = foo;
+		const foo = b ? (mesChoix.flags |= f) : (mesChoix.flags &= ~f);
+		if (foo != mesChoix.flags) {
+			mesChoix.flags = foo;
 			io.emit("upducfg", "flags", foo);
 		}
 	}
@@ -622,7 +633,7 @@
 	});
 
 	io.on("session", function (data) {
-		//console.log(data);
+		console.log(data);
 		session = data;
 		if (data.erreur != undefined) {
 			Erreur(data.erreur);
@@ -631,9 +642,9 @@
 			Info(data.info);
 		}
 		SetSelectorDisplay(".is_admin", session.user.admin != true ? "none" : "block");
-		if (session.choix == undefined) session.choix = JSON.parse(session.user.choix);
-		if (session.choix.flags == undefined) session.choix.flags = 0;
-		Object.defineProperties(session.choix, {
+		mesChoix = session.user.choix;
+		if (mesChoix.flags == undefined) mesChoix.flags = 0;
+		Object.defineProperties(mesChoix, {
 			show_tree: {
 				get: function () {
 					return Boolean(this.flags & 1);
@@ -660,25 +671,25 @@
 			},
 		});
 
-		if (session.choix.carets == undefined) session.choix.carets = "XXXXXXXXXXXXX";
+		if (mesChoix.carets == undefined) mesChoix.carets = "XXXXXXXXXXXXX";
 		document.querySelectorAll(".level1 summary").forEach((caret, idx) => {
-			while (session.choix.carets.length <= idx) session.choix.carets += "X";
-			console.assert(idx < session.choix.carets.length);
+			while (mesChoix.carets.length <= idx) mesChoix.carets += "X";
+			console.assert(idx < mesChoix.carets.length);
 			caret.addEventListener("click", function () {
 				//console.log("click details " + idx, caret);
 				// En js, string est inmutable
-				let ar = session.choix.carets.split("");
+				let ar = mesChoix.carets.split("");
 				ar[idx] = ar[idx] == "X" ? "-" : "X";
-				session.choix.carets = ar.join("");
-				io.emit("upducfg", "carets", session.choix.carets);
+				mesChoix.carets = ar.join("");
+				io.emit("upducfg", "carets", mesChoix.carets);
 			});
-			if (session.choix.carets[idx] == "X") caret.parentElement.setAttribute("open", true);
+			if (mesChoix.carets[idx] == "X") caret.parentElement.setAttribute("open", true);
 			else caret.parentElement.removeAttribute("open");
 		});
-		tree_sw.checked = session.choix.show_tree;
-		HideVoletGauche(session.choix.show_tree);
-		chk_find.checked = session.choix.chk_find;
-		ed_find.value = session.choix.find || "";
+		tree_sw.checked = mesChoix.show_tree;
+		HideVoletGauche(mesChoix.show_tree);
+		chk_find.checked = mesChoix.chk_find;
+		ed_find.value = mesChoix.find || "";
 		OpenOrNew(); // asynchrone..
 		//console.log(session);
 	});
@@ -701,8 +712,24 @@
 		else console.log("IO WEB->", event);
 	});
 
+	io.on("db_list", (ar) => {
+		console.log(ar);
+		SetSelectorDisplay(".si_dbs", ar.length > 1 ? "block" : "none");
+		let foo = "";
+		ar.forEach((db) => (foo += "<option>" + db + "</option>"));
+		cbx_db.innerHTML = foo;
+		//cbx_db.value = mesChoix.db
+	});
+
+	io.on("reload", () => {
+		window.location.reload();
+	});
+
+	//*********************
+	//      Let's GO
+	//*********************
 	async function OpenOrNew() {
-		if (!(await OpenID(session.choix.last_id)) && !(await OpenOneDonne())) itm_new.click();
+		if (!(await OpenID(mesChoix.last_id)) && !(await OpenOneDonne())) itm_new.click();
 	}
 
 	async function OpenOneDonne() {
@@ -729,8 +756,8 @@
 			enr_nom.innerText = enr.nom;
 			AfficheDonne();
 			SetDirty(false);
-			if (session.choix.last_id != row.id) {
-				session.choix.last_id = row.id;
+			if (mesChoix.last_id != row.id) {
+				mesChoix.last_id = row.id;
 				io.emit("upducfg", "last_id", row.id);
 			}
 			MakeTree();
@@ -774,7 +801,7 @@
 				'" onfocus="this.innerText =\'' +
 				v +
 				'\'" contenteditable="' +
-				(session.choix.edit ? "true" : "false") +
+				(mesChoix.edit ? "true" : "false") +
 				'" onblur="blurEnchere(this.innerText,' +
 				i +
 				')" >' +
@@ -874,7 +901,7 @@
 	var session = { choix: {} };
 
 	function SetChoix(nom, val) {
-		session.choix[nom] = val;
+		mesChoix[nom] = val;
 	}
 
 	function SQL(id, stm, p) {
@@ -923,8 +950,8 @@
 					el1.classList.remove("open");
 				});
 				if (!foo) e.target.classList.add("open");
-				//session.choix.open = idx;
-				//io.emit("upducfg", "etats", session.choix);
+				//mesChoix.open = idx;
+				//io.emit("upducfg", "etats", mesChoix);
 			}
 		});
 	});
@@ -940,7 +967,7 @@
 
 	tree_sw.addEventListener("change", function () {
 		HideVoletGauche(this.checked);
-		session.choix.show_tree = this.checked;
+		mesChoix.show_tree = this.checked;
 	});
 
 	function SetElvisArbre(b) {
@@ -958,7 +985,7 @@
 	}
 
 	function SetElvisEdit(b) {
-		if (session.choix.edit != b) SetChoix("edit", b);
+		if (mesChoix.edit != b) SetChoix("edit", b);
 		if (b != sw_edit.checked) sw_edit.checked = b;
 		document.querySelectorAll('[contenteditable="' + (b ? "false" : "true") + '"]').forEach((el) => {
 			el.setAttribute("contenteditable", b);
@@ -986,7 +1013,7 @@
 
 	function GetSelJeu() {
 		let ar = [enr.id];
-		if (session.choix.show_tree)
+		if (mesChoix.show_tree)
 			for (let el of all_sel) {
 				const id = Number(el.id.substr(2));
 				if (id != enr.id && ar.indexOf(id) == -1) ar.push(id); // pour éviter les doublons
@@ -1031,7 +1058,7 @@
 					let opt = "";
 					rows.forEach((el) => {
 						opt += '<option value="' + el.id + '"';
-						if (session.choix.last_id === el.id) opt += " selected";
+						if (mesChoix.last_id === el.id) opt += " selected";
 						opt += ">" + el.nom + "</option>";
 					});
 					resolve(opt);
@@ -1297,7 +1324,7 @@
 				'" node="' +
 				id_node +
 				'" onclick="onJeuClick(event)" draggable="true"  ondragstart="onJeuDrag(event)" hlp="' +
-				(session.choix.edit ? "Drag: Déplacer. Shift-drag: dupliquer le jeu dans un autre dossier. " : "") +
+				(mesChoix.edit ? "Drag: Déplacer. Shift-drag: dupliquer le jeu dans un autre dossier. " : "") +
 				(el.id == enr.id ? "ID:" + el.id + '" class="tree_sel' : "Clic: Ouvrir (ID: " + el.id + ")") +
 				'" >' +
 				(el.nom || "Donne n°" + el.id);
@@ -1372,7 +1399,7 @@
 	}
 
 	function SetEventTree() {
-		SetElvisArbre(session.choix.edit);
+		SetElvisArbre(mesChoix.edit);
 		document.querySelectorAll(".tree [hlp],.tree [alt]").forEach((itm) => {
 			itm.addEventListener("mouseover", (e) => {
 				e.stopPropagation();
@@ -1410,7 +1437,7 @@
 	};
 
 	arbre.addEventListener("dragover", (e) => {
-		if (session.choix.edit) e.preventDefault();
+		if (mesChoix.edit) e.preventDefault();
 	});
 
 	node_trash.addEventListener("dragover", (ev) => {
@@ -1584,12 +1611,12 @@
 	const chk_find = document.getElementById("chk_find");
 
 	chk_find.addEventListener("change", function () {
-		session.choix.chk_find = this.checked;
+		mesChoix.chk_find = this.checked;
 		MakeTree();
 	});
 
 	const onRchChg = (val) => {
-		session.choix.find = val;
+		mesChoix.find = val;
 		io.emit("upducfg", "find", val);
 		MakeTree();
 	};
@@ -1613,7 +1640,7 @@
 				arbre.innerHTML = '<ul class="tree">' + "<li><details open><summary>Résultat</summary><ul>" + AddJeux(r, 0) + "</ul></details></li></ul>";
 				SetEventTree();
 				if (r.length == 0) Warning("Pas de résultats");
-				else if (r.findIndex((el) => el.id == session.choix.last_id) == -1) OpenID(r[0].id);
+				else if (r.findIndex((el) => el.id == mesChoix.last_id) == -1) OpenID(r[0].id);
 				else AfficheTextes();
 			})
 			.catch((e) => Erreur(e));
@@ -1634,7 +1661,7 @@
 		document.querySelector(".cartes > .ouest").innerHTML = MakeDonne(enr.jeu.donne, 4);
 		document.querySelector(".cartes > .est").innerHTML = MakeDonne(enr.jeu.donne, 8);
 		document.querySelector(".cartes > .sud").innerHTML = MakeDonne(enr.jeu.donne, 12);
-		SetElvisEdit(session.choix.edit || false);
+		SetElvisEdit(mesChoix.edit || false);
 		ed_vul.value = enr.jeu.vul;
 		SetVulnerable(enr.jeu.vul);
 		ed_donneur.value = enr.jeu.donneur;
@@ -1726,9 +1753,8 @@
 				console.log(r);
 				//io.emit("upducfg", "nom_base", ed_nom_bkp.value);
 				io.emit("restore", r.fn, (r) => {
-					if (r.err) Erreur(r.err);
-					else console.log(r);
-					window.location.reload();
+					if (r != "OK") Erreur(r);
+					else openDB(ed_nom_bkp.value);
 				});
 			})
 			.catch((e) => Erreur(e));
@@ -1742,9 +1768,16 @@
 	document.querySelectorAll('input[name="rbt_bkp"]').forEach((el) => {
 		el.addEventListener("change", function () {
 			ShowHide("nom_base", this.value == 1);
-			session.choix.rbt_bkp = this.value == 1;
+			mesChoix.rbt_bkp = this.value == 1;
 		});
 	});
+
+	function openDB() {
+		console.log(cbx_db.value);
+		io.emit("open_db", cbx_db.value, (r) => {
+			if (r != "OK") Erreur(r); // le reste par reload..
+		});
+	}
 
 	function SendFile(f, dest, nom) {
 		return new Promise((resolve, reject) => {

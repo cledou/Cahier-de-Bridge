@@ -125,6 +125,23 @@ if (!fs.existsSync(dir_upload)) {
 	fs.mkdirSync(dir_upload);
 }
 
+// base des users
+const db_login = new sqlite3("login.db", { readonly: false });
+{
+	let foo;
+	try {
+		// patchs
+		foo = db_login.prepare("SELECT * FROM parametres WHERE paramName='VERSION_BASE'").get();
+	} catch (err) {
+		if (MakePatch(db_login, "login.sql") == "OK") foo = db_login.prepare("SELECT * FROM parametres WHERE paramName='VERSION_BASE'").get();
+		else process.exit();
+	}
+	let version = Number(foo.paramValue);
+	while (MakePatch(db_login, "log" + version + "to" + (version + 1) + ".sql") == "OK") version++;
+	console.log("Login Database version " + version + " est OK");
+}
+
+// base principale
 const db_def_filename = "bridge.db";
 let db_list = [];
 // lister les bases de données. Attention ! Fonction asynchrone..
@@ -142,7 +159,7 @@ fs.readdir(db_dir, function (err, files) {
 			let db = new sqlite3(db_dir + db_def_filename, { readonly: false });
 			console.log("Créer la base " + db_def_filename);
 			// chercher fichier base
-			let init_file = __dirname + dir_sep + "database.sql";
+			let init_file = "database.sql";
 			if (!fs.existsSync(init_file)) throw new Error("NTBS: Fichier " + init_file + " manquant");
 			else MakePatch(db, init_file);
 			db.close();
@@ -161,10 +178,30 @@ fs.readdir(db_dir, function (err, files) {
 //
 const SESSION_RELOAD_INTERVAL = 10 * 60 * 1000;
 
+function GetUser(nom) {
+	let foo = db_login.prepare("SELECT * FROM users WHERE nom=?").get(nom);
+	if (foo == undefined) foo = db_login.prepare("SELECT * FROM users ORDER BY id LIMIT 1").get();
+	let user = {
+		id: foo.id,
+		nom: foo.nom,
+		is_admin: Boolean(foo.admin),
+		can_add: Boolean(foo.can_add),
+		can_edit: Boolean(foo.can_edit),
+		can_delete: Boolean(foo.can_delete),
+	};
+	try {
+		user.choix = JSON.parse(foo.choix);
+	} catch (e) {
+		console.error(e);
+		user.choix = {};
+	}
+	console.log(user);
+	return user;
+}
+
 io.on("connection", (socket) => {
 	const files_to_remove = [];
 	const session = socket.request.session;
-	//console.log(session);
 	// timeout si inactif...
 	const timer = setInterval(() => {
 		socket.request.session.reload((err) => {
@@ -176,72 +213,38 @@ io.on("connection", (socket) => {
 		});
 	}, SESSION_RELOAD_INTERVAL);
 
-	let db;
-	let db_name = db_def_filename;
-	session.dirty = session.user == undefined;
-
-	function BaseOpenable(nom) {
-		return nom != undefined && db_list.indexOf(nom) != -1;
-	}
-	function OpenBase(nom_user) {
-		//console.log("Openbase", db_name, nom_user);
-		if (db != undefined) db.close();
-		db = new sqlite3(db_dir + db_name, { readonly: false });
-		let foo = db.prepare("SELECT * FROM users WHERE nom=?").get(nom_user || app_config.user);
-		if (foo == undefined) foo = db.prepare("SELECT * FROM users ORDER BY id LIMIT 1").get();
-		session.user = {
-			id: foo.id,
-			nom: foo.nom,
-			is_admin: Boolean(foo.admin),
-			can_add: Boolean(foo.can_add),
-			can_edit: Boolean(foo.can_edit),
-			can_delete: Boolean(foo.can_delete),
-		};
-		try {
-			session.choix = JSON.parse(foo.choix);
-		} catch (e) {
-			console.error(e);
-			session.erreur = e;
-			session.choix = {};
-		}
-	}
-
+	// récupérer user
+	if (session.user == undefined) session.user = GetUser(app_config.user);
+	let db_name = session.user.choix.db || db_def_filename; // nom de la base ouverte par socket.io
+	let db = new sqlite3(db_dir + db_name, { readonly: false });
 	// passons aux choses sérieuses
-	if (session.choix != undefined && BaseOpenable(session.choix.db)) db_name = session.choix.db;
-	OpenBase(session.user ? session.user.nom : app_config.user);
-	if (BaseOpenable(session.choix.db) && session.choix.db != db_name) {
-		db_name = session.choix.db;
-		OpenBase(session.user.nom);
-	}
-
 	session.multiposte = app_config.multiposte;
 	nbr_clients++;
 	console.log(session.user.nom + " est connecté à " + db_name);
-	if (session.dirty) session.save();
 
 	// et maintenant, on attend le ping-pong
 
 	socket.on("session", () => {
 		socket.emit("session", session);
 		socket.emit("info", "Database utilisée: " + db_name);
+		socket.emit("db_list", db_list);
 	});
 
 	socket.on("disconnect", function () {
 		//console.log("disconnect", session);
 		clearInterval(timer);
-		let st = "";
-		if (session.user != undefined) {
-			st = session.user.nom + " déconnecté. ";
-			try {
-				if (session.dirty == true) {
-					const info = db.prepare("UPDATE users SET choix=? WHERE id=" + session.user.id).run(JSON.stringify(session.choix));
-					session.dirty = false;
-				}
-			} catch (err) {
-				console.error(err.message);
+		try {
+			if (session.dirty == true) {
+				console.log("Choix change:", session.user.choix);
+				const info = db_login.prepare("UPDATE users SET choix=? WHERE id=" + session.user.id).run(JSON.stringify(session.user.choix));
+				session.dirty = false;
 			}
+		} catch (err) {
+			console.error(err.message);
 		}
+
 		nbr_clients--;
+		let st = session.user.nom + " déconnecté. ";
 		if (nbr_clients > 1) st += "Encore " + nbr_clients + " connectés";
 		else if (nbr_clients == 1) st += "Reste un seul client connecté";
 		else st += "Plus personne n'est connecté";
@@ -330,14 +333,14 @@ io.on("connection", (socket) => {
 		else
 			try {
 				let info = {};
-				let enr = db.prepare("SELECT id,hash,LENGTH(hash) AS pwl FROM users WHERE id=?").get(id);
+				let enr = db_login.prepare("SELECT id,hash,LENGTH(hash) AS pwl FROM users WHERE id=?").get(id);
 				if (enr == undefined) throw new Error("Erreur dans les identifiants");
 				else if ((old_val != "" || (enr.hash != undefined && enr.pwl != 0)) && bcrypt.compareSync(old_val, enr.hash) == false)
 					throw new Error("Ancien mot de passe incorrect");
 				else if (new_val != "")
 					bcrypt.hash(new_val, 10, function (err, hash) {
 						if (err) throw new Error("Hash:" + err.message);
-						else info = db.prepare("UPDATE users SET hash=? WHERE id=" + enr.id).run(hash);
+						else info = db_login.prepare("UPDATE users SET hash=? WHERE id=" + enr.id).run(hash);
 						if (info.changes == 1) cb("Mot de passe modifié");
 						else throw new Error("Mot de passe inchangé..");
 					});
@@ -352,30 +355,16 @@ io.on("connection", (socket) => {
 			}
 	});
 
-	// callback indispensable car sinon déconnexion session AVANT sauvegarde
-	socket.on("updSession", (nom, valeur, cb) => {
-		if (db == undefined) cb({ err: "Session fermée. Reconnectez vous" });
-		else {
-			updSession(nom, valeur);
-			cb({});
-		}
-	});
-
 	socket.on("upducfg", (nom, valeur) => {
-		updSession(nom, valeur);
-	});
-
-	function updSession(nom, valeur) {
 		let b = false;
-		if (session.choix == undefined) session.choix = {};
-		if (typeof valeur == "object") b = JSON.stringify(session.choix[nom]) === JSON.stringify(valeur);
-		else b = session.choix[nom] == valeur;
+		if (typeof valeur == "object") b = JSON.stringify(session.user.choix[nom]) === JSON.stringify(valeur);
+		else b = session.user.choix[nom] == valeur;
 		if (!b) {
-			session.choix[nom] = valeur; // ajout dynamique.
+			session.user.choix[nom] = valeur; // ajout dynamique.
 			session.dirty = true;
 			session.save();
 		}
-	}
+	});
 
 	socket.on("liste_donnes", (cb) => {
 		if (db == undefined) cb({ err: "Session expirée. Identifiez-vous" });
@@ -478,18 +467,34 @@ io.on("connection", (socket) => {
 					if (dest != file) {
 						console.log("Copier " + file + " dans " + dest);
 						fs.copyFileSync(file, dest);
+						files_to_remove.push(file);
 					}
-					fs.unlinkSync(file);
 					if (db_list.indexOf(nom) == -1) db_list.push(nom);
-					session.choix.db = nom;
-					const info = db.prepare("UPDATE users SET choix=? WHERE id=" + session.user.id).run(JSON.stringify(session.choix));
-					session.dirty = true;
-					cb("OK");
+					cb("OK"); // le reste par appel à open_db
 				} else throw new Error("Fichier corrompu..");
 			} catch (e) {
 				console.log(e);
-				cb({ err: e });
+				cb(e);
 			}
+	});
+
+	socket.on("open_db", (nom, cb) => {
+		try {
+			if (db == undefined) throw new Error("Session fermée. Reconnectez-vous");
+			if (db_list.indexOf(nom) == -1) throw new Error("Base inconnue !");
+			cb("OK");
+			if (nom != db_name) {
+				console.log("open_db", nom, db_name, session.choix.db);
+				session.choix.db = nom;
+				const info = db.prepare("UPDATE users SET choix=? WHERE id=" + session.user.id).run(JSON.stringify(session.choix));
+				session.dirty = true;
+				session.save();
+				socket.emit("reload");
+			}
+		} catch (e) {
+			console.error(e);
+			cb(e);
+		}
 	});
 }); // fin socket.io
 
@@ -590,6 +595,7 @@ function onErreurServer(e) {
 function MakePatch(db, fn) {
 	try {
 		console.log("MakePatch", fn);
+		if (!fs.existsSync(fn)) throw Error(fn + ": fichier manquant");
 		let rawdata = fs.readFileSync(fn);
 		let lignes = rawdata.toString().split("\n");
 		let stm = "";
@@ -618,25 +624,9 @@ function BaseOk(f) {
 	let ok = true;
 	let db = new sqlite3(f, { readonly: false });
 	try {
-		// patchs
-		let foo = db.prepare("SELECT * FROM parametres WHERE paramName='VERSION_BASE'").get();
-		if (foo == undefined) {
-			ok = false;
-			console.error("NTBS: Base sans paramètres", f);
-		} else {
-			let version = Number(foo.paramValue);
-			let found = true;
-			while (found) {
-				let fn = "patch" + version + "vers" + (version + 1) + ".sql";
-				//console.log("Cherche " + fn);
-				found = fs.existsSync(fn);
-				if (found) {
-					MakePatch(db, fn);
-					version += 1;
-				}
-			}
-			console.log("Database " + f + " version " + version + " est OK");
-		}
+		let version = Number(db.prepare("SELECT * FROM parametres WHERE paramName='VERSION_BASE'").get().paramValue);
+		while (MakePatch(db, "patch" + version + "vers" + (version + 1) + ".sql") == "OK") version++;
+		console.log("Database " + f + " version " + version + " est OK");
 		db.close();
 	} catch (err) {
 		console.error("Base not ok", f, err);
