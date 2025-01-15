@@ -102,6 +102,20 @@ button.itmh:hover:not(:disabled) {
 	cursor: pointer;
 }
 
+label.itmh {
+	color: black;
+	border: none;
+	font-size: 1em;
+}
+label.itmh img {
+	margin-right: 5px;
+	width: 32px;
+}
+label.itmh:hover:not(:disabled) {
+	font-weight: bolder;
+	cursor: pointer;
+}
+
 select.itmh {
 	width: max-content;
 }
@@ -167,6 +181,28 @@ ul.ff_btns input:not([type="number"]) {
 	border-bottom: 3px blue solid;
 	color: blue;
 }
+/* summary */
+.level1 summary {
+	display: inline-flex;
+	flex-direction: row;
+	align-items: center;
+}
+/* Pour aligner le contenu, on utilise ::before au lieu de ::marker, car inline-flex */
+.level1 summary::before {
+	content: "\25B6\0020";
+	font-size: 1.3em;
+}
+.level1 [open] summary::before {
+	content: "\25BC\0020";
+}
+.level1 details button,
+.level1 details label {
+	margin-left: 8px;
+}
+.level1 details img {
+	width: auto;
+	height: auto;
+}
 
 /* Style the caret/arrow */
 .caret {
@@ -207,12 +243,14 @@ ul.ff_btns input:not([type="number"]) {
 		position: absolute;
 		flex-direction: column;
 		top: 50px;
-		transform: translate(-100%);
+		transform: translate(-120%);
 		transition: none;
 		height: max-content;
 		transition: transform 0.3s ease-out;
 		background-color: inherit;
+		z-index: 1;
 	}
+
 	.level0 {
 		height: 50px;
 	}

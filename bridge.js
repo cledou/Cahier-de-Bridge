@@ -1,36 +1,44 @@
-// aikido.js version bêta
+// bridge.js version 1.0.2
 /**************
 /     NOTES
  **************
 Pour lancer le programme:
 node bridge
+Persistance réglages: https://socket.io/how-to/use-with-express-session
 */
 
 //**************
 // Declarations
 //**************
 "use strict";
-
-// https://nodejs.org/api/fs.html#fs_file_system
-const fs = require("fs");
-// utiliser le framework 'express' (alias: app)
 const express = require("express");
+const { createServer } = require("http");
+const { join } = require("path");
+const { Server } = require("socket.io");
+const session = require("express-session");
+
+const port = process.env.PORT || 3000;
+
 const app = express();
+const httpServer = createServer(app);
+
+const sessionMiddleware = session({
+	secret: "WqiZvuvVsIV1zmzJQeYUgINqXYe",
+	resave: true,
+	saveUninitialized: true,
+});
+
+app.use(sessionMiddleware);
+const io = new Server(httpServer);
+io.engine.use(sessionMiddleware);
+
+const fs = require("fs");
 const sqlite3 = require("better-sqlite3");
 const bcrypt = require("bcrypt");
 const child_process = require("child_process");
-// authentificaton
-const Session = require("express-session");
-
-// créer le serveur web (alias: httpserver)
-const httpserver = require("http").createServer(app);
-
-// Créer socket d'échange page Web<->Node Js
-const socketio = require("socket.io")(httpserver);
 const favicon = require("serve-favicon"); // icone page web
-const ios = require("socket.io-express-session");
+const multer = require("multer"); // upload middleware
 const { exit } = require("process");
-
 //******************
 // Initialisations
 //******************
@@ -55,6 +63,7 @@ app.use(
 	})
 );
 app.use(express.json());
+var app_config = {};
 
 // récupérer la configuration
 const config_filename = __dirname + "/config.json";
@@ -76,27 +85,7 @@ if (fs.existsSync(config_filename)) {
 //*******************************
 // Initialisation de la session
 //*******************************
-
-var session = Session({
-	// Defaults to MemoryStore, meaning sessions are stored as POJOs
-	// in server memory, and are cleared out when the server restarts.
-	name: "sid",
-	saveUninitialized: false,
-	resave: false,
-	secret: app_config.hash || "blablabla",
-	cookie: {
-		maxAge: 1000 * 60 * 60 * 2,
-		sameSite: true,
-		secure: process.env.NODE_ENV === "production",
-	},
-});
-
-// On passe nos sessions à socket.io
-socketio.use(ios(session));
-app.use(session);
-
 var nbr_clients = 0;
-var app_config = {};
 
 //*********************************
 // Initialiser quelques variables !
@@ -130,6 +119,12 @@ try {
 	if (e.code == "ENOENT") fs.mkdirSync(db_dir);
 }
 
+const dir_upload = __dirname + dir_sep + "upload";
+if (!fs.existsSync(dir_upload)) {
+	console.log("Créer le dossier " + dir_upload);
+	fs.mkdirSync(dir_upload);
+}
+
 const db_def_filename = "bridge.db";
 let db_list = [];
 // lister les bases de données. Attention ! Fonction asynchrone..
@@ -140,7 +135,7 @@ fs.readdir(db_dir, function (err, files) {
 		process.exit();
 	} else
 		files.forEach((f) => {
-			if ((f.endsWith(".db") || f.endsWith(".bkp")) && BaseOk(f)) db_list.push(f);
+			if ((f.endsWith(".db") || f.endsWith(".bkp")) && BaseOk(db_dir + f)) db_list.push(f);
 		});
 	if (db_list.length == 0)
 		try {
@@ -151,7 +146,7 @@ fs.readdir(db_dir, function (err, files) {
 			if (!fs.existsSync(init_file)) throw new Error("NTBS: Fichier " + init_file + " manquant");
 			else MakePatch(db, init_file);
 			db.close();
-			if (BaseOk(db_def_filename)) db_list.push(db_def_filename);
+			if (BaseOk(db_dir + db_def_filename)) db_list.push(db_def_filename);
 			else throw new Error("NTBS: Database " + db_def_filename + " non conforme");
 		} catch (err) {
 			console.error("NTBS 162", err);
@@ -164,14 +159,36 @@ fs.readdir(db_dir, function (err, files) {
 //*******************
 // Chaque fois qu'une page web est affichée, 'connection' ouvre un nouveau socket.
 //
-socketio.on("connection", (client) => {
-	let session = client.handshake.session;
-	let db = new sqlite3(db_dir + db_def_filename, { readonly: false });
-	session.dirty = false;
-	if (session.user == undefined) {
-		let foo = db.prepare("SELECT * FROM users WHERE nom=?").get(app_config.user);
+const SESSION_RELOAD_INTERVAL = 10 * 60 * 1000;
+
+io.on("connection", (socket) => {
+	const files_to_remove = [];
+	const session = socket.request.session;
+	//console.log(session);
+	// timeout si inactif...
+	const timer = setInterval(() => {
+		socket.request.session.reload((err) => {
+			if (err) {
+				// forces the client to reconnect
+				socket.emit("alert", "Echec reload");
+				socket.conn.close();
+			}
+		});
+	}, SESSION_RELOAD_INTERVAL);
+
+	let db;
+	let db_name = db_def_filename;
+	session.dirty = session.user == undefined;
+
+	function BaseOpenable(nom) {
+		return nom != undefined && db_list.indexOf(nom) != -1;
+	}
+	function OpenBase(nom_user) {
+		//console.log("Openbase", db_name, nom_user);
+		if (db != undefined) db.close();
+		db = new sqlite3(db_dir + db_name, { readonly: false });
+		let foo = db.prepare("SELECT * FROM users WHERE nom=?").get(nom_user || app_config.user);
 		if (foo == undefined) foo = db.prepare("SELECT * FROM users ORDER BY id LIMIT 1").get();
-		session.multiposte = app_config.multiposte;
 		session.user = {
 			id: foo.id,
 			nom: foo.nom,
@@ -188,15 +205,30 @@ socketio.on("connection", (client) => {
 			session.choix = {};
 		}
 	}
+
+	// passons aux choses sérieuses
+	if (session.choix != undefined && BaseOpenable(session.choix.db)) db_name = session.choix.db;
+	OpenBase(session.user ? session.user.nom : app_config.user);
+	if (BaseOpenable(session.choix.db) && session.choix.db != db_name) {
+		db_name = session.choix.db;
+		OpenBase(session.user.nom);
+	}
+
+	session.multiposte = app_config.multiposte;
 	nbr_clients++;
-	console.log(session.user.nom + " est connecté.");
-	client.on("session", () => {
-		client.emit("session", session);
-		client.emit("info", "Database utilisée: " + db_def_filename);
+	console.log(session.user.nom + " est connecté à " + db_name);
+	if (session.dirty) session.save();
+
+	// et maintenant, on attend le ping-pong
+
+	socket.on("session", () => {
+		socket.emit("session", session);
+		socket.emit("info", "Database utilisée: " + db_name);
 	});
 
-	client.on("disconnect", function () {
+	socket.on("disconnect", function () {
 		//console.log("disconnect", session);
+		clearInterval(timer);
 		let st = "";
 		if (session.user != undefined) {
 			st = session.user.nom + " déconnecté. ";
@@ -219,9 +251,11 @@ socketio.on("connection", (client) => {
 			db.close();
 			db = undefined;
 		}
+		/* Effacer les fichiers uploadés */
+		for (let path of files_to_remove) if (fs.existsSync(path)) fs.unlinkSync(path);
 	});
 
-	client.onAny((event, p1, p2, p3, p4, p5) => {
+	socket.onAny((event, p1, p2, p3, p4, p5) => {
 		/*
 		if (p5 != undefined) console.log("IO WEB->", event, p1, p2, p3, p4, p5);
 		else if (p4 != undefined) console.log("IO WEB->", event, p1, p2, p3, p4);
@@ -236,7 +270,8 @@ socketio.on("connection", (client) => {
 	/* AVEC CALLBACK */
 	/*****************/
 	function AddTreeNode(node, id_parent) {
-		if (node.jeux == undefined) node.jeux = db.prepare("SELECT d.id,d.nom FROM data2tree t LEFT JOIN donnes d ON d.id==t.id_donne WHERE t.id_arbre" + id_parent).all();
+		if (node.jeux == undefined)
+			node.jeux = db.prepare("SELECT d.id,d.nom FROM data2tree t LEFT JOIN donnes d ON d.id==t.id_donne WHERE t.id_arbre" + id_parent).all();
 		node.childs = db.prepare("SELECT id,itm,pos FROM arbre WHERE id_parent" + id_parent + " ORDER BY pos").all();
 		node.childs.forEach((el) => {
 			AddTreeNode(el, "=" + el.id);
@@ -244,7 +279,7 @@ socketio.on("connection", (client) => {
 		return node;
 	}
 
-	client.on("get_tree", (cb) => {
+	socket.on("get_tree", (cb) => {
 		if (db == undefined) cb({ err: "Session expirée. Identifiez-vous" });
 		else
 			try {
@@ -256,7 +291,7 @@ socketio.on("connection", (client) => {
 			}
 	});
 
-	client.on("cb_all", (requete, param, cb) => {
+	socket.on("cb_all", (requete, param, cb) => {
 		if (db == undefined) cb({ err: "Session expirée. Identifiez-vous" });
 		else
 			try {
@@ -267,7 +302,7 @@ socketio.on("connection", (client) => {
 			}
 	});
 
-	client.on("cb_get", (requete, param, cb) => {
+	socket.on("cb_get", (requete, param, cb) => {
 		if (db == undefined) cb({ err: "Session expirée. Identifiez-vous" });
 		else
 			try {
@@ -278,7 +313,7 @@ socketio.on("connection", (client) => {
 			}
 	});
 
-	client.on("cb_run", (requete, param, cb) => {
+	socket.on("cb_run", (requete, param, cb) => {
 		if (db == undefined) cb({ err: "Session expirée. Identifiez-vous" });
 		else
 			try {
@@ -290,14 +325,15 @@ socketio.on("connection", (client) => {
 			}
 	});
 
-	client.on("chg_mp", function (id, old_val, new_val, cb) {
+	socket.on("chg_mp", function (id, old_val, new_val, cb) {
 		if (db == undefined) cb({ err: "Session fermée. Reconnectez vous" });
 		else
 			try {
 				let info = {};
 				let enr = db.prepare("SELECT id,hash,LENGTH(hash) AS pwl FROM users WHERE id=?").get(id);
 				if (enr == undefined) throw new Error("Erreur dans les identifiants");
-				else if ((old_val != "" || (enr.hash != undefined && enr.pwl != 0)) && bcrypt.compareSync(old_val, enr.hash) == false) throw new Error("Ancien mot de passe incorrect");
+				else if ((old_val != "" || (enr.hash != undefined && enr.pwl != 0)) && bcrypt.compareSync(old_val, enr.hash) == false)
+					throw new Error("Ancien mot de passe incorrect");
 				else if (new_val != "")
 					bcrypt.hash(new_val, 10, function (err, hash) {
 						if (err) throw new Error("Hash:" + err.message);
@@ -317,7 +353,7 @@ socketio.on("connection", (client) => {
 	});
 
 	// callback indispensable car sinon déconnexion session AVANT sauvegarde
-	client.on("updSession", (nom, valeur, cb) => {
+	socket.on("updSession", (nom, valeur, cb) => {
 		if (db == undefined) cb({ err: "Session fermée. Reconnectez vous" });
 		else {
 			updSession(nom, valeur);
@@ -325,7 +361,7 @@ socketio.on("connection", (client) => {
 		}
 	});
 
-	client.on("upducfg", (nom, valeur) => {
+	socket.on("upducfg", (nom, valeur) => {
 		updSession(nom, valeur);
 	});
 
@@ -341,7 +377,7 @@ socketio.on("connection", (client) => {
 		}
 	}
 
-	client.on("liste_donnes", (cb) => {
+	socket.on("liste_donnes", (cb) => {
 		if (db == undefined) cb({ err: "Session expirée. Identifiez-vous" });
 		else
 			try {
@@ -351,7 +387,7 @@ socketio.on("connection", (client) => {
 			}
 	});
 
-	client.on("load_donne", (id, cb) => {
+	socket.on("load_donne", (id, cb) => {
 		if (db == undefined) cb({ err: "Session expirée. Identifiez-vous" });
 		else
 			try {
@@ -363,7 +399,7 @@ socketio.on("connection", (client) => {
 			}
 	});
 
-	client.on("save_donne", (enr, cb) => {
+	socket.on("save_donne", (enr, cb) => {
 		if (db == undefined) cb({ err: "Session fermée. Reconnectez-vous" });
 		else
 			try {
@@ -375,17 +411,84 @@ socketio.on("connection", (client) => {
 				cb({ err: err.message });
 			}
 	});
+	socket.on("export", (ar, cb) => {
+		//console.log("export", ar);
+		if (db == undefined) cb({ err: "Session fermée. Reconnectez-vous" });
+		else
+			try {
+				let st = "";
+				let nom = "";
+				for (let id of ar) {
+					const row = db.prepare("SELECT * FROM donnes WHERE id=" + id).get();
+					if (nom != "") nom += ",";
+					nom += row.nom;
+					st +=
+						"INSERT INTO donnes (nom,data) VALUES ('" +
+						row.nom +
+						"', '" +
+						row.data
+							.replace(/'/g, "''")
+							.replace('", "txt1":', '",\n"txt1":')
+							.replace('", "txt2":', '",\n"txt2":')
+							.replace('", "donne":', '",\n"donne":')
+							.replace('], "enchere":', '],\n"enchere":') +
+						"');\n";
+				}
+				nom += ".sql";
+				const fn = dir_upload + dir_sep + nom;
+				fs.writeFileSync(fn, st);
+				files_to_remove.push(fn);
+				cb({ fn: "/public/upload/" + nom });
+			} catch (e) {
+				cb({ err: err.message });
+			}
+	});
 
-	client.on("bkp", (cb) => {
+	socket.on("import", (fn, cb) => {
+		if (db == undefined) cb("Session fermée. Reconnectez-vous");
+		else {
+			files_to_remove.push(fn);
+			cb(MakePatch(db, fn));
+		}
+	});
+
+	socket.on("bkp", (cb) => {
 		if (db == undefined) cb({ err: "Session fermée. Reconnectez-vous" });
 		else
 			try {
 				const d = new Date();
 				session.bkp = "bridge " + d.toISOString().substring(0, 10) + ".bkp";
 				db.backup(db_dir + session.bkp);
+				files_to_remove.push(db_dir + session.bkp);
 				cb("/public/db/" + session.bkp);
 			} catch (err) {
 				cb({ err: err.message });
+			}
+	});
+
+	socket.on("restore", (file, cb) => {
+		if (db == undefined) cb({ err: "Session fermée. Reconnectez-vous" });
+		else
+			try {
+				// copier le fichier dans le répertoire de BDD
+				const idx = file.lastIndexOf(dir_sep);
+				const nom = file.substring(idx + 1);
+				if (BaseOk(file)) {
+					const dest = db_dir + nom;
+					if (dest != file) {
+						console.log("Copier " + file + " dans " + dest);
+						fs.copyFileSync(file, dest);
+					}
+					fs.unlinkSync(file);
+					if (db_list.indexOf(nom) == -1) db_list.push(nom);
+					session.choix.db = nom;
+					const info = db.prepare("UPDATE users SET choix=? WHERE id=" + session.user.id).run(JSON.stringify(session.choix));
+					session.dirty = true;
+					cb("OK");
+				} else throw new Error("Fichier corrompu..");
+			} catch (e) {
+				console.log(e);
+				cb({ err: e });
 			}
 	});
 }); // fin socket.io
@@ -400,6 +503,17 @@ app.get("/", (req, res) => {
 
 app.get("/index", (req, res) => {
 	res.render("index.html");
+});
+
+//*******************
+//    GET Routes
+//*******************
+// L'utilisation de multer pour charger un fichier dans un répertoire fourni lors du POST
+// est assez complexe. https://stackoverflow.com/questions/75157185/how-to-upload-a-file-using-multer-in-a-specific-directory-defined-by-the-fronten
+app.post("/upload_this", function (req, res) {
+	upload(req, res, function (err) {
+		res.send("OK:" + req.file.path);
+	});
 });
 
 //********************
@@ -421,10 +535,10 @@ process.on("SIGINT", function () {
 // En avant toute !
 //*******************
 
-httpserver.on("error", (e) => {
+httpServer.on("error", (e) => {
 	onErreurServer(e);
 });
-httpserver.listen(app.get("port"), () => {
+httpServer.listen(app.get("port"), () => {
 	console.log("Ecoute port " + app.get("port") + ". CTRL-C pour finir");
 });
 
@@ -447,7 +561,7 @@ if (app_config.certificats != undefined) {
 	});
 	httpsServer.listen(443, () => {
 		console.log("HTTPS Server running on port 443");
-		socketio.attach(httpsServer);
+		io.attach(httpsServer);
 	});
 }
 
@@ -474,33 +588,35 @@ function onErreurServer(e) {
 }
 
 function MakePatch(db, fn) {
-	console.log("MakePatch", fn);
-	let rawdata = fs.readFileSync(fn);
-	let lignes = rawdata.toString().split("\n");
-	let stm = "";
-	let bloc = false;
-	lignes.forEach((el) => {
-		let lig = el.replace("\r", "");
-		if (!(lig.startsWith("#") || lig.startsWith("//"))) {
-			stm += lig + " ";
-			if (lig == "BEGIN") bloc = true;
-			else if (lig.startsWith("END")) bloc = false;
-			if (!bloc && lig.endsWith(";")) {
-				try {
+	try {
+		console.log("MakePatch", fn);
+		let rawdata = fs.readFileSync(fn);
+		let lignes = rawdata.toString().split("\n");
+		let stm = "";
+		let bloc = false;
+		lignes.forEach((el) => {
+			let lig = el.replace("\r", "");
+			if (!(lig.startsWith("#") || lig.startsWith("//"))) {
+				stm += lig + " ";
+				if (lig == "BEGIN") bloc = true;
+				else if (lig.startsWith("END")) bloc = false;
+				if (!bloc && lig.endsWith(";")) {
 					db.prepare(stm).run();
 					stm = "";
-				} catch (e) {
-					console.error(e.message);
 				}
 			}
-		}
-	});
+		});
+		return "OK";
+	} catch (e) {
+		console.error(e.message);
+		return e.message;
+	}
 }
 
 function BaseOk(f) {
 	// f existe forcément
 	let ok = true;
-	let db = new sqlite3(db_dir + f, { readonly: false });
+	let db = new sqlite3(f, { readonly: false });
 	try {
 		// patchs
 		let foo = db.prepare("SELECT * FROM parametres WHERE paramName='VERSION_BASE'").get();
@@ -508,11 +624,11 @@ function BaseOk(f) {
 			ok = false;
 			console.error("NTBS: Base sans paramètres", f);
 		} else {
-			let version = foo.paramValue;
+			let version = Number(foo.paramValue);
 			let found = true;
 			while (found) {
 				let fn = "patch" + version + "vers" + (version + 1) + ".sql";
-				//console.log('Cherche ' + fn);
+				//console.log("Cherche " + fn);
 				found = fs.existsSync(fn);
 				if (found) {
 					MakePatch(db, fn);
@@ -528,3 +644,19 @@ function BaseOk(f) {
 	}
 	return ok;
 }
+
+//*******************
+//  Upload storage
+//*******************
+let storage = multer.diskStorage({
+	destination: (req, file, callback) => {
+		callback(null, dir_upload); // set upload directory on local system.
+	},
+	filename: (req, file, callback) => {
+		callback(null, req.body.nom == undefined ? file.originalname : req.body.nom);
+	},
+});
+
+let upload = multer({
+	storage: storage,
+}).single("userFile");
