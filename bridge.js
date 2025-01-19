@@ -5,6 +5,7 @@
 Pour lancer le programme:
 node bridge
 Persistance réglages: https://socket.io/how-to/use-with-express-session
+Set-ExecutionPolicy Unrestricted -Scope CurrentUser -Force
 */
 
 //**************
@@ -273,8 +274,7 @@ io.on("connection", (socket) => {
 	/* AVEC CALLBACK */
 	/*****************/
 	function AddTreeNode(node, id_parent) {
-		if (node.jeux == undefined)
-			node.jeux = db.prepare("SELECT d.id,d.nom FROM data2tree t LEFT JOIN donnes d ON d.id==t.id_donne WHERE t.id_arbre" + id_parent).all();
+		if (node.jeux == undefined) node.jeux = db.prepare("SELECT d.id,d.nom FROM data2tree t LEFT JOIN donnes d ON d.id==t.id_donne WHERE t.id_arbre" + id_parent).all();
 		node.childs = db.prepare("SELECT id,itm,pos FROM arbre WHERE id_parent" + id_parent + " ORDER BY pos").all();
 		node.childs.forEach((el) => {
 			AddTreeNode(el, "=" + el.id);
@@ -335,8 +335,7 @@ io.on("connection", (socket) => {
 				let info = {};
 				let enr = db_login.prepare("SELECT id,hash,LENGTH(hash) AS pwl FROM users WHERE id=?").get(id);
 				if (enr == undefined) throw new Error("Erreur dans les identifiants");
-				else if ((old_val != "" || (enr.hash != undefined && enr.pwl != 0)) && bcrypt.compareSync(old_val, enr.hash) == false)
-					throw new Error("Ancien mot de passe incorrect");
+				else if ((old_val != "" || (enr.hash != undefined && enr.pwl != 0)) && bcrypt.compareSync(old_val, enr.hash) == false) throw new Error("Ancien mot de passe incorrect");
 				else if (new_val != "")
 					bcrypt.hash(new_val, 10, function (err, hash) {
 						if (err) throw new Error("Hash:" + err.message);
@@ -412,17 +411,7 @@ io.on("connection", (socket) => {
 					const row = db.prepare("SELECT * FROM donnes WHERE id=" + id).get();
 					if (nom != "") nom += ",";
 					nom += row.nom;
-					st +=
-						"INSERT INTO donnes (nom,data) VALUES ('" +
-						row.nom +
-						"', '" +
-						row.data
-							.replace(/'/g, "''")
-							.replace('", "txt1":', '",\n"txt1":')
-							.replace('", "txt2":', '",\n"txt2":')
-							.replace('", "donne":', '",\n"donne":')
-							.replace('], "enchere":', '],\n"enchere":') +
-						"');\n";
+					st += "INSERT INTO donnes (nom,data) VALUES ('" + row.nom + "', '" + row.data.replace(/'/g, "''").replace('", "txt1":', '",\n"txt1":').replace('", "txt2":', '",\n"txt2":').replace('", "donne":', '",\n"donne":').replace('], "enchere":', '],\n"enchere":') + "');\n";
 				}
 				nom += ".sql";
 				const fn = dir_upload + dir_sep + nom;
