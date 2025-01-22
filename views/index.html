@@ -869,11 +869,12 @@
 		return (n + 2).toString();
 	}
 
+	var not_done;
 	function VerifierDonne(donne) {
 		// retourne -1 si erreur de distribution, ou nbr cartes manquantes si distribution ok
 		let compte = new Array(52).fill(0);
 		let cnt_NOES = new Array(4).fill(0);
-		let not_done = 52;
+		not_done = 52;
 		for (let i = 0; i < donne.length; i++) {
 			const NOES = Math.floor(i / 4);
 			const ar = AjouteBlancs(donne[i]).split(" ");
@@ -902,10 +903,8 @@
 						let foo = "";
 						const base = 13 * i;
 						for (let j = 0; j < 13; j++) if (compte[base + j] == 0) foo = N2ARDV(j) + foo;
-						console.log(NOES, i, foo, NOES << 2, (NOES << 2) + i);
 						donne[(NOES << 2) + i] = foo;
 					}
-					console.log(donne);
 					return true;
 				}
 		return true;
@@ -1239,14 +1238,19 @@
 		return st;
 	}
 
-	function blurMain(idx, val) {
-		const st = RetireBlancs(val.innerText.toUpperCase());
+	function blurMain(idx, el) {
+		const st = RetireBlancs(el.innerText.toUpperCase());
 		if (enr.jeu.donne[idx] != st) {
 			enr.jeu.donne[idx] = st;
 			VerifierDonne(enr.jeu.donne);
 			SetDirty(true);
+			if (not_done == 13) {
+				AfficheDonne();
+				document.getElementById("enc_0").focus();
+				return;
+			}
 		}
-		val.innerText = AjouteBlancs(st);
+		el.innerText = AjouteBlancs(st);
 	}
 
 	/****************************/
