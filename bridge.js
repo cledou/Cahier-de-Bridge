@@ -34,7 +34,7 @@ const io = new Server(httpServer);
 io.engine.use(sessionMiddleware);
 
 const fs = require("fs");
-const sqlite3 = require("better-sqlite3");
+const sqlite3 = require("sqlite3");
 const bcrypt = require("bcrypt");
 const child_process = require("child_process");
 const favicon = require("serve-favicon"); // icone page web
@@ -51,6 +51,7 @@ app.set("port", process.env.PORT || 3004);
 app.use("/public", express.static("./")); // 'public' est en réalité ./
 app.use("/css", express.static("./css/"));
 app.use("/images", express.static("./images/"));
+app.use("/node", express.static("./node_modules/"));
 //app.use("/views", express.static("."));
 // exécuter favicon(path) à chaque appel d'une fonction de app
 app.use(favicon("./images/favicon.ico"));
@@ -127,50 +128,27 @@ if (!fs.existsSync(dir_upload)) {
 }
 
 // base des users
-const db_login = new sqlite3("login.db", { readonly: false });
-{
-	let foo;
-	try {
-		// patchs
-		foo = db_login.prepare("SELECT * FROM parametres WHERE paramName='VERSION_BASE'").get();
-	} catch (err) {
-		if (MakePatch(db_login, "login.sql") == "OK") foo = db_login.prepare("SELECT * FROM parametres WHERE paramName='VERSION_BASE'").get();
-		else process.exit();
-	}
-	let version = Number(foo.paramValue);
-	while (MakePatch(db_login, "log" + version + "to" + (version + 1) + ".sql") == "OK") version++;
-	console.log("Login Database version " + version + " est OK");
-}
-
-// base principale
+var db_login;
 const db_def_filename = "bridge.db";
-let db_list = [];
-// lister les bases de données. Attention ! Fonction asynchrone..
-fs.readdir(db_dir, function (err, files) {
-	//handling error
-	if (err) {
-		console.error("Impossible de lire db", err);
-		process.exit();
-	} else
-		files.forEach((f) => {
-			if ((f.endsWith(".db") || f.endsWith(".bkp")) && BaseOk(db_dir + f)) db_list.push(f);
+var db_list = [];
+openBase("", "login")
+	.then((db) => {
+		db_login = db;
+		// s'assurer qu'il existe bien une base par défaut
+		openBase(db_dir, "bridge").then((db1) => {
+			db1.close();
+			fs.readdir(db_dir, function (err, files) {
+				//handling error
+				if (!err) {
+					for (let f of files) {
+						if ((f.endsWith(".db") || f.endsWith(".bkp")) && IsBridge(f)) db_list.push(f);
+					}
+					console.log(db_list);
+				}
+			});
 		});
-	if (db_list.length == 0)
-		try {
-			let db = new sqlite3(db_dir + db_def_filename, { readonly: false });
-			console.log("Créer la base " + db_def_filename);
-			// chercher fichier base
-			let init_file = "database.sql";
-			if (!fs.existsSync(init_file)) throw new Error("NTBS: Fichier " + init_file + " manquant");
-			else MakePatch(db, init_file);
-			db.close();
-			if (BaseOk(db_dir + db_def_filename)) db_list.push(db_def_filename);
-			else throw new Error("NTBS: Database " + db_def_filename + " non conforme");
-		} catch (err) {
-			console.error("NTBS 162", err);
-			process.exit();
-		}
-});
+	})
+	.catch((e) => console.error(e));
 
 //*******************
 //    Socket.io
@@ -179,9 +157,9 @@ fs.readdir(db_dir, function (err, files) {
 //
 const SESSION_RELOAD_INTERVAL = 10 * 60 * 1000;
 
-function GetUser(nom) {
-	let foo = db_login.prepare("SELECT * FROM users WHERE nom=?").get(nom);
-	if (foo == undefined) foo = db_login.prepare("SELECT * FROM users ORDER BY id LIMIT 1").get();
+async function GetUser(nom) {
+	let foo = await db_get(db_login, "SELECT * FROM users WHERE nom=?", [nom]);
+	if (foo == undefined) foo = await db_get(db_login, "SELECT * FROM users ORDER BY id LIMIT 1");
 	let user = {
 		id: foo.id,
 		nom: foo.nom,
@@ -196,11 +174,11 @@ function GetUser(nom) {
 		console.error(e);
 		user.choix = {};
 	}
-	console.log(user);
+	//console.log(user);
 	return user;
 }
 
-io.on("connection", (socket) => {
+io.on("connection", async (socket) => {
 	const files_to_remove = [];
 	const session = socket.request.session;
 	// timeout si inactif...
@@ -215,9 +193,9 @@ io.on("connection", (socket) => {
 	}, SESSION_RELOAD_INTERVAL);
 
 	// récupérer user
-	if (session.user == undefined) session.user = GetUser(app_config.user);
+	if (session.user == undefined) session.user = await GetUser(app_config.user);
 	let db_name = session.user.choix.db || db_def_filename; // nom de la base ouverte par socket.io
-	let db = new sqlite3(db_dir + db_name, { readonly: false });
+	let db = new sqlite3.Database(db_dir + db_name);
 	// passons aux choses sérieuses
 	session.multiposte = app_config.multiposte;
 	nbr_clients++;
@@ -231,13 +209,13 @@ io.on("connection", (socket) => {
 		socket.emit("db_list", db_list);
 	});
 
-	socket.on("disconnect", function () {
+	socket.on("disconnect", async function () {
 		//console.log("disconnect", session);
 		clearInterval(timer);
 		try {
 			if (session.dirty == true) {
-				console.log("Choix change:", session.user.choix);
-				const info = db_login.prepare("UPDATE users SET choix=? WHERE id=" + session.user.id).run(JSON.stringify(session.user.choix));
+				//console.log("Choix change:", session.user.choix);
+				const info = await db_run(db_login, "UPDATE users SET choix=? WHERE id=" + session.user.id, [JSON.stringify(session.user.choix)]);
 				session.dirty = false;
 			}
 		} catch (err) {
@@ -251,7 +229,7 @@ io.on("connection", (socket) => {
 		else st += "Plus personne n'est connecté";
 		console.log(st);
 		if (db != undefined) {
-			if (db.inTransaction) db.prepare("ROLLBACK").run();
+			// if (db.inTransaction) db_all(db,"ROLLBACK").run();
 			db.close();
 			db = undefined;
 		}
@@ -260,75 +238,65 @@ io.on("connection", (socket) => {
 	});
 
 	socket.onAny((event, p1, p2, p3, p4, p5) => {
-		/*
 		if (p5 != undefined) console.log("IO WEB->", event, p1, p2, p3, p4, p5);
 		else if (p4 != undefined) console.log("IO WEB->", event, p1, p2, p3, p4);
 		else if (p3 != undefined) console.log("IO WEB->", event, p1, p2, p3.toString().substring(0, 20));
 		else if (p2 != undefined) console.log("IO WEB->", event, p1, p2);
 		else if (p1 != undefined) console.log("IO WEB->", event, p1);
 		else console.log("IO WEB->", event);
-		*/
 	});
 
 	/*****************/
 	/* AVEC CALLBACK */
 	/*****************/
-	function AddTreeNode(node, id_parent) {
-		if (node.jeux == undefined) node.jeux = db.prepare("SELECT d.id,d.nom FROM data2tree t LEFT JOIN donnes d ON d.id==t.id_donne WHERE t.id_arbre" + id_parent).all();
-		node.childs = db.prepare("SELECT id,itm,pos FROM arbre WHERE id_parent" + id_parent + " ORDER BY pos").all();
-		node.childs.forEach((el) => {
-			AddTreeNode(el, "=" + el.id);
-		});
+	async function AddTreeNode(node, id_parent) {
+		if (node.jeux == undefined) node.jeux = await db_all(db, "SELECT d.id,d.nom FROM data2tree t LEFT JOIN donnes d ON d.id==t.id_donne WHERE t.id_arbre" + id_parent);
+		node.childs = await db_all(db, "SELECT id,itm,pos FROM arbre WHERE id_parent" + id_parent + " ORDER BY pos");
+		for (let el of node.childs) {
+			await AddTreeNode(el, "=" + el.id);
+		}
 		return node;
 	}
 
-	socket.on("get_tree", (cb) => {
+	socket.on("get_tree", async (cb) => {
 		if (db == undefined) cb({ err: "Session expirée. Identifiez-vous" });
 		else
 			try {
 				let node = {};
-				node.jeux = db.prepare("SELECT id,nom FROM donnes WHERE id NOT IN(SELECT id_donne FROM data2tree)").all();
-				cb(AddTreeNode(node, " IS NULL"));
+				node.jeux = await db_all(db, "SELECT id,nom FROM donnes WHERE id NOT IN(SELECT id_donne FROM data2tree)");
+				await AddTreeNode(node, " IS NULL");
+				cb(node);
 			} catch (e) {
 				cb({ err: e.message });
 			}
 	});
 
-	socket.on("cb_all", (requete, param, cb) => {
+	socket.on("cb_all", async (query, values, cb) => {
 		if (db == undefined) cb({ err: "Session expirée. Identifiez-vous" });
 		else
-			try {
-				if (param == undefined) cb(db.prepare(requete).all());
-				else cb(db.prepare(requete).all(param));
-			} catch (e) {
-				cb({ err: e.message });
-			}
+			db.all(query, values || [], function (err, rows) {
+				cb(err ? { err: err.message } : rows);
+			});
 	});
 
-	socket.on("cb_get", (requete, param, cb) => {
+	socket.on("cb_get", async (query, values, cb) => {
 		if (db == undefined) cb({ err: "Session expirée. Identifiez-vous" });
 		else
-			try {
-				if (param == undefined) cb(db.prepare(requete).get());
-				else cb(db.prepare(requete).get(param));
-			} catch (e) {
-				cb({ err: e.message });
-			}
+			db.get(query, values || [], function (err, rows) {
+				//if (err) console.error(err.message, query, values);
+				cb(err ? { err: err.message } : rows);
+			});
 	});
 
-	socket.on("cb_run", (requete, param, cb) => {
+	socket.on("cb_run", async (query, values, cb) => {
 		if (db == undefined) cb({ err: "Session expirée. Identifiez-vous" });
 		else
-			try {
-				console.log(requete, param);
-				if (param == undefined) cb(db.prepare(requete).run());
-				else cb(db.prepare(requete).run(param));
-			} catch (e) {
-				cb({ err: e.message });
-			}
+			db.run(query, values || [], function (err, info) {
+				cb(err ? { err: err.message } : info);
+			});
 	});
 
-	socket.on("chg_mp", function (id, old_val, new_val, cb) {
+	/* socket.on("chg_mp", function (id, old_val, new_val, cb) {
 		if (db == undefined) cb({ err: "Session fermée. Reconnectez vous" });
 		else
 			try {
@@ -349,13 +317,12 @@ io.on("connection", (socket) => {
 					else throw new Error("Mot de passe inchangé..");
 				}
 			} catch (err) {
-				console.log(err.message);
+				console.error(err.message);
 				cb({ err: err.message });
 			}
-	});
+	});*/
 
 	socket.on("upducfg", (nom, valeur) => {
-		console.log("upd user config", nom, valeur);
 		let b = false;
 		if (typeof valeur == "object") b = JSON.stringify(session.user.choix[nom]) === JSON.stringify(valeur);
 		else b = session.user.choix[nom] == valeur;
@@ -366,21 +333,21 @@ io.on("connection", (socket) => {
 		}
 	});
 
-	socket.on("liste_donnes", (cb) => {
+	socket.on("liste_donnes", async (cb) => {
 		if (db == undefined) cb({ err: "Session expirée. Identifiez-vous" });
 		else
 			try {
-				cb(db.prepare("SELECT id,nom FROM donnes ORDER BY nom").all());
+				cb(await db_all(db, "SELECT id,nom FROM donnes ORDER BY nom"));
 			} catch (e) {
 				cb({ err: e.message });
 			}
 	});
 
-	socket.on("load_donne", (id, cb) => {
+	socket.on("load_donne", async (id, cb) => {
 		if (db == undefined) cb({ err: "Session expirée. Identifiez-vous" });
 		else
 			try {
-				let enr = db.prepare("SELECT data FROM donnes WHERE id=?").get(id);
+				let enr = await db_get(db, "SELECT data FROM donnes WHERE id=?" + id);
 				if (enr == undefined) cb({ err: "Donne effacée" });
 				else cb(enr);
 			} catch (e) {
@@ -388,27 +355,25 @@ io.on("connection", (socket) => {
 			}
 	});
 
-	socket.on("save_donne", (enr, cb) => {
+	socket.on("save_donne", async (enr, cb) => {
 		if (db == undefined) cb({ err: "Session fermée. Reconnectez-vous" });
 		else
 			try {
-				console.log(enr);
 				const contenu = JSON.stringify(enr.jeu);
-				if (enr.id == undefined) cb(db.prepare("INSERT INTO donnes (nom,data) VALUES (?,?)").run(enr.nom, contenu));
-				else cb(db.prepare("UPDATE donnes set nom=?,data=? WHERE id=?").run(enr.nom, contenu, enr.id));
+				if (enr.id == undefined) cb(await db_run(db, "INSERT INTO donnes (nom,data) VALUES (?,?)", [enr.nom, contenu]));
+				else cb(await db_run(db, "UPDATE donnes set nom=?,data=? WHERE id=?"), [enr.nom, contenu, enr.id]);
 			} catch (err) {
 				cb({ err: err.message });
 			}
 	});
-	socket.on("export", (ar, cb) => {
-		//console.log("export", ar);
+	socket.on("export", async (ar, cb) => {
 		if (db == undefined) cb({ err: "Session fermée. Reconnectez-vous" });
 		else
 			try {
 				let st = "";
 				let nom = "";
 				for (let id of ar) {
-					const row = db.prepare("SELECT * FROM donnes WHERE id=" + id).get();
+					const row = await db_get(db, "SELECT * FROM donnes WHERE id=" + id);
 					if (nom != "") nom += ",";
 					nom += row.nom;
 					st += "INSERT INTO donnes (nom,data) VALUES ('" + row.nom + "', '" + row.data.replace(/'/g, "''").replace('", "txt1":', '",\n"txt1":').replace('", "txt2":', '",\n"txt2":').replace('", "donne":', '",\n"donne":').replace('], "enchere":', '],\n"enchere":') + "');\n";
@@ -423,52 +388,62 @@ io.on("connection", (socket) => {
 			}
 	});
 
-	socket.on("import", (fn, cb) => {
+	socket.on("import", async (fn, cb) => {
 		if (db == undefined) cb("Session fermée. Reconnectez-vous");
 		else {
 			files_to_remove.push(fn);
-			cb(MakePatch(db, fn));
+			cb(await MakeSQLfile(db, fn));
 		}
 	});
 
+	// Database#backup(filename, [callback])
+	// Database#backup(filename, destName, sourceName, filenameIsDest, [callback])
 	socket.on("bkp", (cb) => {
 		if (db == undefined) cb({ err: "Session fermée. Reconnectez-vous" });
-		else
-			try {
-				const d = new Date();
-				session.bkp = "bridge " + d.toISOString().substring(0, 10) + ".bkp";
-				db.backup(db_dir + session.bkp);
-				files_to_remove.push(db_dir + session.bkp);
-				cb("/public/db/" + session.bkp);
-			} catch (err) {
-				cb({ err: err.message });
-			}
+		else {
+			const d = new Date();
+			session.bkp = "bridge " + d.toISOString().substring(0, 10) + ".bkp";
+			db.backup(db_dir + session.bkp, (r) => {
+				console.log(r);
+				// callback
+				if (r) {
+					console.error(r);
+					cb({ err: r });
+				} else {
+					//files_to_remove.push(db_dir + session.bkp);
+					cb("/public/db/" + session.bkp);
+				}
+			});
+		}
 	});
 
-	socket.on("restore", (file, cb) => {
+	socket.on("restore", async (file, cb) => {
 		if (db == undefined) cb({ err: "Session fermée. Reconnectez-vous" });
 		else
 			try {
 				// copier le fichier dans le répertoire de BDD
 				const idx = file.lastIndexOf(dir_sep);
 				const nom = file.substring(idx + 1);
-				if (BaseOk(file)) {
-					const dest = db_dir + nom;
-					if (dest != file) {
-						console.log("Copier " + file + " dans " + dest);
-						fs.copyFileSync(file, dest);
-						files_to_remove.push(file);
-					}
-					if (db_list.indexOf(nom) == -1) db_list.push(nom);
-					cb("OK"); // le reste par appel à open_db
-				} else throw new Error("Fichier corrompu..");
+				openBase(db_dir, nom)
+					.then((db1) => {
+						db1.close();
+						const dest = db_dir + nom;
+						if (dest != file) {
+							console.log("Copier " + file + " dans " + dest);
+							fs.copyFileSync(file, dest);
+							files_to_remove.push(file);
+						}
+						if (db_list.indexOf(nom) == -1) db_list.push(nom);
+						cb("OK"); // le reste par appel à open_db
+					})
+					.catch((e) => cb(e.message));
 			} catch (e) {
-				console.log(e);
+				console.error(e.message);
 				cb(e);
 			}
 	});
 
-	socket.on("open_db", (nom, cb) => {
+	socket.on("open_db", async (nom, cb) => {
 		try {
 			if (db == undefined) throw new Error("Session fermée. Reconnectez-vous");
 			if (db_list.indexOf(nom) == -1) throw new Error("Base inconnue !");
@@ -476,7 +451,7 @@ io.on("connection", (socket) => {
 			if (nom != db_name) {
 				console.log("open_db", nom, db_name, session.choix.db);
 				session.choix.db = nom;
-				const info = db.prepare("UPDATE users SET choix=? WHERE id=" + session.user.id).run(JSON.stringify(session.choix));
+				const info = await db_all(db_login, "UPDATE users SET choix=? WHERE id=" + session.user.id, [JSON.stringify(session.choix)]);
 				session.dirty = true;
 				session.save();
 				socket.emit("reload");
@@ -582,49 +557,6 @@ function onErreurServer(e) {
 	} else throw e;
 }
 
-function MakePatch(db, fn) {
-	try {
-		console.log("MakePatch", fn);
-		if (!fs.existsSync(fn)) throw Error(fn + ": fichier manquant");
-		let rawdata = fs.readFileSync(fn);
-		let lignes = rawdata.toString().split("\n");
-		let stm = "";
-		let bloc = false;
-		lignes.forEach((el) => {
-			let lig = el.replace("\r", "");
-			if (!(lig.startsWith("#") || lig.startsWith("//"))) {
-				stm += lig + " ";
-				if (lig == "BEGIN") bloc = true;
-				else if (lig.startsWith("END")) bloc = false;
-				if (!bloc && lig.endsWith(";")) {
-					db.prepare(stm).run();
-					stm = "";
-				}
-			}
-		});
-		return "OK";
-	} catch (e) {
-		console.error(e.message);
-		return e.message;
-	}
-}
-
-function BaseOk(f) {
-	// f existe forcément
-	let ok = true;
-	let db = new sqlite3(f, { readonly: false });
-	try {
-		let version = Number(db.prepare("SELECT * FROM parametres WHERE paramName='VERSION_BASE'").get().paramValue);
-		while (MakePatch(db, "patch" + version + "vers" + (version + 1) + ".sql") == "OK") version++;
-		console.log("Database " + f + " version " + version + " est OK");
-		db.close();
-	} catch (err) {
-		console.error("Base not ok", f, err);
-		ok = false;
-	}
-	return ok;
-}
-
 //*******************
 //  Upload storage
 //*******************
@@ -640,3 +572,105 @@ let storage = multer.diskStorage({
 let upload = multer({
 	storage: storage,
 }).single("userFile");
+
+//*******************
+// SQLITE PROMISIFY
+//*******************
+async function db_get(db, query, values = []) {
+	return new Promise(function (resolve, reject) {
+		db.get(query, values, function (err, row) {
+			if (err) {
+				return reject(err);
+			}
+			return resolve(row);
+		});
+	});
+}
+
+async function db_all(db, query, values = []) {
+	return new Promise(function (resolve, reject) {
+		db.all(query, values, function (err, rows) {
+			if (err) {
+				return reject(err);
+			}
+			return resolve(rows);
+		});
+	});
+}
+
+async function db_run(db, query, values = []) {
+	return new Promise(function (resolve, reject) {
+		db.run(query, values, function (err, row) {
+			if (err) {
+				return reject(err);
+			}
+			return resolve(row);
+		});
+	});
+}
+
+async function MakeSQLfile(db, path) {
+	let ok = fs.existsSync(path);
+	if (ok) {
+		const lignes = fs.readFileSync(path).toString().split("\n");
+		let stm = "";
+		let bloc = false;
+		for (let el of lignes) {
+			let lig = el.replace("\r", "");
+			if (!(lig.startsWith("#") || lig.startsWith("//"))) {
+				stm += lig + " ";
+				if (lig == "BEGIN") bloc = true;
+				else if (lig.startsWith("END")) bloc = false;
+				if (!bloc && lig.endsWith(";")) {
+					try {
+						await db_run(db, stm);
+					} catch (e) {
+						console.error(e);
+						ok = false;
+					}
+					stm = "";
+				}
+			}
+		}
+		if (ok) return await getVersion(db);
+	} else console.log(path + ": fichier manquant");
+	return undefined;
+}
+
+async function getVersion(db) {
+	try {
+		let foo = await db_get(db, "SELECT paramValue FROM parametres WHERE paramName='VERSION_BASE'");
+		return Number(foo.paramValue);
+	} catch (e) {
+		return undefined;
+	}
+}
+
+async function openBase(dir, nom) {
+	let db = new sqlite3.Database(dir + nom + ".db");
+	let version = (await getVersion(db)) || (await MakeSQLfile(db, nom + ".sql"));
+	console.log("openBase", nom, version);
+	if (!version) return Promise.reject(new Error("Pas de VERSION_BASE")); // exit
+	else {
+		let row = await db_get(db, "SELECT paramValue FROM parametres WHERE paramName='NATURE_BASE'");
+		if (version) while (await MakeSQLfile(db, row.paramValue.toLowerCase() + version + "vers" + (version + 1) + ".sql")) version++;
+		return db;
+	}
+}
+
+async function IsBridge(nom) {
+	let ok = false;
+	const db = new sqlite3.Database(db_dir + nom);
+	let version = await getVersion(db);
+	if (version) {
+		const row = await db_get(db, "SELECT paramValue FROM parametres WHERE paramName='NATURE_BASE'");
+		const nature = row.paramValue.toLowerCase();
+		if (nature == "bridge") {
+			while (await MakeSQLfile(db, nature + version + "vers" + (version + 1) + ".sql")) version++;
+			ok = true;
+		}
+	}
+	db.close();
+	return ok;
+}
+//******************

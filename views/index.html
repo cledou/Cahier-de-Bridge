@@ -35,7 +35,6 @@
 				display: flex;
 				flex-direction: row;
 				justify-content: flex-start;
-				align-items: stretch;
 				box-sizing: border-box;
 			}
 			#volet_centre {
@@ -45,7 +44,6 @@
 				flex-direction: column;
 				background-color: lightgray;
 				background: linear-gradient(rgba(211, 211, 211, 0.5), rgba(211, 211, 211, 0.5)), url("/images/Cards.png");
-				padding: 0.5em;
 			}
 			.donne {
 				display: flex;
@@ -229,11 +227,12 @@
 				height: 100%;
 			}
 			#volet_tree {
-				display: block;
+				display: flex;
+				flex-direction: column;
 				position: relative;
+				box-sizing: border-box;
 				min-width: 220px;
 				background-color: whitesmoke;
-				box-sizing: border-box;
 				z-index: 2;
 			}
 			#volet_tree.hide_me {
@@ -264,9 +263,11 @@
 				align-items: center;
 			}
 			#volet_tree #arbre {
+				position: relative;
 				margin-top: 1em;
 				box-sizing: border-box;
-				padding-bottom: 100px;
+				overflow-y: scroll;
+				height: 100%;
 			}
 			.ed_div {
 				width: 100%;
@@ -298,6 +299,27 @@
 			#print_this {
 				display: none;
 			}
+			.icn_wrap {
+				position: absolute;
+				display: none;
+				justify-self: flex-start;
+				align-self: flex-start;
+				flex-direction: row;
+				justify-content: flex-start;
+				align-items: center;
+			}
+			.icn_wrap img {
+				margin: 4px;
+				cursor: pointer;
+			}
+			.icn_wrap img:hover {
+				background-color: lightgray;
+			}
+			.cartes:hover .icn_wrap,
+			.encheres:hover .icn_wrap {
+				display: flex;
+			}
+
 			@media (width <= 1300px) {
 				.main {
 					font-size: 1.25rem;
@@ -385,9 +407,7 @@
 				<!-- Modal Content -->
 				<h1>Quelle type de restauration ?</h1>
 				<div>
-					<span hlp="ATTENTION ! Tous les utilisateurs seront impactés">
-						<input type="radio" name="rbt_bkp" value="0" /> Écraser la base existante </span
-					><br />
+					<span hlp="ATTENTION ! Tous les utilisateurs seront impactés"> <input type="radio" name="rbt_bkp" value="0" /> Écraser la base existante </span><br />
 					<span hlp="Préserve la base actuelle"> <input type="radio" name="rbt_bkp" value="1" /> Créer une copie et l'ouvrir </span>
 					<br />
 					<span id="nom_base" hlp="Saisir le nom de la copie">Nom de la copie: <input type="text" id="ed_nom_bkp" /></span>
@@ -417,11 +437,7 @@
 						<input type="checkbox" id="chk_find" /><label for="chk_find">Rechercher seulement<br />dans les noms des jeux</label>
 					</div>
 					<div class="icones si_edit">
-						<img
-							src="/images/subtree.png"
-							alt="Déplacer cette icone sur l'arbre pour créer des nouveaux dossiers ou sous-dossiers"
-							ondragstart="onSubnodeDrag(event)"
-						/>
+						<img src="/images/subtree.png" alt="Déplacer cette icone sur l'arbre pour créer des nouveaux dossiers ou sous-dossiers" ondragstart="onSubnodeDrag(event)" />
 						<img id="node_trash" src="/images/trash_40px.png" draggable="false" alt="Faire glisser ici les dossiers ou jeux à effacer" />
 					</div>
 					<div id="arbre"></div>
@@ -439,54 +455,28 @@
 						</button>
 
 						<div class="menu2">
-							<div
-								class="level0"
-								style="background-image: url('/images/dossier.png')"
-								hlp="Actions génériques sur une donne (ouvrir, sauver, copier...)"
-							>
+							<div class="level0" style="background-image: url('/images/dossier.png')" hlp="Actions génériques sur une donne (ouvrir, sauver, copier...)">
 								<div class="level1">
-									<button class="itmh" id="itm_new"
-										><img src="/images/create_30px.png" alt="Créer une nouvelle donne" />Créer une donne</button
-									>
-									<button class="itmh si_un" alt="Sélectionner une donne existante" id="itm_open"
-										><img src="/images/dossier.png" />Ouvrir une donne</button
-									>
-									<button class="itmh si_dirty" onclick="onSave()" alt="Enregistrer les modifications"
-										><img src="/images/save_30px.png" />Sauver les changements</button
-									>
+									<button class="itmh" id="itm_new"><img src="/images/create_30px.png" alt="Créer une nouvelle donne" />Créer une donne</button>
+									<button class="itmh si_un" alt="Sélectionner une donne existante" id="itm_open"><img src="/images/dossier.png" />Ouvrir une donne</button>
+									<button class="itmh si_dirty" onclick="onSave()" alt="Enregistrer les modifications"><img src="/images/save_30px.png" />Sauver les changements</button>
 									<details hlp="Gestion des données: sauver, restaurer, ajouter, choisir base...">
 										<summary><img src="/images/database_30px.png" />Base de donnée</summary>
 										<input type="file" style="display: none" id="btn_bkp" />
 										<a class="hide_me" id="bkp_lnk" href="/public/bridge.db" download>Télécharger</a>
-										<button class="itmh si_admin" onclick="onBkp()" hlp="Sauvegarder la base de donnée dans un backup"
-											><img src="/images/database_export_24px.png" />Sauvegarde</button
-										>
+										<button class="itmh si_admin" onclick="onBkp()" hlp="Sauvegarder la base de donnée dans un backup"><img src="/images/database_export_24px.png" />Sauvegarde</button>
 										<input type="file" class="hide_me" id="get_bkp" />
-										<button class="itmh si_admin" onclick="onRestore()" hlp="Restaurer la base de donnée depuis une sauvegarde"
-											><img src="/images/database_restore_24px.png" />Restauration</button
-										>
-										<button class="itmh si_admin si_dbs" onclick="OpenModalWnd('sel_db')" hlp="Choisir la base de donnée à ouvrir"
-											><img src="/images/database_view_24px.png" />Sélectionner une base de donnée</button
-										>
+										<button class="itmh si_admin" onclick="onRestore()" hlp="Restaurer la base de donnée depuis une sauvegarde"><img src="/images/database_restore_24px.png" />Restauration</button>
+										<button class="itmh si_admin si_dbs" onclick="OpenModalWnd('sel_db')" hlp="Choisir la base de donnée à ouvrir"><img src="/images/database_view_24px.png" />Sélectionner une base de donnée</button>
 										<input type="file" class="hide_me" id="get_export" />
-										<button class="itmh" hlp="Exporter donne(s) au format SQL. ctrl-clic pour sélectionner plusieurs" id="itm_export"
-											><img src="/images/export_24px.png" />Exporter donne(s)</button
-										>
+										<button class="itmh" hlp="Exporter donne(s) au format SQL. ctrl-clic pour sélectionner plusieurs" id="itm_export"><img src="/images/export_24px.png" />Exporter donne(s)</button>
 										<input type="file" class="hide_me" id="get_import" />
-										<label for="get_import" class="itmh si_admin" hlp="Importer des donnes depuis un fichier SQL">
-											<img src="/images/import_24px.png" />Importer donne(s)
-										</label>
+										<label for="get_import" class="itmh si_admin" hlp="Importer des donnes depuis un fichier SQL"> <img src="/images/import_24px.png" />Importer donne(s) </label>
 									</details>
-									<button class="itmh si_open" onclick="PrintThis()" alt="Imprimer"
-										><img src="/images/print_30px.png" />Imprimer cette donne</button
-									>
+									<button class="itmh si_open" onclick="PrintThis()" alt="Imprimer"><img src="/images/print_30px.png" />Imprimer cette donne</button>
 								</div>
 							</div>
-							<div
-								class="level0"
-								style="background-image: url('/images/link_30px.png')"
-								hlp="Liens en relations avec ce logiciel (aide, mise à jour..)"
-							>
+							<div class="level0" style="background-image: url('/images/link_30px.png')" hlp="Liens en relations avec ce logiciel (aide, mise à jour..)">
 								<div class="level1">
 									<a href="https://github.com/cledou/Cahier-de-Bridge/blob/main/interface.md">Aide à la saisie</a>
 									<a href="https://github.com/cledou/Cahier-de-Bridge/blob/main/install.md">Installation</a>
@@ -508,14 +498,13 @@
 						/></label>
 						<button onclick="PrintThis()"><img src="/images/print_30px.png" alt="Imprimer la donne" /></button>
 						<button class="to_do undo" onclick="Undo()" disabled><img src="/images/undo_30px.png" alt="Revenir en arrière (ctrl-Z)" /></button>
-						<button class="to_do redo" onclick="Redo()" disabled
-							><img src="/images/redo_30px.png" alt="Annuler retour en arrière (shift-ctrl-Z)"
-						/></button>
+						<button class="to_do redo" onclick="Redo()" disabled><img src="/images/redo_30px.png" alt="Annuler retour en arrière (shift-ctrl-Z)" /></button>
 						<button class="si_dirty" onclick="onSave()"><img src="/images/save_30px.png" alt="Sauver les modifications" /></button>
 					</div>
 					<h1 class="titre" id="enr_nom" contenteditable="true" style="min-width: 3em; min-height: 1em"></h1>
 					<div class="donne">
 						<div class="cartes">
+							<div class="icn_wrap"><img src="images/clipboard_18px.png" hlp="Copier la donne comme image dans le presse-papier" onclick="makeImage('.cartes')" /></div>
 							<div class="NS nord"></div>
 							<div class="OE ouest"></div>
 							<div class="centre">
@@ -525,6 +514,7 @@
 							<div class="NS sud"></div>
 						</div>
 						<div class="encheres">
+							<div class="icn_wrap"><img src="images/clipboard_18px.png" hlp="Copier l'enchère' comme image dans le presse-papier" onclick="makeImage('.encheres')" /></div>
 							<h3>Enchères</h3>
 							<div class="flexV">
 								<table id="tbe"></table>
@@ -561,10 +551,7 @@
 									<button class="cp_btn" onclick="navigator.clipboard.writeText('♥')"><img src="/images/coeur.png" /></button>
 									<button class="cp_btn" onclick="navigator.clipboard.writeText('♦')"><img src="/images/Diamonds.png" /></button>
 									<button class="cp_btn" onclick="navigator.clipboard.writeText('♣')"><img src="/images/Clubs.png" /></button>
-									<button class="cp_btn" onclick="navigator.clipboard.writeText('♠♥♦♣')"
-										><img src="/images/Spades.png" /><img src="/images/coeur.png" /><img src="/images/Diamonds.png" /><img
-											src="/images/Clubs.png"
-									/></button>
+									<button class="cp_btn" onclick="navigator.clipboard.writeText('♠♥♦♣')"><img src="/images/Spades.png" /><img src="/images/coeur.png" /><img src="/images/Diamonds.png" /><img src="/images/Clubs.png" /></button>
 								</div>
 								<div class="flexH">
 									Donneur:
@@ -593,6 +580,7 @@
 	</body>
 </html>
 <script src="/socket.io/socket.io.min.js"></script>
+<script src="/node/html2canvas/dist/html2canvas.min.js"></script>
 <script>
 	/*
 	 TODO: voir traduction avec gettext https://github.com/guillaumepotier/gettext.js/
@@ -808,18 +796,7 @@
 		for (let i = 0; i < enchere.length; i++) {
 			if (i % 4 == 0) st += "</tr><tr>";
 			const v = enchere[i];
-			st +=
-				'<td id="enc_' +
-				i +
-				'" onfocus="this.innerText =\'' +
-				v +
-				'\'" contenteditable="' +
-				(mesChoix.edit ? "true" : "false") +
-				'" onblur="blurEnchere(this.innerText,' +
-				i +
-				',event.relatedTarget.id)" >' +
-				getEnchereSt(v) +
-				"</td>";
+			st += '<td id="enc_' + i + '" onfocus="this.innerText =\'' + v + '\'" contenteditable="' + (mesChoix.edit ? "true" : "false") + '" onblur="blurEnchere(this.innerText,' + i + ',event.relatedTarget.id)" >' + getEnchereSt(v) + "</td>";
 		}
 		st += "</tr>";
 		return st;
@@ -840,15 +817,7 @@
 	}
 
 	function GetHTMLmain(img, ar, idx) {
-		return (
-			'<div class="main" ><img src="/images/' +
-			img +
-			'.png" /><span style="min-width: 6em" contenteditable="true" oninput="Info(\'\')" onblur="blurMain(' +
-			idx +
-			',this)">' +
-			AjouteBlancs(ar[idx]) +
-			"</span></div>"
-		);
+		return '<div class="main" ><img src="/images/' + img + '.png" /><span style="min-width: 6em" contenteditable="true" oninput="Info(\'\')" onblur="blurMain(' + idx + ',this)">' + AjouteBlancs(ar[idx]) + "</span></div>";
 	}
 	function MakeDonne(ar, idx) {
 		return GetHTMLmain("Spades", ar, idx++) + GetHTMLmain("coeur", ar, idx++) + GetHTMLmain("Diamonds", ar, idx++) + GetHTMLmain("Clubs", ar, idx++);
@@ -929,12 +898,12 @@
 		});
 	}
 
-	function SQL_all(stm, p) {
-		return SQL("cb_all", stm, p);
+	function SQL_all(stm) {
+		return SQL("cb_all", stm);
 	}
 
-	function SQL_get(stm, p) {
-		return SQL("cb_get", stm, p);
+	function SQL_get(stm) {
+		return SQL("cb_get", stm);
 	}
 
 	function SQL_run(stm, p) {
@@ -1253,6 +1222,14 @@
 		el.innerText = AjouteBlancs(st);
 	}
 
+	function makeImage(sel) {
+		const foo = document.querySelector(sel);
+		html2canvas(foo, { scrollX: 0, scrollY: -window.scrollY }).then((canvas) => {
+			canvas.toBlob((blob) => {
+				navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]).then(() => OK("Image copiée dans le presse-papier"));
+			});
+		});
+	}
 	/****************************/
 	/*        STATUS BAR        */
 	/****************************/
@@ -1332,16 +1309,7 @@
 	function AddJeux(ar, id_node) {
 		let st = "";
 		ar.forEach((el) => {
-			st +=
-				'<li id="j_' +
-				el.id +
-				'" node="' +
-				id_node +
-				'" onclick="onJeuClick(event)" draggable="true"  ondragstart="onJeuDrag(event)" hlp="' +
-				(mesChoix.edit ? "Drag: Déplacer. Shift-drag: dupliquer le jeu dans un autre dossier. " : "") +
-				(el.id == enr.id ? "ID:" + el.id + '" class="tree_sel' : "Clic: Ouvrir (ID: " + el.id + ")") +
-				'" >' +
-				(el.nom || "Donne n°" + el.id);
+			st += '<li id="j_' + el.id + '" node="' + id_node + '" onclick="onJeuClick(event)" draggable="true"  ondragstart="onJeuDrag(event)" hlp="' + (mesChoix.edit ? "Drag: Déplacer. Shift-drag: dupliquer le jeu dans un autre dossier. " : "") + (el.id == enr.id ? "ID:" + el.id + '" class="tree_sel' : "Clic: Ouvrir (ID: " + el.id + ")") + '" >' + (el.nom || "Donne n°" + el.id);
 			//st += '<img class="si_edit" src="/images/Hand_25px.png" id="jeux' + el.id + '" hlp="Sert à faire glisser le jeu vers un autre dossier ou la corbeille"/>';
 			st += "</li>";
 		});
@@ -1362,27 +1330,11 @@
 		const ar_max = ar.length - 1;
 		ar.forEach((el, idx) => {
 			if (idx != el.pos) renumerote(el.id, idx);
-			st +=
-				'<li><details open><summary ondragstart="onNodeDrag(event)" ondragenter="onDragEnter(this)" ondragleave="onDragLeave(this)" onDrop="DropOnNode(event)" >';
+			st += '<li><details open><summary ondragstart="onNodeDrag(event)" ondragenter="onDragEnter(this)" ondragleave="onDragLeave(this)" onDrop="DropOnNode(event)" >';
 			st += '<span contenteditable node="' + el.id + '" onblur="onBlurNode(' + el.id + ',this.innerText)">' + el.itm + "</span>";
-			st +=
-				'<img class="si_edit" src="/images/Hand_25px.png" id="node' +
-				el.id +
-				'" hlp="Sert à faire glisser le dossier vers un autre dossier ou la corbeille (n\'efface pas les jeux)"/>';
-			if (idx > 0)
-				st +=
-					'<img class="si_edit" src="/images/up_25px.png" onclick="UpNode(event,' +
-					el.id +
-					"," +
-					el.pos +
-					' )" hlp="Remonter ce dossier dans la liste"/>';
-			if (idx < ar_max)
-				st +=
-					'<img class="si_edit" src="/images/down_25px.png" onclick="DownNode(event,' +
-					el.id +
-					"," +
-					el.pos +
-					')" hlp="Descendre ce dossier dans la liste"/>';
+			st += '<img class="si_edit" src="/images/Hand_25px.png" id="node' + el.id + '" hlp="Sert à faire glisser le dossier vers un autre dossier ou la corbeille (n\'efface pas les jeux)"/>';
+			if (idx > 0) st += '<img class="si_edit" src="/images/up_25px.png" onclick="UpNode(event,' + el.id + "," + el.pos + ' )" hlp="Remonter ce dossier dans la liste"/>';
+			if (idx < ar_max) st += '<img class="si_edit" src="/images/down_25px.png" onclick="DownNode(event,' + el.id + "," + el.pos + ')" hlp="Descendre ce dossier dans la liste"/>';
 			st += "</summary><ul>" + AddChilds(el.childs) + AddJeux(el.jeux, el.id) + "</ul></details>";
 		});
 		return st;
@@ -1429,12 +1381,7 @@
 		if (ed_find.value.trim() != "") MakeRecherche();
 		else
 			io.emit("get_tree", (r) => {
-				arbre.innerHTML =
-					'<ul class="tree">' +
-					AddChilds(r.childs) +
-					"<li><details open><summary>Non classés</summary><ul>" +
-					AddJeux(r.jeux, 0) +
-					"</ul></details></li></ul>";
+				arbre.innerHTML = '<ul class="tree">' + AddChilds(r.childs) + "<li><details open><summary>Non classés</summary><ul>" + AddJeux(r.jeux, 0) + "</ul></details></li></ul>";
 				SetEventTree();
 				if (selector != undefined) {
 					const el = arbre.querySelector(selector);
@@ -1512,8 +1459,7 @@
 		const node_org = Number(document.getElementById(id).getAttribute("node"));
 		if (node_dest == null) node_dest = 0;
 		try {
-			if (node_dest != 0 && (node_org == 0 || make_copy == true))
-				await SQL_run("INSERT INTO data2tree (id_donne,id_arbre) VALUES (" + id.substr(2) + "," + node_dest + ")");
+			if (node_dest != 0 && (node_org == 0 || make_copy == true)) await SQL_run("INSERT INTO data2tree (id_donne,id_arbre) VALUES (" + id.substr(2) + "," + node_dest + ")");
 			else if (node_dest == 0) await SQL_run("DELETE FROM data2tree WHERE id_donne=" + id.substr(2) + " AND id_arbre=" + node_org);
 			else await SQL_run("UPDATE data2tree SET id_arbre=" + node_dest + " WHERE id_donne=" + id.substr(2) + " AND id_arbre=" + node_org);
 			MakeTree();
@@ -1549,7 +1495,7 @@
 	async function AddNode() {
 		try {
 			let pos = await SQL_get("SELECT MAX(pos)+1 as n FROM arbre");
-			let r = await SQL_run("INSERT INTO arbre (itm,pos) VALUES ('Nouveau dossier',?)", pos.n || 0);
+			let r = await SQL_run("INSERT INTO arbre (itm,pos) VALUES ('Nouveau dossier',?)", [pos.n || 0]);
 			MakeTree('details [node="' + r.lastInsertRowid + '"]');
 		} catch (e) {
 			Erreur(e);
@@ -1590,7 +1536,7 @@
 			const id = " WHERE id=" + id_node;
 			r = await SQL_get("SELECT itm FROM arbre" + id);
 			if (r.itm != txt) {
-				await SQL_run("UPDATE arbre SET itm=?" + id, txt);
+				await SQL_run("UPDATE arbre SET itm=?" + id, [txt]);
 			}
 		} catch (e) {
 			Erreur(e);
@@ -1601,12 +1547,7 @@
 		if (txt == undefined) return "";
 		const rch = ed_find.value.trim();
 		if (rch != "") txt = txt.replace(new RegExp(rch, "ig"), '<span class="rch_txt">' + rch + "</span>");
-		return txt
-			.replace(/♦/g, '<img src="/images/Diamonds.png" />')
-			.replace(/♣/g, '<img src="/images/Clubs.png" />')
-			.replace(/♠/g, '<img src="/images/Spades.png" />')
-			.replace(/♥/g, '<img src="/images/coeur.png" />')
-			.replace(/\n/g, "<br />");
+		return txt.replace(/♦/g, '<img src="/images/Diamonds.png" />').replace(/♣/g, '<img src="/images/Clubs.png" />').replace(/♠/g, '<img src="/images/Spades.png" />').replace(/♥/g, '<img src="/images/coeur.png" />').replace(/\n/g, "<br />");
 	}
 
 	function Masquer(val) {
