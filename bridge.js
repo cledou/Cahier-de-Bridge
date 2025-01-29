@@ -231,12 +231,14 @@ io.on("connection", async (socket) => {
 	});
 
 	socket.onAny((event, p1, p2, p3, p4, p5) => {
+		/*
 		if (p5 != undefined) console.log("IO WEB->", event, p1, p2, p3, p4, p5);
 		else if (p4 != undefined) console.log("IO WEB->", event, p1, p2, p3, p4);
 		else if (p3 != undefined) console.log("IO WEB->", event, p1, p2, p3.toString().substring(0, 20));
 		else if (p2 != undefined) console.log("IO WEB->", event, p1, p2);
 		else if (p1 != undefined) console.log("IO WEB->", event, p1);
 		else console.log("IO WEB->", event);
+		*/
 	});
 
 	/*****************/
@@ -445,7 +447,7 @@ io.on("connection", async (socket) => {
 			if (db_list.indexOf(nom) == -1) throw new Error("Base inconnue !");
 			cb("OK");
 			if (nom != db_name) {
-				console.log("open_db", nom, db_name, session.choix.db);
+				//console.log("open_db", nom, db_name, session.choix.db);
 				session.choix.db = nom;
 				const info = await db_all(db_login, "UPDATE users SET choix=? WHERE id=" + session.user.id, [JSON.stringify(session.choix)]);
 				session.dirty = true;
@@ -533,7 +535,7 @@ if (app_config.certificats != undefined) {
 
 // lancer le navigateur par défaut sur la page par défaut
 if (dir_sep != "/")
-	child_process.exec("start http://localhost:" + app.get("port"), (error, stdout, stderr) => {
+	child_process.exec("start http://localhost:" + app_config.http_port, (error, stdout, stderr) => {
 		if (error) {
 			console.error("oups", error.message);
 		}
@@ -645,7 +647,7 @@ async function getVersion(db) {
 async function openBase(dir, nom) {
 	let db = new sqlite3.Database(dir + nom + ".db");
 	let version = (await getVersion(db)) || (await MakeSQLfile(db, nom + ".sql"));
-	console.log("openBase", nom, version);
+	//console.log("openBase", nom, version);
 	if (!version) return Promise.reject(new Error("Pas de VERSION_BASE")); // exit
 	else {
 		let row = await db_get(db, "SELECT paramValue FROM parametres WHERE paramName='NATURE_BASE'");
