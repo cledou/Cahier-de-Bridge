@@ -17,9 +17,6 @@ const { createServer } = require("http");
 const { join } = require("path");
 const { Server } = require("socket.io");
 const session = require("express-session");
-
-const port = process.env.PORT || 3000;
-
 const app = express();
 const httpServer = createServer(app);
 
@@ -45,8 +42,6 @@ const { exit } = require("process");
 //******************
 //initialisation du serveur web, des chemins locaux et du socket
 app.set("env", process.env.ENV || "development");
-app.set("port", process.env.PORT || 3004);
-
 // utiliser des répertoires statiques chainés (si page manquante, passe au rép suivant..)
 app.use("/public", express.static("./")); // 'public' est en réalité ./
 app.use("/css", express.static("./css/"));
@@ -76,7 +71,6 @@ if (fs.existsSync(config_filename)) {
 		let s = fs.readFileSync(config_filename);
 		if (s != "{}") {
 			app_config = JSON.parse(s);
-			if (app_config.port != undefined) app.set("port", app_config.port);
 		}
 	} catch (e) {
 		console.error("Parsing error 130", e);
@@ -250,8 +244,7 @@ io.on("connection", async (socket) => {
 	/* AVEC CALLBACK */
 	/*****************/
 	async function AddTreeNode(node, id_parent) {
-		if (node.jeux == undefined)
-			node.jeux = await db_all(db, "SELECT d.id,d.nom FROM data2tree t LEFT JOIN donnes d ON d.id==t.id_donne WHERE t.id_arbre" + id_parent);
+		if (node.jeux == undefined) node.jeux = await db_all(db, "SELECT d.id,d.nom FROM data2tree t LEFT JOIN donnes d ON d.id==t.id_donne WHERE t.id_arbre" + id_parent);
 		node.childs = await db_all(db, "SELECT id,itm,pos FROM arbre WHERE id_parent" + id_parent + " ORDER BY pos");
 		for (let el of node.childs) {
 			await AddTreeNode(el, "=" + el.id);
@@ -377,17 +370,7 @@ io.on("connection", async (socket) => {
 					const row = await db_get(db, "SELECT * FROM donnes WHERE id=" + id);
 					if (nom != "") nom += ",";
 					nom += row.nom;
-					st +=
-						"INSERT INTO donnes (nom,data) VALUES ('" +
-						row.nom +
-						"', '" +
-						row.data
-							.replace(/'/g, "''")
-							.replace('", "txt1":', '",\n"txt1":')
-							.replace('", "txt2":', '",\n"txt2":')
-							.replace('", "donne":', '",\n"donne":')
-							.replace('], "enchere":', '],\n"enchere":') +
-						"');\n";
+					st += "INSERT INTO donnes (nom,data) VALUES ('" + row.nom + "', '" + row.data.replace(/'/g, "''").replace('", "txt1":', '",\n"txt1":').replace('", "txt2":', '",\n"txt2":').replace('", "donne":', '",\n"donne":').replace('], "enchere":', '],\n"enchere":') + "');\n";
 				}
 				nom += ".sql";
 				const fn = dir_upload + dir_sep + nom;
@@ -522,8 +505,8 @@ process.on("SIGINT", function () {
 httpServer.on("error", (e) => {
 	onErreurServer(e);
 });
-httpServer.listen(app.get("port"), () => {
-	console.log("Ecoute port " + app.get("port") + ". CTRL-C pour finir");
+httpServer.listen(app_config.http_port, () => {
+	console.log("Ecoute port " + app_config.http_port + ". CTRL-C pour finir");
 });
 
 if (app_config.certificats != undefined) {
@@ -543,8 +526,8 @@ if (app_config.certificats != undefined) {
 	httpsServer.on("error", (e) => {
 		onErreurServer(e);
 	});
-	httpsServer.listen(443, () => {
-		console.log("HTTPS Server running on port 443");
+	httpsServer.listen(app_config.https_port, () => {
+		console.log("HTTPS Server running on port " + app_config.https_port);
 		io.attach(httpsServer);
 	});
 }
