@@ -7,3 +7,5 @@ renew.txt
 db/*
 upload/*
 login.db
+*.key
+ssl/*
