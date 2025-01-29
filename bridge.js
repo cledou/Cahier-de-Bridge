@@ -32,7 +32,6 @@ io.engine.use(sessionMiddleware);
 
 const fs = require("fs");
 const sqlite3 = require("sqlite3");
-const bcrypt = require("bcrypt");
 const child_process = require("child_process");
 const favicon = require("serve-favicon"); // icone page web
 const multer = require("multer"); // upload middleware
