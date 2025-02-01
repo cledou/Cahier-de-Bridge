@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<!-- https://www.youtube.com/watch?v=TUD1AWZVgQ8  -->
+		<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png" />
+		<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png" />
+		<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png" />
+		<link rel="manifest" href="/images/site.webmanifest" />
+		<link rel="stylesheet" href="/css/style.css" />
+		<link rel="stylesheet" href="/css/status.css" />
+		<title>Se connecter</title>
+		<style>
+			.main {
+				position: absolute;
+				display: flex;
+				flex-direction: column;
+				width: 100%;
+				height: 100%;
+				background: linear-gradient(rgba(211, 211, 211, 0.5), rgba(211, 211, 211, 0.5)), url("/images/Cards.png");
+			}
+			.login {
+				position: relative;
+				display: flex;
+				flex-direction: column;
+				justify-content: space-around;
+				align-items: center;
+				margin: auto;
+				max-width: 90%;
+				min-height: 200px;
+				padding: 5px 20px 13px 20px;
+				border-radius: 10px;
+				background: #999;
+				background: -moz-linear-gradient(#000, #999);
+				background: -webkit-linear-gradient(#000, #999);
+				background: -o-linear-gradient(#000, #999);
+				-webkit-animation-name: zoom;
+				-webkit-animation-duration: 0.6s;
+				animation-name: zoom;
+				animation-duration: 0.6s;
+				color: antiquewhite;
+			}
+			.edbox {
+				display: flex;
+				flex-direction: column;
+				justify-content: flex-start;
+				align-self: stretch;
+				margin-top: 10px;
+				margin-bottom: 10px;
+			}
+			.login button {
+				margin: 0.5em;
+				padding: 0.2em;
+				font-size: large;
+			}
+			#lk_forgot {
+				cursor: pointer;
+				text-decoration: underline;
+				color: blue;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="main">
+			<div class="login">
+				<h1>Accès protégé</h1>
+				<button id="btn_noname" hlp="Accès en lecture seulement">Entrer comme visiteur</button>
+				<p>OU, si déjà enregistré</p>
+				<div class="edbox">
+					Nom ou Email:
+					<input type="text" id="ed_login" />
+				</div>
+				<div class="edbox" id="box_pw">
+					Mot de passe:
+					<input type="password" id="ed_pw" />
+				</div>
+				<button id="btn_OK">Connexion</button>
+				<div id="lk_forgot">J'ai oublié mon mot de passe</div>
+			</div>
+			<div id="status"></div>
+		</div>
+	</body>
+</html>
+<script src="/socket.io/socket.io.min.js"></script>
+<script>
+	const ed_login = document.getElementById("ed_login");
+	const box_pw = document.getElementById("box_pw");
+	const btn_OK = document.getElementById("btn_OK");
+	const lk_forgot = document.getElementById("lk_forgot");
+
+	var io = io.connect(location.host);
+
+	io.on("connect", function () {
+		io.emit("session", (data) => {
+			session = data;
+			if (session.user) {
+				ed_login.value = session.user.nom;
+				onUser();
+				ed_pw.focus();
+			}
+		});
+	});
+
+	function onUser() {
+		io.emit("is_user", ed_login.value, (r) => {
+			console.log(r);
+			const b = r.startsWith("OK");
+			box_pw.style.opacity = b ? 1 : 0;
+			lk_forgot.style.opacity = b ? 1 : 0;
+			btn_OK.disabled = !b;
+			if (r.startsWith("NTBS")) Erreur(r);
+		});
+	}
+
+	ed_login.addEventListener("input", onUser);
+
+	document.getElementById("btn_noname").addEventListener("click", function () {
+		io.emit("connect_me", "Anonyme", "", (r) => {
+			if (r == "OK") window.location.href = "/";
+			else Erreur(r);
+		});
+	});
+
+	btn_OK.addEventListener("click", function () {
+		io.emit("connect_me", ed_login.value, document.getElementById("ed_pw").value, (r) => {
+			console.log(r);
+			if (r == "OK") window.location.href = "/";
+			else Erreur(r);
+		});
+	});
+
+	lk_forgot.addEventListener("click", function () {
+		io.emit("forgot", ed_login.value, (r) => {
+			console.log("forgot", r);
+			if (r.err) {
+				Erreur(r.err);
+				if (r.contact && r.contact != "") alert("Contactez l'administrateur du site à " + r.contact); //
+			} else OK(r);
+		});
+	});
+
+	/****************************/
+	/*        STATUS BAR        */
+	/****************************/
+	const status = document.getElementById("status"); //https://codepen.io/lcoulon/pen/QdPgqz
+	document.querySelectorAll("[hlp],[alt]").forEach((itm) => {
+		itm.addEventListener("mouseover", (e) => {
+			e.stopPropagation();
+			if (!itm.parentElement.hasAttribute("disabled")) Info(itm.getAttribute("hlp") || itm.getAttribute("alt"));
+		});
+		itm.addEventListener("mouseout", (e) => {
+			Info("");
+		});
+	});
+
+	function Info(msg) {
+		status.classList.remove("warning");
+		status.classList.remove("error");
+		status.classList.remove("ok");
+		status.innerHTML = msg;
+	}
+
+	function Erreur(msg) {
+		console.error(msg);
+		Info('<img src="/images/error_25px.png"/>' + msg);
+		status.classList.add("error");
+	}
+
+	function OK(msg) {
+		Info('<img src="/images/Ok_25px.png"/>' + msg);
+		status.classList.add("ok");
+	}
+
+	function Warning(msg) {
+		Info('<img src="/images/Warning Shield.png"/>' + msg);
+		status.classList.add("warning");
+	}
+</script>

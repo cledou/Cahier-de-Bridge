@@ -500,6 +500,12 @@
 						<button class="to_do undo" onclick="Undo()" disabled><img src="/images/undo_30px.png" alt="Revenir en arrière (ctrl-Z)" /></button>
 						<button class="to_do redo" onclick="Redo()" disabled><img src="/images/redo_30px.png" alt="Annuler retour en arrière (shift-ctrl-Z)" /></button>
 						<button class="si_dirty" onclick="onSave()"><img src="/images/save_30px.png" alt="Sauver les modifications" /></button>
+						<button class="si_login hide_me" onclick="window.location.href='/user'">
+							<img src="/images/add_user_30px.png" alt="Créer un compte utilisateur" />
+						</button>
+						<button class="si_login hide_me" onclick="window.location.href='/login'">
+							<img src="/images/close_window_30px.png" hlp="Revenir à l'écran de connexion" />
+						</button>
 					</div>
 					<h1 class="titre" id="enr_nom" contenteditable="true" style="min-width: 3em; min-height: 1em"></h1>
 					<div class="donne">
@@ -590,7 +596,7 @@
 	//  Variables globales
 	//*********************
 	var io = io.connect(location.host);
-	var session;
+	var session = { choix: {} };
 	var mesChoix;
 
 	const volet_tree = document.getElementById("volet_tree"); // lié à mesChoix.show_tree
@@ -637,97 +643,102 @@
 
 	// connect -> session -> get_dims -> liste_donnes -> loadDonne OU nouvelle donne
 	io.on("connect", function () {
-		io.emit("session"); // il faut récupérer la variable de session
-	});
+		io.emit("session", (data) => {
+			session = data;
+			if (data.erreur != undefined) {
+				Erreur(data.erreur);
+			}
+			if (data.info != undefined) {
+				Info(data.info);
+			}
+			if (!session.user.admin) for (let el of document.getElementsByClassName("si_admin")) el.remove();
 
-	io.on("session", function (data) {
-		session = data;
-		if (data.erreur != undefined) {
-			Erreur(data.erreur);
-		}
-		if (data.info != undefined) {
-			Info(data.info);
-		}
-		SetSelectorDisplay(".is_admin", session.user.admin != true ? "none" : "block");
-		mesChoix = session.user.choix;
-		if (mesChoix.flags == undefined) mesChoix.flags = 0;
-		Object.defineProperties(mesChoix, {
-			show_tree: {
-				get: function () {
-					return Boolean(this.flags & 1);
+			mesChoix = session.user.choix;
+			if (mesChoix.flags == undefined) mesChoix.flags = 0;
+			Object.defineProperties(mesChoix, {
+				show_tree: {
+					get: function () {
+						return Boolean(this.flags & 1);
+					},
+					set: (b) => SetSessionFlag(1, b),
 				},
-				set: (b) => SetSessionFlag(1, b),
-			},
-			edit: {
-				get: function () {
-					return Boolean(this.flags & 2);
+				edit: {
+					get: function () {
+						return Boolean(this.flags & 2);
+					},
+					set: (b) => SetSessionFlag(2, b),
 				},
-				set: (b) => SetSessionFlag(2, b),
-			},
-			chk_find: {
-				get: function () {
-					return Boolean(this.flags & 4);
+				chk_find: {
+					get: function () {
+						return Boolean(this.flags & 4);
+					},
+					set: (b) => SetSessionFlag(4, b),
 				},
-				set: (b) => SetSessionFlag(4, b),
-			},
-			rbt_bkp: {
-				get: () => {
-					return Boolean(this.flags & 8);
+				rbt_bkp: {
+					get: () => {
+						return Boolean(this.flags & 8);
+					},
+					set: (b) => SetSessionFlag(8, b),
 				},
-				set: (b) => SetSessionFlag(8, b),
-			},
-		});
-
-		if (mesChoix.carets == undefined) mesChoix.carets = "XXXXXXXXXXXXX";
-		document.querySelectorAll(".level1 summary").forEach((caret, idx) => {
-			while (mesChoix.carets.length <= idx) mesChoix.carets += "X";
-			console.assert(idx < mesChoix.carets.length);
-			caret.addEventListener("click", function () {
-				// En js, string est inmutable
-				let ar = mesChoix.carets.split("");
-				ar[idx] = ar[idx] == "X" ? "-" : "X";
-				SetChoix("carets", ar.join(""));
 			});
-			if (mesChoix.carets[idx] == "X") caret.parentElement.setAttribute("open", true);
-			else caret.parentElement.removeAttribute("open");
+
+			if (mesChoix.carets == undefined) mesChoix.carets = "XXXXXXXXXXXXX";
+			document.querySelectorAll(".level1 summary").forEach((caret, idx) => {
+				while (mesChoix.carets.length <= idx) mesChoix.carets += "X";
+				console.assert(idx < mesChoix.carets.length);
+				caret.addEventListener("click", function () {
+					// En js, string est inmutable
+					let ar = mesChoix.carets.split("");
+					ar[idx] = ar[idx] == "X" ? "-" : "X";
+					SetChoix("carets", ar.join(""));
+				});
+				if (mesChoix.carets[idx] == "X") caret.parentElement.setAttribute("open", true);
+				else caret.parentElement.removeAttribute("open");
+			});
+			tree_sw.checked = mesChoix.show_tree;
+			HideVoletGauche(mesChoix.show_tree);
+			chk_find.checked = mesChoix.chk_find;
+			ed_find.value = mesChoix.find || "";
+			ed_masquer.value = mesChoix.masquer || 4;
+			for (let el of document.getElementsByClassName("si_login")) {
+				if (session.need_login) el.classList.remove("hide_me");
+				else el.classList.add("hide_me");
+			}
+
+			OpenOrNew(); // asynchrone..
 		});
-		tree_sw.checked = mesChoix.show_tree;
-		HideVoletGauche(mesChoix.show_tree);
-		chk_find.checked = mesChoix.chk_find;
-		ed_find.value = mesChoix.find || "";
-		ed_masquer.value = mesChoix.masquer || 4;
-		OpenOrNew(); // asynchrone..
-	});
-	io.on("info", function (msg) {
-		Info(msg);
-	});
-	io.on("alert", function (msg) {
-		Erreur(msg);
-	});
-	io.on("warning", function (msg) {
-		Warning(msg);
-	});
-	io.onAny((event, p1, p2, p3, p4, p5) => {
-		return;
-		if (p5 != undefined) console.log("IO WEB->", event, p1, p2, p3, p4, p5);
-		else if (p4 != undefined) console.log("IO WEB->", event, p1, p2, p3, p4);
-		else if (p3 != undefined) console.log("IO WEB->", event, p1, p2, p3.toString().substring(0, 20));
-		else if (p2 != undefined) console.log("IO WEB->", event, p1, p2);
-		else if (p1 != undefined) console.log("IO WEB->", event, p1);
-		else console.log("IO WEB->", event);
-	});
 
-	io.on("db_list", (ar) => {
-		SetSelectorDisplay(".si_dbs", ar.length > 1 ? "block" : "none");
-		let foo = "";
-		ar.forEach((db) => (foo += "<option>" + db + "</option>"));
-		cbx_db.innerHTML = foo;
-		//cbx_db.value = mesChoix.db
-	});
+		io.on("info", function (msg) {
+			Info(msg);
+		});
+		io.on("alert", function (msg) {
+			Erreur(msg);
+		});
+		io.on("warning", function (msg) {
+			Warning(msg);
+		});
+		io.onAny((event, p1, p2, p3, p4, p5) => {
+			return;
+			if (p5 != undefined) console.log("IO WEB->", event, p1, p2, p3, p4, p5);
+			else if (p4 != undefined) console.log("IO WEB->", event, p1, p2, p3, p4);
+			else if (p3 != undefined) console.log("IO WEB->", event, p1, p2, p3.toString().substring(0, 20));
+			else if (p2 != undefined) console.log("IO WEB->", event, p1, p2);
+			else if (p1 != undefined) console.log("IO WEB->", event, p1);
+			else console.log("IO WEB->", event);
+		});
 
-	io.on("reload", () => {
-		window.location.reload();
-	});
+		io.on("db_list", (ar) => {
+			SetSelectorDisplay(".si_dbs", ar.length > 1 ? "block" : "none");
+			let foo = "";
+			ar.forEach((db) => (foo += "<option>" + db + "</option>"));
+			cbx_db.innerHTML = foo;
+			//cbx_db.value = mesChoix.db
+		});
+
+		io.on("reload", () => {
+			window.location.reload();
+		});
+	}); // connect
 
 	//*********************
 	//      Let's GO
@@ -878,8 +889,6 @@
 				}
 		return true;
 	}
-
-	var session = { choix: {} };
 
 	function SetChoix(nom, val) {
 		mesChoix[nom] = val;

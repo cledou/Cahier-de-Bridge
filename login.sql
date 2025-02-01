@@ -12,7 +12,6 @@ CREATE TABLE users (
   email VARCHAR(64),
   hash VARCHAR(60),
   reset_hash VARCHAR(60),
-  reset_validity DATETIME,
   choix TEXT DEFAULT '{"flags": 1}',
   binette BLOB,
   admin BOOLEAN DEFAULT FALSE,

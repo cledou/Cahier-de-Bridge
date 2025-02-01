@@ -1,0 +1,54 @@
+.jolicbx input[type="checkbox"] {
+	position: relative;
+	width: 50px;
+	height: 20px;
+	margin-left: 0;
+	margin-right: 0.8em;
+	margin-top: 0.2em;
+	appearance: none;
+	-webkit-appearance: none;
+	background: linear-gradient(0deg, #333, #000);
+	outline: none;
+	border-radius: 10px;
+	box-shadow: 0 0 0 2px #353535, inset 0 0 8px rgba(0, 0, 0, 1), 0 2px 8px rgba(0, 0, 0, 0.5), inset 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+.jolicbx input:checked[type="checkbox"] {
+	background: linear-gradient(0deg, #6dd1ff, #20b7ff);
+	box-shadow: 0 0 2px #6dd1ff, 0 0 0 2px #353535, inset 0 0 8px rgba(0, 0, 0, 1), 0 2px 8px rgba(0, 0, 0, 0.5), inset 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+.jolicbx input[type="checkbox"]:before {
+	content: "";
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 30px;
+	height: 20px;
+	background: linear-gradient(0deg, #000, #6b6b6b);
+	border-radius: 10px;
+	box-shadow: 0 0 0 1px #232323;
+	transform: scale(0.98, 0.96);
+	transition: 0.5s;
+}
+
+.jolicbx input[type="checkbox"]:after {
+	content: "";
+	position: absolute;
+	top: calc(50% - 2px);
+	left: 20px;
+	width: 4px;
+	height: 4px;
+	background: linear-gradient(0deg, #6b6b6b, #000);
+	border-radius: 50%;
+	transition: 0.5s;
+}
+
+.jolicbx input:checked[type="checkbox"]:before {
+	left: 20px;
+}
+
+.jolicbx input:checked[type="checkbox"]:after {
+	left: 40px;
+	background: #63cdff;
+}

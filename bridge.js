@@ -19,7 +19,10 @@ const { Server } = require("socket.io");
 const session = require("express-session");
 const app = express();
 const httpServer = createServer(app);
+const nodemailer = require("nodemailer");
+//const SendmailTransport = require("nodemailer/lib/sendmail-transport");
 
+const md5 = require("md5");
 const sessionMiddleware = session({
 	secret: "WqiZvuvVsIV1zmzJQeYUgINqXYe",
 	resave: true,
@@ -36,6 +39,7 @@ const child_process = require("child_process");
 const favicon = require("serve-favicon"); // icone page web
 const multer = require("multer"); // upload middleware
 const { exit } = require("process");
+
 //******************
 // Initialisations
 //******************
@@ -60,9 +64,11 @@ app.use(
 );
 app.use(express.json());
 var app_config = {};
+var transport;
 
 // récupérer la configuration
 const config_filename = __dirname + "/config.json";
+if (!fs.existsSync(config_filename)) fs.copyFileSync(__dirname + "/_config.json", config_filename);
 if (fs.existsSync(config_filename)) {
 	//file exists
 	//onsole.log('file ' + config_filename + ' exists');
@@ -70,12 +76,20 @@ if (fs.existsSync(config_filename)) {
 		let s = fs.readFileSync(config_filename);
 		if (s != "{}") {
 			app_config = JSON.parse(s);
+			if (app_config.mail != undefined)
+				try {
+					transport = nodemailer.createTransport(app_config.mail);
+					console.log("Envoi Email via " + app_config.mail.host);
+				} catch (e) {
+					console.error("Erreur transport mail", e);
+				}
+			else console.error("Pas de configuration mail");
 		}
 	} catch (e) {
 		console.error("Parsing error 130", e);
 		exit(-1);
 	}
-} else console.log(config_filename + " introuvable. A créer");
+} else console.error("NTBS:" + config_filename + " introuvable. A créer");
 
 //*******************************
 // Initialisation de la session
@@ -190,14 +204,14 @@ io.on("connection", async (socket) => {
 	let db_name = session.user.choix.db || db_def_filename; // nom de la base ouverte par socket.io
 	let db = new sqlite3.Database(db_dir + db_name);
 	// passons aux choses sérieuses
-	session.multiposte = app_config.multiposte;
 	nbr_clients++;
 	console.log(session.user.nom + " est connecté à " + db_name);
 
 	// et maintenant, on attend le ping-pong
 
-	socket.on("session", () => {
-		socket.emit("session", session);
+	socket.on("session", (cb) => {
+		session.need_login = app_config.need_login;
+		cb(session);
 		socket.emit("info", "Database utilisée: " + db_name);
 		socket.emit("db_list", db_list);
 	});
@@ -447,9 +461,8 @@ io.on("connection", async (socket) => {
 			if (db_list.indexOf(nom) == -1) throw new Error("Base inconnue !");
 			cb("OK");
 			if (nom != db_name) {
-				//console.log("open_db", nom, db_name, session.choix.db);
-				session.choix.db = nom;
-				const info = await db_all(db_login, "UPDATE users SET choix=? WHERE id=" + session.user.id, [JSON.stringify(session.choix)]);
+				session.user.choix.db = nom;
+				const info = await db_all(db_login, "UPDATE users SET choix=? WHERE id=" + session.user.id, [JSON.stringify(session.user.choix)]);
 				session.dirty = true;
 				session.save();
 				socket.emit("reload");
@@ -459,18 +472,167 @@ io.on("connection", async (socket) => {
 			cb(e);
 		}
 	});
+
+	/********************/
+	/* Contrôle d'accès */
+	/********************/
+
+	socket.on("forgot", (nom, cb) => {
+		if (db_login == undefined) cb("NTBS: Liste des utilisateurs inaccessible");
+		else
+			db_login.get("SELECT id,nom,email FROM users WHERE nom LIKE ? OR email LIKE ?", [nom, nom], (err, row) => {
+				if (err) cb({ err: err.message, contact: app_config.email_to });
+				else if (row == undefined) cb({ err: "Utilisateur introuvable" });
+				else if (transport == undefined) cb({ err: "Envoi d'email pas configuré sur ce site", contact: app_config.email_to });
+				else {
+					// envoi d'un mail pour réinitialiser le mot de passe
+					if (row.email == undefined) cb({ err: "Email de '" + nom + "' manquant", contact: app_config.email_to });
+					else {
+						const hash = md5(row.id + row.nom + Date.now());
+						db_login.run("UPDATE users SET reset_hash=? WHERE id=?", [hash, row.id], (err) => {
+							if (err) cb({ err: err.message, contact: app_config.email_to });
+							else {
+								// le lien expire après 5 mn
+								setTimeout(() => {
+									db_login.run("UPDATE users SET reset_hash=null WHERE reset_hash=?", [hash], (err) => {
+										if (err) console.error(err.message);
+									});
+								}, 300000);
+								const raz_url = app_config.http_url + "/reset?p1=" + hash;
+								const message = {
+									from: app_config.mail.auth.user, // Sender address
+									to: row.email || app_config.email_to, // List of recipients
+									subject: "Demande de réinitialisation de mot de passe pour " + row.nom, // Subject line
+									html: 'Cliquez sur le lien pour réinitialiser votre mot de passe: <a href="' + raz_url + '">Nouveau mot de passe</a>',
+									text: "Pour réinitialiser votre mot de passe, cliquez ou copier dans votre navigateur l'adresse suivante: " + raz_url,
+								};
+								console.log(message);
+								transport.sendMail(message, function (err, info) {
+									if (err) cb({ err: err.message, contact: app_config.email_to });
+									else cb("Un Email contenant le lien pour réinitialiser votre mot de passe a été envoyé à " + row.email);
+								});
+							}
+						});
+					}
+				}
+			});
+	});
+
+	socket.on("get_hash", (hash, cb) => {
+		if (db_login == undefined) cb({ err: "NTBS: Liste des utilisateurs inaccessible" });
+		else
+			db_login.get("SELECT nom,id FROM users WHERE reset_hash=?", [hash], (err, row) => {
+				if (err) cb({ err: err.message });
+				else if (row == undefined) cb({ err: "Lien de réinitialisation expiré" });
+				else cb(row);
+			});
+	});
+
+	socket.on("set_hash", (reset_hash, pw, cb) => {
+		if (db_login == undefined) cb({ err: "NTBS: Liste des utilisateurs inaccessible" });
+		else {
+			db_login.run("UPDATE users SET hash=?,reset_hash=NULL WHERE reset_hash=?", [pw == "" ? "NULL" : md5(pw), reset_hash], function (err) {
+				if (err) cb({ err: err.message });
+				else if (this.changes != 1) cb({ err: "Lien expiré" });
+				else cb("OK");
+			});
+		}
+	});
+
+	socket.on("is_user", (nom, cb) => {
+		if (db_login == undefined) cb("NTBS: Liste des utilisateurs inaccessible");
+		else
+			db_login.get("SELECT COUNT(*) as cnt FROM USERS WHERE nom LIKE ? OR email LIKE ?", [nom, nom], (err, row) => {
+				if (!err && row && row.cnt) cb("OK:" + row.cnt);
+				else cb("");
+			});
+	});
+
+	socket.on("is_dispo", (champ, value, cb) => {
+		if (db_login == undefined) cb({ err: "NTBS: Liste des utilisateurs inaccessible" });
+		else
+			db_login.get("SELECT COUNT(*) as cnt FROM USERS WHERE " + champ + " LIKE ? AND id <> " + session.user.id, [value], (err, row) => {
+				if (err) cb({ err: err.message });
+				else cb({ dispo: row.cnt == 0 });
+			});
+	});
+
+	socket.on("updUser", (champ, value, cb) => {
+		if (db_login == undefined) cb({ err: "NTBS: Session fermée. Reconnectez vous" });
+		else
+			db_login.run("UPDATE users SET " + champ + "=? WHERE id=" + session.user.id, [value], (err) => {
+				if (err) cb(err.message);
+				else cb("OK");
+			});
+	});
+
+	function PasswordOK(pw, hash) {
+		// Pour une petite appli sans gros enjeux de sécurité, le md5 suffit largement.
+		// Pour une appli plus secure, utiliser bcrypt (mais install compliqué) ou Crypto
+		return (!hash && pw == "") || hash == md5(pw);
+	}
+
+	async function ChangeMP(id, pw) {
+		db_login.run("UPDATE users SET hash=" + (pw == "" ? "NULL" : "'" + md5(pw) + "'") + " WHERE id=" + id, (err) => {
+			return err ? err.message : "OK";
+		});
+	}
+
+	async function CheckMP(id, pw) {
+		db_login.get("SELECT hash FROM users WHERE id=" + id, (err, row) => {
+			if (err) return err.message;
+			else if (row == undefined) return "Utilisateur introuvable";
+			else if (!PasswordOK(pw, row.hash)) return "Mot de passe incorrect";
+			else return "OK";
+		});
+	}
+
+	socket.on("updpwd", async (old_pw, new_pw, cb) => {
+		let r = await CheckMP(session.user.id, old_pw);
+		if (r != "OK") cb(r);
+		else ChangeMP(id, new_pw).then((r) => cb(r));
+	});
+
+	socket.on("connect_me", (nom, pw, cb) => {
+		db_login.get("SELECT id,hash,admin,last_db FROM USERS WHERE nom LIKE ? OR email LIKE ?", [nom, nom], (err, row) => {
+			if (err) cb(err.message);
+			else if (PasswordOK(pw, row.hash)) {
+				session.user = {
+					id: row.id,
+					nom: nom,
+					is_admin: Boolean(row.admin),
+					last_db: row.last_db,
+				};
+				session.save();
+				cb("OK");
+			} else cb("Mot de passe incorrect");
+		});
+	});
 }); // fin socket.io
 
 //*******************
 //    GET Routes
 //*******************
 
-app.get("/", (req, res) => {
+app.get("/login", (req, res) => {
+	req.session.user = undefined;
+	res.render("login.html");
+});
+
+app.get("/", checkAuthenticated, (req, res) => {
 	res.render("index.html");
 });
 
-app.get("/index", (req, res) => {
+app.get("/index", checkAuthenticated, (req, res) => {
 	res.render("index.html");
+});
+
+app.get("/user", checkAuthenticated, (req, res) => {
+	res.render("user.html");
+});
+
+app.get("/reset", (req, res) => {
+	res.render("resetpw.html");
 });
 
 //*******************
@@ -483,6 +645,18 @@ app.post("/upload_this", function (req, res) {
 		res.send("OK:" + req.file.path);
 	});
 });
+
+function checkAuthenticated(req, res, next) {
+	//console.log("checkAuthenticated", app_config.need_login, req.sesssion);
+	if (app_config.need_login == false) next();
+	else if (req.session != undefined && req.session.user != undefined) {
+		//console.log(req.session.user.nom);
+		next();
+	} else {
+		res.redirect("/login");
+		//console.log("Echec auth");
+	}
+}
 
 //********************
 // En arrière toute !
@@ -510,30 +684,33 @@ httpServer.listen(app_config.http_port, () => {
 	console.log("Ecoute port " + app_config.http_port + ". CTRL-C pour finir");
 });
 
-if (app_config.certificats != undefined) {
-	// Certificate
-	const privateKey = fs.readFileSync(app_config.certificats + "privkey.pem", "utf8");
-	const certificate = fs.readFileSync(app_config.certificats + "cert.pem", "utf8");
-	const ca = fs.readFileSync(app_config.certificats + "chain.pem", "utf8");
+if (app_config.https_port != undefined && app_config.https_port > 0 && app_config.ssl_dir != undefined && fs.existsSync(app_config.ssl_dir))
+	try {
+		// Certificate
+		const privateKey = fs.readFileSync(app_config.ssl_dir + "privkey.pem", "utf8");
+		const certificate = fs.readFileSync(app_config.ssl_dir + "cert.pem", "utf8");
+		const ca = fs.readFileSync(app_config.ssl_dir + "chain.pem", "utf8");
 
-	const credentials = {
-		key: privateKey,
-		cert: certificate,
-		ca: ca,
-	};
+		const credentials = {
+			key: privateKey,
+			cert: certificate,
+			ca: ca,
+		};
 
-	const httpsServer = require("https").createServer(credentials, app);
+		const httpsServer = require("https").createServer(credentials, app);
 
-	httpsServer.on("error", (e) => {
-		onErreurServer(e);
-	});
-	httpsServer.listen(app_config.https_port, () => {
-		console.log("HTTPS Server running on port " + app_config.https_port);
-		io.attach(httpsServer);
-	});
-}
+		httpsServer.on("error", (e) => {
+			onErreurServer(e);
+		});
+		httpsServer.listen(app_config.https_port, () => {
+			console.log("HTTPS Server running on port " + app_config.https_port);
+			io.attach(httpsServer);
+		});
+	} catch (e) {
+		console.error(e.message);
+	}
 
-// lancer le navigateur par défaut sur la page par défaut
+// lancer le navigateur par défaut sur la page par défaut. Le séparateur de dossier est différent sous Windows
 if (dir_sep != "/")
 	child_process.exec("start http://localhost:" + app_config.http_port, (error, stdout, stderr) => {
 		if (error) {
@@ -607,7 +784,7 @@ async function db_run(db, query, values = []) {
 	});
 }
 
-async function MakeSQLfile(db, path) {
+async function MakeSQLfile(db, path, verbose = true) {
 	let ok = fs.existsSync(path);
 	if (ok) {
 		const lignes = fs.readFileSync(path).toString().split("\n");
@@ -631,7 +808,7 @@ async function MakeSQLfile(db, path) {
 			}
 		}
 		if (ok) return await getVersion(db);
-	} else console.log(path + ": fichier manquant");
+	} else if (verbose) console.log(path + ": fichier manquant");
 	return undefined;
 }
 
@@ -651,7 +828,7 @@ async function openBase(dir, nom) {
 	if (!version) return Promise.reject(new Error("Pas de VERSION_BASE")); // exit
 	else {
 		let row = await db_get(db, "SELECT paramValue FROM parametres WHERE paramName='NATURE_BASE'");
-		if (version) while (await MakeSQLfile(db, row.paramValue.toLowerCase() + version + "vers" + (version + 1) + ".sql")) version++;
+		if (version) while (await MakeSQLfile(db, row.paramValue.toLowerCase() + version + "vers" + (version + 1) + ".sql", false)) version++;
 		return db;
 	}
 }
@@ -664,7 +841,7 @@ async function IsBridge(nom) {
 		const row = await db_get(db, "SELECT paramValue FROM parametres WHERE paramName='NATURE_BASE'");
 		const nature = row.paramValue.toLowerCase();
 		if (nature == "bridge") {
-			while (await MakeSQLfile(db, nature + version + "vers" + (version + 1) + ".sql")) version++;
+			while (await MakeSQLfile(db, nature + version + "vers" + (version + 1) + ".sql", false)) version++;
 			ok = true;
 		}
 	}

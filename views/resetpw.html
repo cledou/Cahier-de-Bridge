@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<!-- https://www.youtube.com/watch?v=TUD1AWZVgQ8  -->
+		<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png" />
+		<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png" />
+		<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png" />
+		<link rel="manifest" href="/images/site.webmanifest" />
+		<link rel="stylesheet" href="/css/style.css" />
+		<link rel="stylesheet" href="/css/status.css" />
+		<title>Changer mon mot de passe</title>
+		<style>
+			.main {
+				position: absolute;
+				display: flex;
+				flex-direction: column;
+				justify-content: space-between;
+				width: 100%;
+				height: 100%;
+				box-sizing: border-box;
+				background: linear-gradient(rgba(211, 211, 211, 0.5), rgba(211, 211, 211, 0.5)), url("/images/oubli.png");
+			}
+			.menu {
+				position: relative;
+				width: 100%;
+				height: 48px;
+				background-color: lightgray;
+				display: flex;
+				flex-direction: row;
+				border-radius: 5px;
+				justify-content: flex-end;
+				align-items: center;
+				padding-right: 0.5em;
+				box-sizing: inherit;
+			}
+
+			.container {
+				position: relative;
+				display: flex;
+				flex-direction: row;
+				justify-content: center;
+				align-items: center;
+				width: 100%;
+				height: 100%;
+				box-sizing: inherit;
+				flex-wrap: wrap;
+			}
+			.card {
+				margin: 1em;
+				box-sizing: inherit;
+				position: relative;
+				display: flex;
+				flex-direction: column;
+				justify-content: space-between;
+				align-items: center;
+				max-width: 90%;
+				min-height: 200px;
+				padding: 5px 20px 13px 20px;
+				border-radius: 10px;
+				background: #999;
+				background: -moz-linear-gradient(#000, #999);
+				background: -webkit-linear-gradient(#000, #999);
+				background: -o-linear-gradient(#000, #999);
+				-webkit-animation-name: zoom;
+				-webkit-animation-duration: 0.6s;
+				animation-name: zoom;
+				animation-duration: 0.6s;
+				color: antiquewhite;
+			}
+			.card .edbox {
+				display: flex;
+				flex-direction: column;
+				justify-content: flex-start;
+				margin-top: 10px;
+				margin-bottom: 10px;
+			}
+			.card button {
+				margin: 0.2em;
+				padding: 0.2em;
+				display: flex;
+				flex-direction: row;
+				justify-content: flex-start;
+				align-items: center;
+				font-size: large;
+				margin: auto;
+				cursor: pointer;
+			}
+			.card button:disabled {
+				cursor: not-allowed;
+			}
+			#red {
+				color: rgb(128, 19, 19);
+				font-weight: bold;
+				margin-bottom: 8px;
+			}
+			.edbox input {
+				width: 100%;
+				margin-right: 8px;
+			}
+			#btn_OK {
+				display: none;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="main">
+			<div class="menu">
+				<button onclick="window.location.href='/login'">
+					<img src="/images/close_window_30px.png" hlp="Revenir à l'écran de connexion" />
+				</button>
+			</div>
+			<div class="container">
+				<div class="card">
+					<h1 id="l_nom">Harry cover</h1>
+					<div class="edbox">
+						Nouveau mot de passe:
+						<input type="password" id="ed_pw_new" oninput="SetRed()" />
+					</div>
+					<div class="edbox">
+						Confirmer nouveau mot de passe:
+						<input type="password" id="ed_pw_new2" oninput="SetRed()" />
+					</div>
+					<div id="red">Les saisies ne correspondent pas</div>
+					<button id="btn_OK"><img src="/images/save_30px.png" />Changer</button>
+				</div>
+			</div>
+			<div id="status"></div>
+		</div>
+	</body>
+</html>
+<script src="/socket.io/socket.io.min.js"></script>
+<script>
+	//*********************
+	//  Variables globales
+	//*********************
+	var io = io.connect(location.host);
+	const ed_pw_new = document.getElementById("ed_pw_new");
+	const ed_pw_new2 = document.getElementById("ed_pw_new2");
+	const btn_ok = document.getElementById("btn_OK");
+	const not_same = document.getElementById("red");
+	const urlParams = new URLSearchParams(window.location.search);
+	const hash = urlParams.get("p1");
+
+	//*********************
+	// SESSION socket I/O
+	//*********************
+
+	io.on("connect", function () {
+		io.emit("get_hash", hash, (r) => {
+			if (r.err) Erreur(r.err);
+			else {
+				l_nom.innerHTML = r.nom;
+				console.log(r);
+				btn_ok.style.display = "block";
+				btn_ok.addEventListener("click", function () {
+					console.assert(ed_pw_new.value == ed_pw_new2.value);
+					if (ed_pw_new.value == ed_pw_new2.value)
+						io.emit("set_hash", hash, ed_pw_new.value, (data) => {
+							console.log(data);
+							if (data.err) Erreur(data.err);
+							else window.location.href = "/login";
+						});
+				});
+			}
+		});
+	}); // io connect
+
+	/****************************/
+	/*    On actions user       */
+	/****************************/
+
+	SetRed();
+	ed_pw_new.focus();
+	ed_pw_new.addEventListener("input", SetRed);
+	ed_pw_new2.addEventListener("input", SetRed);
+
+	function SetRed() {
+		if (ed_pw_new.value != ed_pw_new2.value) {
+			not_same.style.opacity = 1;
+			btn_ok.disabled = true;
+		} else {
+			not_same.style.opacity = 0;
+			btn_ok.disabled = false;
+		}
+	}
+
+	/****************************/
+	/*        STATUS BAR        */
+	/****************************/
+	const status = document.getElementById("status"); //https://codepen.io/lcoulon/pen/QdPgqz
+	document.querySelectorAll("[hlp],[alt]").forEach((itm) => {
+		itm.addEventListener("mouseover", (e) => {
+			e.stopPropagation();
+			if (!itm.parentElement.hasAttribute("disabled")) Info(itm.getAttribute("hlp") || itm.getAttribute("alt"));
+		});
+		itm.addEventListener("mouseout", (e) => {
+			Info("");
+		});
+	});
+
+	function Info(msg) {
+		status.classList.remove("warning");
+		status.classList.remove("error");
+		status.classList.remove("ok");
+		status.innerHTML = msg;
+	}
+
+	function Erreur(msg) {
+		console.error(msg);
+		Info('<img src="/images/error_25px.png"/>' + msg);
+		status.classList.add("error");
+	}
+
+	function OK(msg) {
+		Info('<img src="/images/Ok_25px.png"/>' + msg);
+		status.classList.add("ok");
+	}
+
+	function Warning(msg) {
+		Info('<img src="/images/Warning Shield.png"/>' + msg);
+		status.classList.add("warning");
+	}
+</script>

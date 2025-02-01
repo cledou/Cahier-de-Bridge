@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<!-- https://www.youtube.com/watch?v=TUD1AWZVgQ8  -->
+		<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png" />
+		<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png" />
+		<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png" />
+		<link rel="manifest" href="/images/site.webmanifest" />
+		<link rel="stylesheet" href="/css/style.css" />
+		<link rel="stylesheet" href="/css/status.css" />
+		<link rel="stylesheet" href="/css/myCheckbox.css" />
+		<title>Paramètres utilisateur</title>
+		<style>
+			.main {
+				position: absolute;
+				display: flex;
+				flex-direction: column;
+				justify-content: space-between;
+				width: 100%;
+				height: 100%;
+				box-sizing: border-box;
+				background: linear-gradient(rgba(211, 211, 211, 0.5), rgba(211, 211, 211, 0.5)), url("/images/Cards.png");
+			}
+			.menu {
+				position: relative;
+				width: 100%;
+				height: 48px;
+				background-color: lightgray;
+				display: flex;
+				flex-direction: row;
+				border-radius: 5px;
+				justify-content: flex-end;
+				align-items: center;
+				padding-right: 0.5em;
+				box-sizing: inherit;
+			}
+
+			.container {
+				position: relative;
+				display: flex;
+				flex-direction: row;
+				justify-content: center;
+				align-items: center;
+				width: 100%;
+				height: 100%;
+				box-sizing: inherit;
+				flex-wrap: wrap;
+			}
+			.card {
+				margin: 1em;
+				box-sizing: inherit;
+				position: relative;
+				display: flex;
+				flex-direction: column;
+				justify-content: space-between;
+				align-items: center;
+				max-width: 90%;
+				min-height: 200px;
+				padding: 5px 20px 13px 20px;
+				border-radius: 10px;
+				background: #999;
+				background: -moz-linear-gradient(#000, #999);
+				background: -webkit-linear-gradient(#000, #999);
+				background: -o-linear-gradient(#000, #999);
+				-webkit-animation-name: zoom;
+				-webkit-animation-duration: 0.6s;
+				animation-name: zoom;
+				animation-duration: 0.6s;
+				color: antiquewhite;
+			}
+			.card .center_box {
+				display: flex;
+				flex-direction: column;
+				justify-content: flex-start;
+				align-self: flex-start;
+				width: 100%;
+			}
+			.card .edbox {
+				display: flex;
+				flex-direction: column;
+				justify-content: flex-start;
+				margin-top: 10px;
+				margin-bottom: 10px;
+			}
+			.card button {
+				margin: 0.2em;
+				padding: 0.2em;
+				display: flex;
+				flex-direction: row;
+				justify-content: flex-start;
+				align-items: center;
+				font-size: large;
+				margin: auto;
+				cursor: pointer;
+			}
+			.card button:disabled {
+				cursor: not-allowed;
+			}
+			.edbox.hide_me {
+				display: none;
+			}
+			#red {
+				color: rgb(128, 19, 19);
+				font-weight: bold;
+				margin-bottom: 8px;
+			}
+			.wrap {
+				display: flex;
+				flex-direction: row;
+				justify-content: space-between;
+				width: 100%;
+			}
+			.edbox input {
+				width: 100%;
+				margin-right: 8px;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="main">
+			<div class="menu">
+				<button class="si_login" onclick="window.location.href='/'">
+					<img src="/images/close_window_30px.png" hlp="Revenir au tableau de bord" />
+				</button>
+			</div>
+			<div class="container">
+				<div class="card">
+					<h1 id="l_nom">Harry cover</h1>
+					<div class="wrap">
+						<div class="edbox">
+							Nom d'utilisateur:
+							<input type="text" id="ed_login" />
+						</div>
+						<button hlp="Enregistrer les modifications" alt="Enregistrer" onclick="SaveLogin()"><img src="/images/save_25px.png" /></button>
+					</div>
+					<div class="wrap">
+						<div class="edbox">
+							Email:
+							<input type="text" id="ed_email" />
+						</div>
+						<button hlp="Enregistrer les modifications" alt="Enregistrer" onclick="SaveEmail()"><img src="/images/save_25px.png" /></button>
+					</div>
+					<details>
+						<summary>Changer mon mot de passe</summary>
+						<div class="edbox" id="si_mp">
+							Ancien mot de passe:
+							<input type="password" id="ed_pw_old" />
+						</div>
+						<div class="edbox">
+							Nouveau mot de passe:
+							<input type="password" id="ed_pw_new" oninput="SetRed()" />
+						</div>
+						<div class="edbox">
+							Confirmer nouveau mot de passe:
+							<input type="password" id="ed_pw_new2" oninput="SetRed()" />
+						</div>
+						<div id="red">Les saisies ne correspondent pas</div>
+						<button id="btn_OK"><img src="/images/save_30px.png" />Changer</button>
+					</details>
+				</div>
+			</div>
+			<div id="status"></div>
+		</div>
+	</body>
+</html>
+<script src="/socket.io/socket.io.min.js"></script>
+<script>
+	//*********************
+	//  Variables globales
+	//*********************
+	var io = io.connect(location.host);
+	var session;
+	var mesChoix;
+	const ed_login = document.getElementById("ed_login");
+	const ed_email = document.getElementById("ed_email");
+	const ed_pw_old = document.getElementById("ed_pw_old");
+	const ed_pw_new = document.getElementById("ed_pw_new");
+	const ed_pw_new2 = document.getElementById("ed_pw_new2");
+	const btn_ok = document.getElementById("btn_OK");
+	const not_same = document.getElementById("red");
+
+	//*********************
+	// SESSION socket I/O
+	//*********************
+	function SetChoix(nom, val) {
+		mesChoix[nom] = val;
+		io.emit("upducfg", nom, val);
+	}
+
+	io.on("connect", function () {
+		io.emit("session", (data) => {
+			session = data;
+			//console.log("session", data);
+			mesChoix = session.user.choix;
+			io.emit("get_user", session.user.id, (row) => {
+				console.log("get_user", row);
+				if (row.err) Erreur(row.err);
+				else {
+					ed_login.value = row.nom;
+					document.getElementById("l_nom").innerText = row.nom;
+					ed_email.value = row.email;
+					const cl = document.getElementById("si_mp").classList;
+					if (row.has_mp) cl.remove("hide_me");
+					else cl.add("hide_me");
+					for (let el of document.getElementsByClassName("is_admin")) {
+						if (row.admin) el.classList.remove("hide_me");
+						else el.classList.add("hide_me");
+					}
+					if (mesChoix.carets1 == undefined) mesChoix.carets1 = "XXXX";
+					document.querySelectorAll(".card summary").forEach((caret, idx) => {
+						while (mesChoix.carets1.length <= idx) mesChoix.carets1 += "X";
+						caret.addEventListener("click", function () {
+							// En js, string est inmutable
+							let ar = mesChoix.carets1.split("");
+							ar[idx] = ar[idx] == "X" ? "-" : "X";
+							SetChoix("carets1", ar.join(""));
+						});
+						if (mesChoix.carets1[idx] == "X") caret.parentElement.setAttribute("open", true);
+						else caret.parentElement.removeAttribute("open");
+					});
+				}
+			});
+			ed_login.value = session.user.nom;
+		});
+	}); // io connect
+
+	/****************************/
+	/*    On actions user       */
+	/****************************/
+	btn_ok.addEventListener("click", function () {
+		console.assert(ed_pw_new.value == ed_pw_new2.value);
+		if (ed_pw_new.value == ed_pw_new2.value)
+			io.emit("updpwd", ed_pw_old.value, ed_pw_new.value, (data) => {
+				if (data.err) Erreur(data.err);
+				else OK("Mot de passe modifié");
+			});
+	});
+
+	SetRed();
+	function SetRed() {
+		if (ed_pw_new.value != ed_pw_new2.value) {
+			not_same.style.opacity = 1;
+			btn_ok.disabled = true;
+		} else {
+			not_same.style.opacity = 0;
+			btn_ok.disabled = false;
+		}
+	}
+
+	ed_login.parentElement.nextElementSibling.disabled = true;
+	ed_login.addEventListener("input", function () {
+		io.emit("is_dispo", "nom", ed_login.value, (data) => {
+			if (data.err) Erreur(data.err);
+			else if (data.dispo) {
+				ed_login.style.color = "green";
+				Info("Nom d'utilisateur disponible");
+			} else {
+				ed_login.style.color = "red";
+				Warning("Utilisateur déjà enregistré");
+			}
+			this.parentElement.nextElementSibling.disabled = !data.dispo;
+		});
+	});
+	function SaveLogin() {
+		io.emit("updUser", "nom", ed_login.value, (r) => {
+			if (r != "OK") Erreur(r);
+			else {
+				OK("Nom d'utilisateur modifié");
+				document.getElementById("l_nom").innerText = ed_login.value;
+			}
+		});
+	}
+
+	ed_email.parentElement.nextElementSibling.disabled = true;
+	ed_email.addEventListener("input", function () {
+		io.emit("is_dispo", "email", this.value, (data) => {
+			if (data.err) Erreur(data.err);
+			else if (data.dispo) {
+				ed_email.style.color = "green";
+			} else {
+				ed_email.style.color = "red";
+				Warning("Email déjà inscrit dans la base");
+			}
+			this.parentElement.nextElementSibling.disabled = !data.dispo;
+		});
+	});
+	function SaveEmail() {
+		io.emit("updUser", "email", ed_email.value, (r) => {
+			if (r != "OK") Erreur(r);
+			else OK("Email modifié");
+		});
+	}
+
+	/****************************/
+	/*        STATUS BAR        */
+	/****************************/
+	const status = document.getElementById("status"); //https://codepen.io/lcoulon/pen/QdPgqz
+	document.querySelectorAll("[hlp],[alt]").forEach((itm) => {
+		itm.addEventListener("mouseover", (e) => {
+			e.stopPropagation();
+			if (!itm.parentElement.hasAttribute("disabled")) Info(itm.getAttribute("hlp") || itm.getAttribute("alt"));
+		});
+		itm.addEventListener("mouseout", (e) => {
+			Info("");
+		});
+	});
+
+	function Info(msg) {
+		status.classList.remove("warning");
+		status.classList.remove("error");
+		status.classList.remove("ok");
+		status.innerHTML = msg;
+	}
+
+	function Erreur(msg) {
+		console.error(msg);
+		Info('<img src="/images/error_25px.png"/>' + msg);
+		status.classList.add("error");
+	}
+
+	function OK(msg) {
+		Info('<img src="/images/Ok_25px.png"/>' + msg);
+		status.classList.add("ok");
+	}
+
+	function Warning(msg) {
+		Info('<img src="/images/Warning Shield.png"/>' + msg);
+		status.classList.add("warning");
+	}
+</script>

@@ -1,0 +1,19 @@
+{
+	"mail": {
+		"host": "your.mail.host",
+		"port": 465,
+		"auth": {
+			"user": "ne_pas_repondre@votre_adresse.fr",
+			"pass": "blablabla"
+		}
+	},
+	"http_url": "http://localhost:3005",
+	"http_port": 3005,
+	"https_port": 0,
+	"ssl_dir": "Directory to your certificats. Delete this line if you don't use https (https_port must be 0)",
+	"need_login": true,
+	"_need_login": "false: login to dashboard as 'user' (see below) / Must be true if you want to use the login page",
+	"user": "Administrateur",
+	"hash": "hash is a random hexadecimal string to secure the app cookie session. Exemple: 5f4dcc3b5aa765d61d8327deb882cf99",
+	"email_to": "Adresse mail de l'administrateur (exemple: admin@votre_adresse.fr)"
+}
