@@ -1,12 +1,12 @@
 .vscode/numbered-bookmarks.json
 node_modules/*
-package-lock.json
+./package-lock.json
 *.tlp
-test.html
-renew.txt
+./test.html
+./renew.txt
 db/*
 upload/*
 login.db
 *.key
 ssl/*
-config.json
+./config.json
