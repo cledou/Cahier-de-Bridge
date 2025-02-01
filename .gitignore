@@ -1,6 +1,5 @@
 .vscode/numbered-bookmarks.json
 node_modules/*
-./package-lock.json
 *.tlp
 ./test.html
 ./renew.txt
@@ -10,3 +9,4 @@ login.db
 *.key
 ssl/*
 config.json
+package-lock.json
