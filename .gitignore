@@ -9,4 +9,3 @@ login.db
 *.key
 ssl/*
 config.json
-package-lock.json
