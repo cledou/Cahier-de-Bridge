@@ -3,8 +3,8 @@
 		"host": "smtp.orange.fr",
 		"port": 465,
 		"auth": {
-			"user": "ne_pas_repondre@votre_adresse.fr",
-			"pass": "blablabla"
+			"user": "gesp.alexandre@orange.fr",
+			"pass": "v8K9A%.i"
 		}
 	},
 	"http_url": "http://localhost:3005",
