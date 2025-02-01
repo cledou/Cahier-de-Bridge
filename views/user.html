@@ -166,6 +166,7 @@
 	</body>
 </html>
 <script src="/socket.io/socket.io.min.js"></script>
+<script src="/js/status.js"></script>
 <script>
 	//*********************
 	//  Variables globales
@@ -173,6 +174,7 @@
 	var io = io.connect(location.host);
 	var session;
 	var mesChoix;
+	const l_nom = document.getElementById("l_nom");
 	const ed_login = document.getElementById("ed_login");
 	const ed_email = document.getElementById("ed_email");
 	const ed_pw_old = document.getElementById("ed_pw_old");
@@ -192,14 +194,13 @@
 	io.on("connect", function () {
 		io.emit("session", (data) => {
 			session = data;
-			//console.log("session", data);
+			console.log("session", data);
 			mesChoix = session.user.choix;
 			io.emit("get_user", session.user.id, (row) => {
-				console.log("get_user", row);
 				if (row.err) Erreur(row.err);
 				else {
 					ed_login.value = row.nom;
-					document.getElementById("l_nom").innerText = row.nom;
+					l_nom.innerText = row.nom;
 					ed_email.value = row.email;
 					const cl = document.getElementById("si_mp").classList;
 					if (row.has_mp) cl.remove("hide_me");
@@ -268,7 +269,7 @@
 			if (r != "OK") Erreur(r);
 			else {
 				OK("Nom d'utilisateur modifié");
-				document.getElementById("l_nom").innerText = ed_login.value;
+				l_nom.innerText = ed_login.value;
 			}
 		});
 	}
@@ -291,42 +292,5 @@
 			if (r != "OK") Erreur(r);
 			else OK("Email modifié");
 		});
-	}
-
-	/****************************/
-	/*        STATUS BAR        */
-	/****************************/
-	const status = document.getElementById("status"); //https://codepen.io/lcoulon/pen/QdPgqz
-	document.querySelectorAll("[hlp],[alt]").forEach((itm) => {
-		itm.addEventListener("mouseover", (e) => {
-			e.stopPropagation();
-			if (!itm.parentElement.hasAttribute("disabled")) Info(itm.getAttribute("hlp") || itm.getAttribute("alt"));
-		});
-		itm.addEventListener("mouseout", (e) => {
-			Info("");
-		});
-	});
-
-	function Info(msg) {
-		status.classList.remove("warning");
-		status.classList.remove("error");
-		status.classList.remove("ok");
-		status.innerHTML = msg;
-	}
-
-	function Erreur(msg) {
-		console.error(msg);
-		Info('<img src="/images/error_25px.png"/>' + msg);
-		status.classList.add("error");
-	}
-
-	function OK(msg) {
-		Info('<img src="/images/Ok_25px.png"/>' + msg);
-		status.classList.add("ok");
-	}
-
-	function Warning(msg) {
-		Info('<img src="/images/Warning Shield.png"/>' + msg);
-		status.classList.add("warning");
 	}
 </script>

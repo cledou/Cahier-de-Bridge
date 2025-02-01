@@ -587,6 +587,7 @@
 </html>
 <script src="/socket.io/socket.io.min.js"></script>
 <script src="/node/html2canvas/dist/html2canvas.min.js"></script>
+<script src="/js/status.js"></script>
 <script>
 	/*
 	 TODO: voir traduction avec gettext https://github.com/guillaumepotier/gettext.js/
@@ -744,7 +745,7 @@
 	//      Let's GO
 	//*********************
 	async function OpenOrNew() {
-		if (!(await OpenID(mesChoix.last_id)) && !(await OpenOneDonne())) itm_new.click();
+		if (!(await OpenID(mesChoix.id_donne)) && !(await OpenOneDonne())) itm_new.click();
 	}
 
 	async function OpenOneDonne() {
@@ -764,14 +765,14 @@
 			const row = await SQL_get("SELECT * FROM donnes WHERE id=" + id);
 			if (row == undefined) return false;
 			const foo = JSON.parse(row.data);
-			if (!VerifierDonne(foo.donne)) return false;
+			VerifierDonne(foo.donne);
 			enr.jeu = foo;
 			enr.nom = row.nom || "Donne n°" + row.id;
 			enr.id = row.id;
 			enr_nom.innerText = enr.nom;
 			AfficheDonne();
 			SetDirty(false);
-			if (mesChoix.last_id != row.id) SetChoix("last_id", row.id);
+			if (mesChoix.id_donne != row.id) SetChoix("id_donne", row.id);
 			MakeTree();
 			DisableSelector(".si_un", false);
 			return true;
@@ -1046,7 +1047,7 @@
 					let opt = "";
 					rows.forEach((el) => {
 						opt += '<option value="' + el.id + '"';
-						if (mesChoix.last_id === el.id) opt += " selected";
+						if (mesChoix.id_donne === el.id) opt += " selected";
 						opt += ">" + el.nom + "</option>";
 					});
 					resolve(opt);
@@ -1239,43 +1240,6 @@
 			});
 		});
 	}
-	/****************************/
-	/*        STATUS BAR        */
-	/****************************/
-	const status = document.getElementById("status"); //https://codepen.io/lcoulon/pen/QdPgqz
-	document.querySelectorAll("[hlp],[alt]").forEach((itm) => {
-		itm.addEventListener("mouseover", (e) => {
-			e.stopPropagation();
-			if (!itm.parentElement.hasAttribute("disabled")) Info(itm.getAttribute("hlp") || itm.getAttribute("alt"));
-		});
-		itm.addEventListener("mouseout", (e) => {
-			Info("");
-		});
-	});
-
-	function Info(msg) {
-		status.classList.remove("warning");
-		status.classList.remove("error");
-		status.classList.remove("ok");
-		status.innerHTML = msg;
-	}
-
-	function Erreur(msg) {
-		console.error(msg);
-		Info('<img src="/images/error_25px.png"/>' + msg);
-		status.classList.add("error");
-	}
-
-	function OK(msg) {
-		Info('<img src="/images/Ok_25px.png"/>' + msg);
-		status.classList.add("ok");
-	}
-
-	function Warning(msg) {
-		Info('<img src="/images/Warning Shield.png"/>' + msg);
-		status.classList.add("warning");
-	}
-
 	/****************************/
 	/*     FENETRES POP-UP      */
 	/****************************/
@@ -1605,7 +1569,7 @@
 				arbre.innerHTML = '<ul class="tree">' + "<li><details open><summary>Résultat</summary><ul>" + AddJeux(r, 0) + "</ul></details></li></ul>";
 				SetEventTree();
 				if (r.length == 0) Warning("Pas de résultats");
-				else if (r.findIndex((el) => el.id == mesChoix.last_id) == -1) OpenID(r[0].id);
+				else if (r.findIndex((el) => el.id == mesChoix.id_donne) == -1) OpenID(r[0].id);
 				else AfficheTextes();
 			})
 			.catch((e) => Erreur(e));

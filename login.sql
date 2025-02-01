@@ -12,14 +12,10 @@ CREATE TABLE users (
   email VARCHAR(64),
   hash VARCHAR(60),
   reset_hash VARCHAR(60),
-  choix TEXT DEFAULT '{"flags": 1}',
+  choix TEXT DEFAULT '{"flags": 1, "last_db": "bridge.db"}',
   binette BLOB,
-  admin BOOLEAN DEFAULT FALSE,
-  can_add BOOLEAN DEFAULT FALSE,
-  can_edit BOOLEAN DEFAULT FALSE,
-  can_delete BOOLEAN DEFAULT FALSE,
-  can_restore BOOLEAN DEFAULT FALSE
+  admin BOOLEAN DEFAULT FALSE
 );
 
 INSERT INTO users (id,nom) VALUES (1,'Anonyme');
-INSERT INTO users (id,nom,admin,can_add,can_edit,can_delete,can_restore) VALUES (2,'Administrateur',true,true,true,true,true);
+INSERT INTO users (id,nom,admin) VALUES (2,'Administrateur',true);

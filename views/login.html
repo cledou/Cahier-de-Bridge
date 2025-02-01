@@ -83,6 +83,7 @@
 	</body>
 </html>
 <script src="/socket.io/socket.io.min.js"></script>
+<script src="/js/status.js"></script>
 <script>
 	const ed_login = document.getElementById("ed_login");
 	const box_pw = document.getElementById("box_pw");
@@ -124,56 +125,19 @@
 
 	btn_OK.addEventListener("click", function () {
 		io.emit("connect_me", ed_login.value, document.getElementById("ed_pw").value, (r) => {
-			console.log(r);
 			if (r == "OK") window.location.href = "/";
 			else Erreur(r);
 		});
 	});
 
 	lk_forgot.addEventListener("click", function () {
+		document.body.style.cursor = "wait";
 		io.emit("forgot", ed_login.value, (r) => {
-			console.log("forgot", r);
+			document.body.style.cursor = "default";
 			if (r.err) {
 				Erreur(r.err);
 				if (r.contact && r.contact != "") alert("Contactez l'administrateur du site à " + r.contact); //
 			} else OK(r);
 		});
 	});
-
-	/****************************/
-	/*        STATUS BAR        */
-	/****************************/
-	const status = document.getElementById("status"); //https://codepen.io/lcoulon/pen/QdPgqz
-	document.querySelectorAll("[hlp],[alt]").forEach((itm) => {
-		itm.addEventListener("mouseover", (e) => {
-			e.stopPropagation();
-			if (!itm.parentElement.hasAttribute("disabled")) Info(itm.getAttribute("hlp") || itm.getAttribute("alt"));
-		});
-		itm.addEventListener("mouseout", (e) => {
-			Info("");
-		});
-	});
-
-	function Info(msg) {
-		status.classList.remove("warning");
-		status.classList.remove("error");
-		status.classList.remove("ok");
-		status.innerHTML = msg;
-	}
-
-	function Erreur(msg) {
-		console.error(msg);
-		Info('<img src="/images/error_25px.png"/>' + msg);
-		status.classList.add("error");
-	}
-
-	function OK(msg) {
-		Info('<img src="/images/Ok_25px.png"/>' + msg);
-		status.classList.add("ok");
-	}
-
-	function Warning(msg) {
-		Info('<img src="/images/Warning Shield.png"/>' + msg);
-		status.classList.add("warning");
-	}
 </script>

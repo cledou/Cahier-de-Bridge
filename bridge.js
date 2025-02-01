@@ -50,7 +50,7 @@ app.use("/public", express.static("./")); // 'public' est en réalité ./
 app.use("/css", express.static("./css/"));
 app.use("/images", express.static("./images/"));
 app.use("/node", express.static("./node_modules/"));
-//app.use("/views", express.static("."));
+app.use("/js", express.static("./js"));
 // exécuter favicon(path) à chaque appel d'une fonction de app
 app.use(favicon("./images/favicon.ico"));
 //initialisation du serveur web, des chemins locaux et du socket. Indispensable, même si ejs n'est pas utilisé
@@ -164,25 +164,25 @@ openBase("", "login")
 //
 const SESSION_RELOAD_INTERVAL = 10 * 60 * 1000;
 
-async function GetUser(nom) {
-	let foo = await db_get(db_login, "SELECT * FROM users WHERE nom=?", [nom]);
-	if (foo == undefined) foo = await db_get(db_login, "SELECT * FROM users ORDER BY id LIMIT 1");
+function SetUser(row) {
 	let user = {
-		id: foo.id,
-		nom: foo.nom,
-		is_admin: Boolean(foo.admin),
-		can_add: Boolean(foo.can_add),
-		can_edit: Boolean(foo.can_edit),
-		can_delete: Boolean(foo.can_delete),
+		id: row.id,
+		nom: row.nom,
+		is_admin: Boolean(row.admin),
 	};
 	try {
-		user.choix = JSON.parse(foo.choix);
+		user.choix = JSON.parse(row.choix);
 	} catch (e) {
 		console.error(e);
 		user.choix = {};
 	}
-	//console.log(user);
 	return user;
+}
+
+async function GetUser(nom) {
+	let foo = await db_get(db_login, "SELECT * FROM users WHERE nom=?", [nom]);
+	if (foo == undefined) foo = await db_get(db_login, "SELECT * FROM users ORDER BY id LIMIT 1");
+	return SetUser(foo);
 }
 
 io.on("connection", async (socket) => {
@@ -205,19 +205,19 @@ io.on("connection", async (socket) => {
 	let db = new sqlite3.Database(db_dir + db_name);
 	// passons aux choses sérieuses
 	nbr_clients++;
-	console.log(session.user.nom + " est connecté à " + db_name);
+	const who = session.user.nom + " est connecté à " + db_name;
+	console.log(who);
 
 	// et maintenant, on attend le ping-pong
 
 	socket.on("session", (cb) => {
 		session.need_login = app_config.need_login;
 		cb(session);
-		socket.emit("info", "Database utilisée: " + db_name);
+		socket.emit("info", who);
 		socket.emit("db_list", db_list);
 	});
 
 	socket.on("disconnect", async function () {
-		//console.log("disconnect", session);
 		clearInterval(timer);
 		try {
 			if (session.dirty == true) {
@@ -352,18 +352,6 @@ io.on("connection", async (socket) => {
 			}
 	});
 
-	socket.on("load_donne", async (id, cb) => {
-		if (db == undefined) cb({ err: "Session expirée. Identifiez-vous" });
-		else
-			try {
-				let enr = await db_get(db, "SELECT data FROM donnes WHERE id=?" + id);
-				if (enr == undefined) cb({ err: "Donne effacée" });
-				else cb(enr);
-			} catch (e) {
-				cb({ err: e.message });
-			}
-	});
-
 	socket.on("save_donne", async (enr, cb) => {
 		if (db == undefined) cb({ err: "Session fermée. Reconnectez-vous" });
 		else
@@ -476,6 +464,16 @@ io.on("connection", async (socket) => {
 	/********************/
 	/* Contrôle d'accès */
 	/********************/
+	socket.on("connect_me", (nom, pw, cb) => {
+		db_login.get("SELECT * FROM users WHERE nom LIKE ? OR email LIKE ?", [nom, nom], (err, row) => {
+			if (err) cb(err.message);
+			else if (PasswordOK(pw, row.hash)) {
+				session.user = SetUser(row);
+				session.save();
+				cb("OK");
+			} else cb("Mot de passe incorrect");
+		});
+	});
 
 	socket.on("forgot", (nom, cb) => {
 		if (db_login == undefined) cb("NTBS: Liste des utilisateurs inaccessible");
@@ -506,7 +504,6 @@ io.on("connection", async (socket) => {
 									html: 'Cliquez sur le lien pour réinitialiser votre mot de passe: <a href="' + raz_url + '">Nouveau mot de passe</a>',
 									text: "Pour réinitialiser votre mot de passe, cliquez ou copier dans votre navigateur l'adresse suivante: " + raz_url,
 								};
-								console.log(message);
 								transport.sendMail(message, function (err, info) {
 									if (err) cb({ err: err.message, contact: app_config.email_to });
 									else cb("Un Email contenant le lien pour réinitialiser votre mot de passe a été envoyé à " + row.email);
@@ -537,6 +534,16 @@ io.on("connection", async (socket) => {
 				else cb("OK");
 			});
 		}
+	});
+
+	socket.on("get_user", (id, cb) => {
+		if (db_login == undefined) cb({ err: "NTBS: Liste des utilisateurs inaccessible" });
+		else
+			db_login.get("SELECT nom,email,admin FROM users WHERE id=" + id, (err, row) => {
+				if (err) cb({ err: err.message });
+				else if (row == undefined) cb({ err: "NTBS: Utilisateur effacé" });
+				else cb({ nom: row.nom, email: row.email, admin: Boolean(row.admin), has_mp: Boolean(row.hash != undefined) });
+			});
 	});
 
 	socket.on("is_user", (nom, cb) => {
@@ -591,22 +598,6 @@ io.on("connection", async (socket) => {
 		let r = await CheckMP(session.user.id, old_pw);
 		if (r != "OK") cb(r);
 		else ChangeMP(id, new_pw).then((r) => cb(r));
-	});
-
-	socket.on("connect_me", (nom, pw, cb) => {
-		db_login.get("SELECT id,hash,admin,last_db FROM USERS WHERE nom LIKE ? OR email LIKE ?", [nom, nom], (err, row) => {
-			if (err) cb(err.message);
-			else if (PasswordOK(pw, row.hash)) {
-				session.user = {
-					id: row.id,
-					nom: nom,
-					is_admin: Boolean(row.admin),
-					last_db: row.last_db,
-				};
-				session.save();
-				cb("OK");
-			} else cb("Mot de passe incorrect");
-		});
 	});
 }); // fin socket.io
 
