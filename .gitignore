@@ -10,3 +10,4 @@ login.db
 *.key
 ssl/*
 ./config.json
+config.json
