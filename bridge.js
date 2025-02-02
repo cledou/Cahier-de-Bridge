@@ -136,13 +136,12 @@ if (!fs.existsSync(dir_upload)) {
 
 // base des users
 var db_login;
-const db_def_filename = "bridge.db";
 var db_list = [];
-openBase("", "login")
+openBase("login.db", "login.sql")
 	.then((db) => {
 		db_login = db;
 		// s'assurer qu'il existe bien une base par défaut
-		openBase(db_dir, "bridge").then((db1) => {
+		openBase(db_dir + "bridge.db").then((db1) => {
 			db1.close();
 			fs.readdir(db_dir, function (err, files) {
 				//handling error
@@ -164,25 +163,19 @@ openBase("", "login")
 //
 const SESSION_RELOAD_INTERVAL = 10 * 60 * 1000;
 
-function SetUser(row) {
+async function GetUser(nom) {
+	const stmt = "SELECT U.id,U.nom,U.last_db,U.admin,P.id as id_choix, P.choix FROM users U LEFT JOIN persistance P ON P.id_user=U.id AND P.nom_base=U.last_db WHERE U.nom=?";
+	let row = await db_get(db_login, stmt, [nom]);
+	if (row == undefined) row = await db_get(db_login, stmt, "Anonyme");
 	let user = {
 		id: row.id,
 		nom: row.nom,
+		last_db: row.last_db,
 		is_admin: Boolean(row.admin),
+		choix: JSON.parse(row.choix),
+		id_choix: row.id_choix,
 	};
-	try {
-		user.choix = JSON.parse(row.choix);
-	} catch (e) {
-		console.error(e);
-		user.choix = {};
-	}
 	return user;
-}
-
-async function GetUser(nom) {
-	let foo = await db_get(db_login, "SELECT * FROM users WHERE nom=?", [nom]);
-	if (foo == undefined) foo = await db_get(db_login, "SELECT * FROM users ORDER BY id LIMIT 1");
-	return SetUser(foo);
 }
 
 io.on("connection", async (socket) => {
@@ -201,20 +194,21 @@ io.on("connection", async (socket) => {
 
 	// récupérer user
 	if (session.user == undefined) session.user = await GetUser(app_config.user);
-	let db_name = session.user.choix.db || db_def_filename; // nom de la base ouverte par socket.io
-	let db = new sqlite3.Database(db_dir + db_name);
-	// passons aux choses sérieuses
+	const db_rw = session.user.id > 1; // si id=1, c'est un Anonyme
+	let db;
 	nbr_clients++;
-	const who = session.user.nom + " est connecté à " + db_name;
-	console.log(who);
-
 	// et maintenant, on attend le ping-pong
 
 	socket.on("session", (cb) => {
 		session.need_login = app_config.need_login;
-		cb(session);
-		socket.emit("info", who);
-		socket.emit("db_list", db_list);
+		openBase(db_dir + session.user.last_db).then((db1) => {
+			db = db1;
+			const who = session.user.nom + " est connecté à " + session.user.last_db;
+			console.log(who);
+			cb(session);
+			socket.emit("info", who);
+			socket.emit("db_list", db_list);
+		});
 	});
 
 	socket.on("disconnect", async function () {
@@ -222,7 +216,12 @@ io.on("connection", async (socket) => {
 		try {
 			if (session.dirty == true) {
 				//console.log("Choix change:", session.user.choix);
-				const info = await db_run(db_login, "UPDATE users SET choix=? WHERE id=" + session.user.id, [JSON.stringify(session.user.choix)]);
+				if (db_rw) {
+					if (session.user.id_choix == undefined) {
+						await db_run(db_login, "INSERT INTO persistance (id_user,nom_base,choix) VALUES (?,?,?)", [session.user.id, session.user.last_db, JSON.stringify(session.user.choix)]);
+						session.user.id_choix = db_login.lastID;
+					} else await db_run(db_login, "UPDATE persistance SET choix=? WHERE id=?", [JSON.stringify(session.user.choix), session.user.id_choix]);
+				}
 				session.dirty = false;
 			}
 		} catch (err) {
@@ -354,6 +353,7 @@ io.on("connection", async (socket) => {
 
 	socket.on("save_donne", async (enr, cb) => {
 		if (db == undefined) cb({ err: "Session fermée. Reconnectez-vous" });
+		else if (!db_rw) cb({ err: "Accès en écriture refusé en mode 'Visiteur'" });
 		else
 			try {
 				const contenu = JSON.stringify(enr.jeu);
@@ -424,7 +424,7 @@ io.on("connection", async (socket) => {
 				// copier le fichier dans le répertoire de BDD
 				const idx = file.lastIndexOf(dir_sep);
 				const nom = file.substring(idx + 1);
-				openBase(db_dir, nom)
+				openBase(db_dir + nom)
 					.then((db1) => {
 						db1.close();
 						const dest = db_dir + nom;
@@ -448,9 +448,9 @@ io.on("connection", async (socket) => {
 			if (db == undefined) throw new Error("Session fermée. Reconnectez-vous");
 			if (db_list.indexOf(nom) == -1) throw new Error("Base inconnue !");
 			cb("OK");
-			if (nom != db_name) {
-				session.user.choix.db = nom;
-				const info = await db_all(db_login, "UPDATE users SET choix=? WHERE id=" + session.user.id, [JSON.stringify(session.user.choix)]);
+			if (nom != session.user.last_db) {
+				session.user.last_db = nom;
+				const info = await db_all(db_login, "UPDATE users SET last_db=? WHERE id=" + session.user.id, [nom]);
 				session.dirty = true;
 				session.save();
 				socket.emit("reload");
@@ -464,14 +464,17 @@ io.on("connection", async (socket) => {
 	/********************/
 	/* Contrôle d'accès */
 	/********************/
-	socket.on("connect_me", (nom, pw, cb) => {
-		db_login.get("SELECT * FROM users WHERE nom LIKE ? OR email LIKE ?", [nom, nom], (err, row) => {
+
+	socket.on("connect_me", async function (nom, pw, cb) {
+		db_login.get("SELECT nom,hash FROM users WHERE nom LIKE ? OR email LIKE ?", [nom, nom], (err, row) => {
 			if (err) cb(err.message);
-			else if (PasswordOK(pw, row.hash)) {
-				session.user = SetUser(row);
-				session.save();
-				cb("OK");
-			} else cb("Mot de passe incorrect");
+			else if (PasswordOK(pw, row.hash))
+				GetUser(row.nom).then((user) => {
+					session.user = user;
+					session.save();
+					cb("OK");
+				});
+			else cb("Mot de passe incorrect");
 		});
 	});
 
@@ -770,6 +773,8 @@ async function db_run(db, query, values = []) {
 			if (err) {
 				return reject(err);
 			}
+			db.lastID = this.lastID;
+			db.changes = this.changes;
 			return resolve(row);
 		});
 	});
@@ -812,9 +817,9 @@ async function getVersion(db) {
 	}
 }
 
-async function openBase(dir, nom) {
-	let db = new sqlite3.Database(dir + nom + ".db");
-	let version = (await getVersion(db)) || (await MakeSQLfile(db, nom + ".sql"));
+async function openBase(path, sql = "bridge.sql") {
+	let db = new sqlite3.Database(path);
+	let version = (await getVersion(db)) || (await MakeSQLfile(db, sql));
 	//console.log("openBase", nom, version);
 	if (!version) return Promise.reject(new Error("Pas de VERSION_BASE")); // exit
 	else {
