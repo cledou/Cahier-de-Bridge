@@ -2,7 +2,6 @@
 node_modules/*
 *.tlp
 ./test.html
-./renew.txt
 db/*
 upload/*
 *.key
