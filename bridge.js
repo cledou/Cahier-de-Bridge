@@ -645,6 +645,20 @@ io.on("connection", async (socket) => {
 			)
 			.catch((e) => cb(e));
 	});
+
+	socket.on("del_user", (id, cb) => {
+		// effacer la bdd de l'utilisateur
+		let info = db_login.run("DELETE FROM users WHERE id=?", [id], (err) => {
+			if (err) cb(err);
+			else if (info.changes != 1) cb("Effacement impossible");
+			else {
+				session.ok = "Utilisateur effacé";
+				session.save();
+				cb();
+				files_to_remove.push(db_dir + "id_" + id + ".db");
+			}
+		});
+	});
 }); // fin socket.io
 
 //*******************
