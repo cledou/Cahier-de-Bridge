@@ -203,11 +203,25 @@ io.on("connection", async (socket) => {
 		session.need_login = app_config.need_login;
 		openBase(db_dir + session.user.last_db).then((db1) => {
 			db = db1;
-			const who = session.user.nom + " est connecté à " + session.user.last_db;
-			console.log(who);
-			cb(session);
-			socket.emit("info", who);
+			if (session.ok != undefined) {
+				socket.emit("OK", session.ok);
+				session.ok = undefined;
+			} else if (session.info != undefined) {
+				socket.emit("info", session.info);
+				session.info = undefined;
+			} else if (session.err != undefined) {
+				socket.emit("alert", session.err);
+				session.err = undefined;
+			} else if (session.warning != undefined) {
+				socket.emit("warning", session.warning);
+				session.warning = undefined;
+			} else {
+				const who = session.user.nom + " est connecté à " + session.user.last_db;
+				console.log(who);
+				socket.emit("info", who);
+			}
 			socket.emit("db_list", db_list);
+			cb(session);
 		});
 	});
 
@@ -542,7 +556,7 @@ io.on("connection", async (socket) => {
 	socket.on("get_user", (id, cb) => {
 		if (db_login == undefined) cb({ err: "NTBS: Liste des utilisateurs inaccessible" });
 		else
-			db_login.get("SELECT nom,email,admin FROM users WHERE id=" + id, (err, row) => {
+			db_login.get("SELECT nom,email,admin,hash FROM users WHERE id=" + id, (err, row) => {
 				if (err) cb({ err: err.message });
 				else if (row == undefined) cb({ err: "NTBS: Utilisateur effacé" });
 				else cb({ nom: row.nom, email: row.email, admin: Boolean(row.admin), has_mp: Boolean(row.hash != undefined) });
@@ -576,31 +590,40 @@ io.on("connection", async (socket) => {
 			});
 	});
 
-	function PasswordOK(pw, hash) {
-		// Pour une petite appli sans gros enjeux de sécurité, le md5 suffit largement.
-		// Pour une appli plus secure, utiliser bcrypt (mais install compliqué) ou Crypto
-		return (!hash && pw == "") || hash == md5(pw);
-	}
+	socket.on("get_admin_email", (cb) => cb(app_config.email_to));
 
-	async function ChangeMP(id, pw) {
-		db_login.run("UPDATE users SET hash=" + (pw == "" ? "NULL" : "'" + md5(pw) + "'") + " WHERE id=" + id, (err) => {
-			return err ? err.message : "OK";
+	function ChangeMP(id, pw) {
+		return new Promise((resolve, reject) => {
+			db_login.run("UPDATE users SET hash=" + (pw == "" ? "NULL" : "'" + md5(pw) + "'") + " WHERE id=" + id, (err) => {
+				if (err) reject(err.message);
+				else resolve();
+			});
 		});
 	}
 
-	async function CheckMP(id, pw) {
-		db_login.get("SELECT hash FROM users WHERE id=" + id, (err, row) => {
-			if (err) return err.message;
-			else if (row == undefined) return "Utilisateur introuvable";
-			else if (!PasswordOK(pw, row.hash)) return "Mot de passe incorrect";
-			else return "OK";
+	function CheckMP(id, pw) {
+		return new Promise((resolve, reject) => {
+			db_login.get("SELECT hash FROM users WHERE id=" + id, (err, row) => {
+				if (err) reject(err.message);
+				else if (row == undefined) reject("Utilisateur introuvable");
+				else if (!PasswordOK(pw, row.hash)) reject("Mot de passe incorrect");
+				else resolve(id);
+			});
 		});
 	}
 
-	socket.on("updpwd", async (old_pw, new_pw, cb) => {
-		let r = await CheckMP(session.user.id, old_pw);
-		if (r != "OK") cb(r);
-		else ChangeMP(id, new_pw).then((r) => cb(r));
+	socket.on("updpwd", (old_pw, new_pw, cb) => {
+		CheckMP(session.user.id, old_pw)
+			.then((id) =>
+				ChangeMP(id, new_pw)
+					.then((r) => {
+						session.ok = "Mot de passe modifié";
+						session.save();
+						cb();
+					})
+					.catch((e) => cb(e))
+			)
+			.catch((e) => cb(e));
 	});
 }); // fin socket.io
 

@@ -58,6 +58,7 @@
 				cursor: pointer;
 				text-decoration: underline;
 				color: blue;
+				margin-bottom: 1em;
 			}
 		</style>
 	</head>
@@ -71,13 +72,15 @@
 					Nom ou Email:
 					<input type="text" id="ed_login" />
 				</div>
-				<div class="edbox" id="box_pw">
+				<div class="edbox si_connu" id="box_pw">
 					Mot de passe:
 					<input type="password" id="ed_pw" />
 				</div>
-				<button id="btn_OK">Connexion</button>
-				<div id="lk_forgot">J'ai oublié mon mot de passe</div>
+				<button class="si_connu" id="btn_OK">Connexion</button>
+				<div class="si_connu" id="lk_forgot">J'ai oublié mon mot de passe</div>
+				<a class="hide_me" id="lk_admin" hlp="">Contact</a>
 			</div>
+			<a href="http://github.com/cledou/Cahier-de-Bridge" style="text-align: center; margin-bottom: 0.5em">Application Open source</a>
 			<div id="status"></div>
 		</div>
 	</body>
@@ -89,6 +92,7 @@
 	const box_pw = document.getElementById("box_pw");
 	const btn_OK = document.getElementById("btn_OK");
 	const lk_forgot = document.getElementById("lk_forgot");
+	const lk_admin = document.getElementById("lk_admin");
 
 	var io = io.connect(location.host);
 
@@ -100,6 +104,15 @@
 				onUser();
 				ed_pw.focus();
 			}
+			io.emit("get_admin_email", (r) => {
+				//if (r != undefined && r.indexOf(" ") == -1 && r.indexOf("@") != -1) {
+				if (r != undefined && r.indexOf("@") != -1) {
+					lk_admin.innerText = "Contacter l'administrateur";
+					lk_admin.setAttribute("href", "mailto:" + r);
+					lk_admin.setAttribute("hlp", "Cliquez pour envoyer un message à l'administrateur du site (" + r + ")");
+					lk_admin.classList.remove("hide_me");
+				}
+			});
 		});
 	});
 
@@ -116,19 +129,14 @@
 
 	ed_login.addEventListener("input", onUser);
 
-	document.getElementById("btn_noname").addEventListener("click", function () {
-		io.emit("connect_me", "Anonyme", "", (r) => {
+	const connect_me = (nom, pw) => {
+		io.emit("connect_me", nom, pw, (r) => {
 			if (r == "OK") window.location.href = "/";
 			else Erreur(r);
 		});
-	});
-
-	btn_OK.addEventListener("click", function () {
-		io.emit("connect_me", ed_login.value, document.getElementById("ed_pw").value, (r) => {
-			if (r == "OK") window.location.href = "/";
-			else Erreur(r);
-		});
-	});
+	};
+	document.getElementById("btn_noname").addEventListener("click", () => connect_me("Anonyme", ""));
+	btn_OK.addEventListener("click", () => connect_me(ed_login.value, document.getElementById("ed_pw").value));
 
 	lk_forgot.addEventListener("click", function () {
 		document.body.style.cursor = "wait";

@@ -1,7 +1,7 @@
 /****************************/
 /*        STATUS BAR        */
 /****************************/
-const status = document.getElementById("status");
+const status_bar = document.getElementById("status");
 var fade_timer;
 document.querySelectorAll("[hlp],[alt]").forEach((itm) => {
 	itm.addEventListener("mouseover", (e) => {
@@ -13,35 +13,35 @@ document.querySelectorAll("[hlp],[alt]").forEach((itm) => {
 	});
 });
 
-function SetStatus(msg, fade) {
-	status.removeAttribute("class");
-	status.innerHTML = msg;
-	if (fade) {
+function SetStatus(msg, fade = false) {
+	status_bar.removeAttribute("class");
+	status_bar.innerHTML = msg;
+	if (fade == true) {
 		if (fade_timer) clearTimeout(fade_timer);
 		fade_timer = setTimeout(() => {
-			status.innerHTML = "";
-			status.removeAttribute("class");
+			status_bar.innerHTML = "";
+			status_bar.removeAttribute("class");
 			fade_timer = undefined;
 		}, 5000);
 	}
 }
 
 function Info(msg) {
-	if (!fade_timer) status.innerHTML = msg;
+	if (!fade_timer) SetStatus(msg, false);
 }
 
 function Erreur(msg) {
 	console.error(msg);
 	SetStatus('<img src="/images/error_25px.png"/>' + msg, true);
-	status.classList.add("error");
+	status_bar.classList.add("error");
 }
 
 function OK(msg) {
 	Info('<img src="/images/Ok_25px.png"/>' + msg);
-	status.classList.add("ok");
+	status_bar.classList.add("ok");
 }
 
 function Warning(msg) {
 	Info('<img src="/images/Warning Shield.png"/>' + msg, true);
-	status.classList.add("warning");
+	status_bar.classList.add("warning");
 }

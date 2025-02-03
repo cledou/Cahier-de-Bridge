@@ -233,9 +233,9 @@
 	btn_ok.addEventListener("click", function () {
 		console.assert(ed_pw_new.value == ed_pw_new2.value);
 		if (ed_pw_new.value == ed_pw_new2.value)
-			io.emit("updpwd", ed_pw_old.value, ed_pw_new.value, (data) => {
-				if (data.err) Erreur(data.err);
-				else OK("Mot de passe modifié");
+			io.emit("updpwd", ed_pw_old.value, ed_pw_new.value, (err) => {
+				if (err) Erreur(err);
+				else window.location.href = "/";
 			});
 	});
 
