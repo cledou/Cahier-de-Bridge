@@ -459,21 +459,28 @@
 								<div class="level1">
 									<button class="itmh" id="itm_new"><img src="/images/create_30px.png" alt="Créer une nouvelle donne" />Créer une donne</button>
 									<button class="itmh si_un" alt="Sélectionner une donne existante" id="itm_open"><img src="/images/dossier.png" />Ouvrir une donne</button>
+									<input type="file" class="hide_me" id="get_export" />
+									<button class="itmh" hlp="Exporter donne(s) au format SQL. ctrl-clic pour sélectionner plusieurs" id="itm_export"><img src="/images/export_24px.png" />Exporter donne(s)</button>
 									<button class="itmh si_dirty" onclick="onSave()" alt="Enregistrer les modifications"><img src="/images/save_30px.png" />Sauver les changements</button>
-									<details hlp="Gestion des données: sauver, restaurer, ajouter, choisir base...">
-										<summary><img src="/images/database_30px.png" />Base de donnée</summary>
-										<input type="file" style="display: none" id="btn_bkp" />
-										<a class="hide_me" id="bkp_lnk" href="/public/bridge.db" download>Télécharger</a>
-										<button class="itmh si_admin" onclick="onBkp()" hlp="Sauvegarder la base de donnée dans un backup"><img src="/images/database_export_24px.png" />Sauvegarde</button>
-										<input type="file" class="hide_me" id="get_bkp" />
-										<button class="itmh si_admin" onclick="onRestore()" hlp="Restaurer la base de donnée depuis une sauvegarde"><img src="/images/database_restore_24px.png" />Restauration</button>
-										<button class="itmh si_admin si_dbs" onclick="OpenModalWnd('sel_db')" hlp="Choisir la base de donnée à ouvrir"><img src="/images/database_view_24px.png" />Sélectionner une base de donnée</button>
-										<input type="file" class="hide_me" id="get_export" />
-										<button class="itmh" hlp="Exporter donne(s) au format SQL. ctrl-clic pour sélectionner plusieurs" id="itm_export"><img src="/images/export_24px.png" />Exporter donne(s)</button>
-										<input type="file" class="hide_me" id="get_import" />
-										<label for="get_import" class="itmh si_admin" hlp="Importer des donnes depuis un fichier SQL"> <img src="/images/import_24px.png" />Importer donne(s) </label>
-									</details>
 									<button class="itmh si_open" onclick="PrintThis()" alt="Imprimer"><img src="/images/print_30px.png" />Imprimer cette donne</button>
+								</div>
+							</div>
+							<div class="level0" id="menu_user" style="background-image: url('/images/user_30px.png')" hlp="Gestion des utilisateurs">
+								<div class="level1">
+									<button class="itmh" onclick="window.location.href='/user'" hlp="Modifier mon profil enregistré"><img src="/images/user_edit.png" />Modifier mon profil</button>
+									<button class="itmh" onclick="delUser()" hlp="Effacer mon profil de ce site. Vous ne pourrez plus vous connecter."><img src="/images/user_remove_30px.png" />Effacer mon profil</button>
+								</div>
+							</div>
+							<div class="level0 si_admin" style="background-image: url('/images/settings_30px.png')" hlp="Paramètres de l'application et administration">
+								<div class="level1">
+									<input type="file" style="display: none" id="btn_bkp" />
+									<a class="hide_me" id="bkp_lnk" href="/public/bridge.db" download>Télécharger</a>
+									<button class="itmh" onclick="onBkp()" hlp="Sauvegarder la base de donnée dans un backup"><img src="/images/database_export_24px.png" />Sauvegarde</button>
+									<input type="file" class="hide_me" id="get_bkp" />
+									<button class="itmh" onclick="onRestore()" hlp="Restaurer la base de donnée depuis une sauvegarde"><img src="/images/database_restore_24px.png" />Restauration</button>
+									<button class="itmh si_dbs" onclick="OpenModalWnd('sel_db')" hlp="Choisir la base de donnée à ouvrir"><img src="/images/database_view_24px.png" />Sélectionner une base de donnée</button>
+									<input type="file" class="hide_me" id="get_import" />
+									<label for="get_import" class="itmh" hlp="Importer des donnes depuis un fichier SQL"> <img src="/images/import_24px.png" />Importer donne(s) </label>
 								</div>
 							</div>
 							<div class="level0" style="background-image: url('/images/link_30px.png')" hlp="Liens en relations avec ce logiciel (aide, mise à jour..)">
@@ -500,10 +507,10 @@
 						<button class="to_do undo" onclick="Undo()" disabled><img src="/images/undo_30px.png" alt="Revenir en arrière (ctrl-Z)" /></button>
 						<button class="to_do redo" onclick="Redo()" disabled><img src="/images/redo_30px.png" alt="Annuler retour en arrière (shift-ctrl-Z)" /></button>
 						<button class="si_dirty" onclick="onSave()"><img src="/images/save_30px.png" alt="Sauver les modifications" /></button>
-						<button class="si_login hide_me" onclick="window.location.href='/user'">
+						<button id="btn_register" onclick="window.location.href='/register'">
 							<img src="/images/add_user_30px.png" alt="Créer un compte utilisateur" />
 						</button>
-						<button class="si_login hide_me" onclick="window.location.href='/login'">
+						<button id="btn_back" onclick="window.location.href='/login'">
 							<img src="/images/close_window_30px.png" hlp="Revenir à l'écran de connexion" />
 						</button>
 					</div>
@@ -652,7 +659,14 @@
 			if (data.info != undefined) {
 				Info(data.info);
 			}
-			if (!session.user.admin) for (let el of document.getElementsByClassName("si_admin")) el.remove();
+			console.log("Session:", session);
+			// ajuster l'affichage au chargement
+			if (!session.need_login || session.user.id != 1) document.getElementById("btn_register").remove();
+			if (!session.need_login) {
+				document.getElementById("btn_back").remove();
+				document.getElementById("menu_user").remove();
+			} else if (session.user.id == 1) document.getElementById("menu_user").remove();
+			if (!session.user.is_admin) for (let el of document.getElementsByClassName("si_admin")) el.remove();
 
 			mesChoix = session.user.choix;
 			if (mesChoix.flags == undefined) mesChoix.flags = 0;
@@ -701,10 +715,6 @@
 			chk_find.checked = mesChoix.chk_find;
 			ed_find.value = mesChoix.find || "";
 			ed_masquer.value = mesChoix.masquer || 4;
-			for (let el of document.getElementsByClassName("si_login")) {
-				if (session.need_login) el.classList.remove("hide_me");
-				else el.classList.add("hide_me");
-			}
 
 			OpenOrNew(); // asynchrone..
 		});

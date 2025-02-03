@@ -45,6 +45,7 @@ END;
 
 CREATE TRIGGER on_add_user AFTER INSERT ON users
 BEGIN
+  UPDATE users SET last_db = 'id_' || NEW.id || '.db' WHERE id = NEW.id;
   INSERT INTO persistance (id_user,nom_base) VALUES (NEW.id,'id_' || NEW.id || '.db');
   INSERT INTO notifications (id_user_de,id_user_vers,message) VALUES (2,NEW.id,'Bienvenue ' || NEW.nom || ' !');
   INSERT INTO notifications (id_user_de,id_user_vers,message) VALUES (NEW.id,2,'Inscription de ' || NEW.nom);

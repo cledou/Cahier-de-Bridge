@@ -10,8 +10,7 @@
 		<link rel="manifest" href="/images/site.webmanifest" />
 		<link rel="stylesheet" href="/css/style.css" />
 		<link rel="stylesheet" href="/css/status.css" />
-		<link rel="stylesheet" href="/css/myCheckbox.css" />
-		<title>Paramètres utilisateur</title>
+		<title>Nouvel utilisateur</title>
 		<style>
 			.main {
 				position: absolute;
@@ -54,8 +53,8 @@
 				position: relative;
 				display: flex;
 				flex-direction: column;
-				justify-content: space-between;
-				align-items: center;
+				justify-content: flex-start;
+				align-items: flex-start;
 				max-width: 90%;
 				min-height: 200px;
 				padding: 5px 20px 13px 20px;
@@ -70,12 +69,14 @@
 				animation-duration: 0.6s;
 				color: antiquewhite;
 			}
+
 			.card .edbox {
 				display: flex;
 				flex-direction: column;
 				justify-content: flex-start;
 				margin-top: 10px;
 				margin-bottom: 10px;
+				width: 100%;
 			}
 			.card button {
 				margin: 0.2em;
@@ -94,8 +95,8 @@
 			.edbox.hide_me {
 				display: none;
 			}
-			#red {
-				color: rgb(128, 19, 19);
+			.red {
+				color: red;
 				font-weight: bold;
 				margin-bottom: 8px;
 			}
@@ -114,44 +115,34 @@
 	<body>
 		<div class="main">
 			<div class="menu">
-				<button class="si_login" onclick="window.location.href='/'">
-					<img src="/images/close_window_30px.png" hlp="Revenir au tableau de bord" />
+				<button class="si_login" onclick="window.location.href='/login'">
+					<img src="/images/close_window_30px.png" hlp="Revenir à l'écran de connexion" />
 				</button>
 			</div>
 			<div class="container">
 				<div class="card">
-					<h1 id="l_nom">Harry cover</h1>
-					<div class="wrap">
-						<div class="edbox">
-							Nom d'utilisateur:
-							<input type="text" id="ed_login" />
-						</div>
-						<button hlp="Enregistrer les modifications" alt="Enregistrer" onclick="SaveLogin()"><img src="/images/save_25px.png" /></button>
+					<h1 id="l_nom">Nouvel utilisateur</h1>
+					<div class="edbox">
+						Nom d'utilisateur:
+						<input type="text" id="ed_login" />
 					</div>
-					<div class="wrap">
-						<div class="edbox">
-							Email:
-							<input type="text" id="ed_email" />
-						</div>
-						<button hlp="Enregistrer les modifications" alt="Enregistrer" onclick="SaveEmail()"><img src="/images/save_25px.png" /></button>
+					<div class="edbox">
+						Email:
+						<input type="text" id="ed_email" />
 					</div>
-					<details>
-						<summary>Changer mon mot de passe</summary>
-						<div class="edbox" id="si_mp">
-							Ancien mot de passe:
-							<input type="password" id="ed_pw_old" />
-						</div>
-						<div class="edbox">
-							Nouveau mot de passe:
-							<input type="password" id="ed_pw_new" oninput="SetRed()" />
-						</div>
-						<div class="edbox">
-							Confirmer nouveau mot de passe:
-							<input type="password" id="ed_pw_new2" oninput="SetRed()" />
-						</div>
-						<div id="red">Les saisies ne correspondent pas</div>
-						<button id="btn_OK"><img src="/images/save_30px.png" />Changer</button>
-					</details>
+					<div class="edbox">
+						Définir un mot de passe:
+						<input type="password" id="ed_pw_new" oninput="SetRed()" />
+					</div>
+					<div class="edbox">
+						Confirmer le mot de passe:
+						<input type="password" id="ed_pw_new2" oninput="SetRed()" />
+					</div>
+					<div class="red" id="not_same">Les saisies ne correspondent pas</div>
+					<div class="wrap">
+						<button id="btn_OK"><img src="/images/save_30px.png" />Enregistrer</button>
+						<button><img src="/images/close_window_30px.png" onclick="window.location.href='/login'" />Annuler</button>
+					</div>
 				</div>
 			</div>
 			<div id="status"></div>
@@ -165,87 +156,37 @@
 	//  Variables globales
 	//*********************
 	var io = io.connect(location.host);
-	var session;
-	var mesChoix;
-	const l_nom = document.getElementById("l_nom");
+	var nom_dispo = false;
+	var email_dispo = false;
 	const ed_login = document.getElementById("ed_login");
 	const ed_email = document.getElementById("ed_email");
-	const ed_pw_old = document.getElementById("ed_pw_old");
 	const ed_pw_new = document.getElementById("ed_pw_new");
 	const ed_pw_new2 = document.getElementById("ed_pw_new2");
 	const btn_ok = document.getElementById("btn_OK");
-	const not_same = document.getElementById("red");
+	const not_same = document.getElementById("not_same");
 
 	//*********************
 	// SESSION socket I/O
 	//*********************
-	function SetChoix(nom, val) {
-		mesChoix[nom] = val;
-		io.emit("upducfg", nom, val);
-	}
 
 	io.on("connect", function () {
-		io.emit("session", (data) => {
-			session = data;
-			console.log("session", data);
-			mesChoix = session.user.choix;
-			io.emit("get_user", session.user.id, (row) => {
-				if (row.err) Erreur(row.err);
-				else {
-					ed_login.value = row.nom;
-					l_nom.innerText = row.nom;
-					ed_email.value = row.email;
-					const cl = document.getElementById("si_mp").classList;
-					if (row.has_mp) cl.remove("hide_me");
-					else cl.add("hide_me");
-					for (let el of document.getElementsByClassName("is_admin")) {
-						if (row.admin) el.classList.remove("hide_me");
-						else el.classList.add("hide_me");
-					}
-					if (mesChoix.carets1 == undefined) mesChoix.carets1 = "XXXX";
-					document.querySelectorAll(".card summary").forEach((caret, idx) => {
-						while (mesChoix.carets1.length <= idx) mesChoix.carets1 += "X";
-						caret.addEventListener("click", function () {
-							// En js, string est inmutable
-							let ar = mesChoix.carets1.split("");
-							ar[idx] = ar[idx] == "X" ? "-" : "X";
-							SetChoix("carets1", ar.join(""));
-						});
-						if (mesChoix.carets1[idx] == "X") caret.parentElement.setAttribute("open", true);
-						else caret.parentElement.removeAttribute("open");
-					});
-				}
-			});
-			ed_login.value = session.user.nom;
-		});
+		io.emit("session", () => {});
 	}); // io connect
 
 	/****************************/
 	/*    On actions user       */
 	/****************************/
-	btn_ok.addEventListener("click", function () {
-		console.assert(ed_pw_new.value == ed_pw_new2.value);
-		if (ed_pw_new.value == ed_pw_new2.value)
-			io.emit("updpwd", ed_pw_old.value, ed_pw_new.value, (err) => {
-				if (err) Erreur(err);
-				else window.location.href = "/";
-			});
-	});
-
-	SetRed();
-	function SetRed() {
-		if (ed_pw_new.value != ed_pw_new2.value) {
-			not_same.style.opacity = 1;
-			btn_ok.disabled = true;
-		} else {
-			not_same.style.opacity = 0;
+	function SetOK() {
+		if (nom_dispo && email_dispo && ed_pw_new.value == ed_pw_new2.value) {
 			btn_ok.disabled = false;
+		} else {
+			btn_ok.disabled = true;
 		}
 	}
 
-	ed_login.parentElement.nextElementSibling.disabled = true;
 	ed_login.addEventListener("input", function () {
 		io.emit("is_dispo", "nom", ed_login.value, (data) => {
+			nom_dispo = data.dispo == true;
 			if (data.err) Erreur(data.err);
 			else if (data.dispo) {
 				ed_login.style.color = "green";
@@ -254,22 +195,13 @@
 				ed_login.style.color = "red";
 				Warning("Utilisateur déjà enregistré");
 			}
-			this.parentElement.nextElementSibling.disabled = !data.dispo;
+			SetOK();
 		});
 	});
-	function SaveLogin() {
-		io.emit("updUser", "nom", ed_login.value, (r) => {
-			if (r != "OK") Erreur(r);
-			else {
-				OK("Nom d'utilisateur modifié");
-				l_nom.innerText = ed_login.value;
-			}
-		});
-	}
 
-	ed_email.parentElement.nextElementSibling.disabled = true;
 	ed_email.addEventListener("input", function () {
 		io.emit("is_dispo", "email", this.value, (data) => {
+			email_dispo = data.dispo = true;
 			if (data.err) Erreur(data.err);
 			else if (data.dispo) {
 				ed_email.style.color = "green";
@@ -277,13 +209,20 @@
 				ed_email.style.color = "red";
 				Warning("Email déjà inscrit dans la base");
 			}
-			this.parentElement.nextElementSibling.disabled = !data.dispo;
+			SetOK();
 		});
 	});
-	function SaveEmail() {
-		io.emit("updUser", "email", ed_email.value, (r) => {
-			if (r != "OK") Erreur(r);
-			else OK("Email modifié");
-		});
+
+	SetRed();
+	function SetRed() {
+		not_same.style.opacity = ed_pw_new.value != ed_pw_new2.value ? 1 : 0;
+		SetOK();
 	}
+
+	btn_ok.addEventListener("click", function () {
+		io.emit("register", ed_login.value, ed_email.value, ed_pw_new.value, (err) => {
+			if (err) Erreur(err.message);
+			else window.location.href = "/";
+		});
+	});
 </script>

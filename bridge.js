@@ -592,6 +592,12 @@ io.on("connection", async (socket) => {
 
 	socket.on("get_admin_email", (cb) => cb(app_config.email_to));
 
+	function PasswordOK(pw, hash) {
+		// Pour une petite appli sans gros enjeux de sécurité, le md5 suffit largement.
+		// Pour une appli plus secure, utiliser bcrypt (mais install compliqué) ou Crypto
+		return (!hash && pw == "") || hash == md5(pw);
+	}
+
 	function ChangeMP(id, pw) {
 		return new Promise((resolve, reject) => {
 			db_login.run("UPDATE users SET hash=" + (pw == "" ? "NULL" : "'" + md5(pw) + "'") + " WHERE id=" + id, (err) => {
@@ -611,6 +617,20 @@ io.on("connection", async (socket) => {
 			});
 		});
 	}
+
+	socket.on("register", (login, email, pw, cb) => {
+		let info = db_login.run("INSERT INTO  users (nom, email, hash) VALUES (?,?,?)", [login, email, pw == "" ? undefined : md5(pw)], (err) => {
+			if (err) cb(err);
+			else {
+				GetUser(login).then((user) => {
+					console.log(user);
+					session.user = user;
+					session.save();
+					cb();
+				});
+			}
+		});
+	});
 
 	socket.on("updpwd", (old_pw, new_pw, cb) => {
 		CheckMP(session.user.id, old_pw)
@@ -646,6 +666,10 @@ app.get("/index", checkAuthenticated, (req, res) => {
 
 app.get("/user", checkAuthenticated, (req, res) => {
 	res.render("user.html");
+});
+
+app.get("/register", (req, res) => {
+	res.render("register.html");
 });
 
 app.get("/reset", (req, res) => {
