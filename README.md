@@ -1,4 +1,4 @@
-# [Cahier de Bridge](http://jeu-bridge.fr/)
+<h2>[Cahier de Bridge](http://jeu-bridge.fr/)</h2>
 
 ## Introduction
 
