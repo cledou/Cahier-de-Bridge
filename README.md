@@ -11,7 +11,13 @@ J'ai donc créé cette application pour qu'elle puisse:
 3. Les imprimer
 4. Et même éventuellement les partager en ligne avec ses élèves.
 
-A la date de Janvier 2025, l'application est fonctionnelle et utilisable en mode mono-utilisateur. La roadmap est la suivante:
+[Informations sur l'installation](./install.md)
+
+[Prise en main du logiciel](./interface.md)
+
+[Configuration initiale](./config.md)
+
+A la date de Février 2025, l'application est fonctionnelle et utilisable en mode mono-utilisateur ou multi-utilisateur. La roadmap est la suivante:
 
 -   [x] Editeur de mains de bridge
 -   [x] Classement dans un arbre de sélection
@@ -21,14 +27,10 @@ A la date de Janvier 2025, l'application est fonctionnelle et utilisable en mode
 -   [x] Sauvegarde de la base de donnée
 -   [x] Mise en ligne sur Github et npm
 -   [ ] Fichiers d'aide (en cours..)
--   [ ] Restauration de la base
--   [ ] Contrôle d'accès multi-utilisateurs
+-   [x] Restauration de la base
+-   [x] Contrôle d'accès multi-utilisateurs
 -   [ ] Undo-Redo (Possibilité d'annuler une action)
 -   [ ] Tutoriels vidéos
 -   [ ] Version anglaise
-
-[Informations sur l'installation](./install.md)
-
-[Prise en main du logiciel](./interface.md)
 
 Vous pouvez me payer un café ou des croquettes pour le chat sur [ma page Tipeee](https://fr.tipeee.com/createur-open-source/)
