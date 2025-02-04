@@ -63,6 +63,9 @@ Donc vous pouvez installer les sources dans un sous-dossier de 'Mes Documents'.
 
 -   Se placer dans le dossier contenant les sources (voir plus haut)
 -   `npm install`
+-   Windows étant un système assez peu coopératif, si vous avez une erreur de ce type
+    ![Erreur Policy](doc/erreur_policy.png)
+    tapez `Set-ExecutionPolicy -Scope CurrentUser unrestricted` dans le terminal, et réessayez.
 
 Normalement, le gestionnaire de paquet devrait gérer correctement la compilation. En cas de problème à cette étape, vérifiez que vous êtes bien en mode 'Administrateur', et que vous avez les droits d'écrire dans les dossiers système.
 
@@ -121,3 +124,10 @@ Se connecter ensuite sur la [page locale](http://localhost:3005/)
 `sudo systemctl enable cahier.service`
 
 `sudo systemctl daemon-reload`
+
+### installer l'application sur un serveur partagé
+
+Si cette application n'est pas la seule à tourner sur votre machine, ou si vous désirez un accès sécurisé type HTTPS (le cadenas vert...), vous devrez passer par un reverse proxy style 'nginx'. Le paramétrage doit être confié à un administrateur réseau qui connait votre plateforme.
+
+A titre purement informatif, voici l'enregistrement placé dans notre serveur de démonstration Debian dans /etc/nginx/sites-enabled
+[Enregistrement nginx](./cahier.ngnix)
