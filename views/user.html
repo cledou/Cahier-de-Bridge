@@ -189,7 +189,7 @@
 			session = data;
 			console.log("session", data);
 			mesChoix = session.user.choix;
-			io.emit("get_user", session.user.id, (row) => {
+			io.emit("get_user", session.user.id_user, (row) => {
 				if (row.err) Erreur(row.err);
 				else {
 					ed_login.value = row.nom;

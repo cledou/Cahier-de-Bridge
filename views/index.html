@@ -670,11 +670,11 @@
 			}
 			console.log("Session:", session);
 			// ajuster l'affichage au chargement
-			if (!session.need_login || session.user.id != 1) document.getElementById("btn_register").remove();
+			if (!session.need_login || session.user.id_user != 1) document.getElementById("btn_register").remove();
 			if (!session.need_login) {
 				document.getElementById("btn_back").remove();
 				document.getElementById("menu_user").remove();
-			} else if (session.user.id == 1) document.getElementById("menu_user").remove();
+			} else if (session.user.id_user == 1) document.getElementById("menu_user").remove();
 			if (!session.user.is_admin) for (let el of document.getElementsByClassName("si_admin")) el.remove();
 
 			mesChoix = session.user.choix;
@@ -1089,7 +1089,8 @@
 
 	function onSave() {
 		io.emit("save_donne", enr, (r) => {
-			if (r.err) Erreur(r);
+			console.log(r);
+			if (r.err) Erreur(r.err);
 			else SetDirty(false);
 		});
 	}
@@ -1121,7 +1122,7 @@
 		);
 	});
 	document.getElementById("btn_del_user").addEventListener("click", () => {
-		io.emit("del_user", session.user.id, (err) => {
+		io.emit("del_user", session.user.id_user, (err) => {
 			if (err) Erreur(err);
 			else window.location.href = "/login";
 		});

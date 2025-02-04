@@ -164,18 +164,36 @@ openBase("login.db", "login.sql")
 const SESSION_RELOAD_INTERVAL = 10 * 60 * 1000;
 
 async function GetUser(nom) {
-	const stmt = "SELECT U.id,U.nom,U.last_db,U.admin,P.id as id_choix, P.choix FROM users U LEFT JOIN persistance P ON P.id_user=U.id AND P.nom_base=U.last_db WHERE U.nom=?";
+	const stmt =
+		"SELECT U.id,U.nom,U.admin,U.last_db,B.filename,B.id_owner, UB.* FROM users U \
+	LEFT JOIN bases B ON B.id=U.last_db \
+	LEFT JOIN user_base UB ON UB.id_user=U.id AND UB.id_base=U.last_db \
+	WHERE U.nom=?";
 	let row = await db_get(db_login, stmt, [nom]);
-	if (row == undefined) row = await db_get(db_login, stmt, "Anonyme");
-	let user = {
-		id: row.id,
-		nom: row.nom,
-		last_db: row.last_db,
-		is_admin: Boolean(row.admin),
-		choix: JSON.parse(row.choix),
-		id_choix: row.id_choix,
-	};
-	return user;
+	//console.log(row);
+	return row != undefined
+		? {
+				id_user: row.id,
+				id_base: row.last_db,
+				nom: row.nom,
+				filename: row.filename,
+				is_admin: Boolean(row.admin),
+				choix: JSON.parse(row.choix),
+				can_edit: Boolean(row.admin || row.can_edit),
+				can_delete: Boolean(row.admin || row.can_delete),
+				can_erase: Boolean(row.id_user > 1 && row.id_owner == row.id_user),
+		  }
+		: {
+				id_user: 1,
+				id_base: 1,
+				nom: "Anonyme",
+				filename: "example.db",
+				is_admin: false,
+				choix: { flags: 1 },
+				can_edit: false,
+				can_delete: false,
+				can_erase: false,
+		  };
 }
 
 io.on("connection", async (socket) => {
@@ -193,15 +211,18 @@ io.on("connection", async (socket) => {
 	}, SESSION_RELOAD_INTERVAL);
 
 	// récupérer user
-	if (session.user == undefined) session.user = await GetUser(app_config.user);
-	const db_rw = session.user.id > 1; // si id=1, c'est un Anonyme
+	if (session.user == undefined) {
+		session.user = await GetUser(app_config.user);
+		//console.log("Session user:", session.user);
+	}
+	const db_rw = session.user.id_user > 1; // si id=1, c'est un Anonyme
 	let db;
 	nbr_clients++;
 	// et maintenant, on attend le ping-pong
 
 	socket.on("session", (cb) => {
 		session.need_login = app_config.need_login;
-		openBase(db_dir + session.user.last_db).then((db1) => {
+		openBase(db_dir + session.user.filename).then((db1) => {
 			db = db1;
 			if (session.ok != undefined) {
 				socket.emit("OK", session.ok);
@@ -216,7 +237,7 @@ io.on("connection", async (socket) => {
 				socket.emit("warning", session.warning);
 				session.warning = undefined;
 			} else {
-				const who = session.user.nom + " est connecté à " + session.user.last_db;
+				const who = session.user.nom + " est connecté à " + session.user.filename;
 				console.log(who);
 				socket.emit("info", who);
 			}
@@ -229,14 +250,9 @@ io.on("connection", async (socket) => {
 		clearInterval(timer);
 		try {
 			if (session.dirty == true) {
-				//console.log("Choix change:", session.user.choix);
-				if (db_rw) {
-					if (session.user.id_choix == undefined) {
-						await db_run(db_login, "INSERT INTO persistance (id_user,nom_base,choix) VALUES (?,?,?)", [session.user.id, session.user.last_db, JSON.stringify(session.user.choix)]);
-						session.user.id_choix = db_login.lastID;
-					} else await db_run(db_login, "UPDATE persistance SET choix=? WHERE id=?", [JSON.stringify(session.user.choix), session.user.id_choix]);
-				}
+				if (db_rw) await db_run(db_login, "UPDATE user_base SET choix=? WHERE id_user=? AND id_base=?", [JSON.stringify(session.user.choix), session.user.id_user, session.user.id_base]);
 				session.dirty = false;
+				session.save();
 			}
 		} catch (err) {
 			console.error(err.message);
@@ -312,9 +328,10 @@ io.on("connection", async (socket) => {
 
 	socket.on("cb_run", async (query, values, cb) => {
 		if (db == undefined) cb({ err: "Session expirée. Identifiez-vous" });
+		else if (!db_rw) cb({ err: "Accès en écriture refusé en mode 'Visiteur'" });
 		else
-			db.run(query, values || [], function (err, info) {
-				cb(err ? { err: err.message } : info);
+			db.run(query, values || [], function (err) {
+				cb(err ? { err: err.message } : this);
 			});
 	});
 
@@ -464,7 +481,7 @@ io.on("connection", async (socket) => {
 			cb("OK");
 			if (nom != session.user.last_db) {
 				session.user.last_db = nom;
-				const info = await db_all(db_login, "UPDATE users SET last_db=? WHERE id=" + session.user.id, [nom]);
+				const info = await db_all(db_login, "UPDATE users SET last_db=? WHERE id=" + session.user.id_user, [nom]);
 				session.dirty = true;
 				session.save();
 				socket.emit("reload");
@@ -575,7 +592,7 @@ io.on("connection", async (socket) => {
 	socket.on("is_dispo", (champ, value, cb) => {
 		if (db_login == undefined) cb({ err: "NTBS: Liste des utilisateurs inaccessible" });
 		else
-			db_login.get("SELECT COUNT(*) as cnt FROM USERS WHERE " + champ + " LIKE ? AND id <> " + session.user.id, [value], (err, row) => {
+			db_login.get("SELECT COUNT(*) as cnt FROM USERS WHERE " + champ + " LIKE ? AND id <> " + session.user.id_user, [value], (err, row) => {
 				if (err) cb({ err: err.message });
 				else cb({ dispo: row.cnt == 0 });
 			});
@@ -584,7 +601,7 @@ io.on("connection", async (socket) => {
 	socket.on("updUser", (champ, value, cb) => {
 		if (db_login == undefined) cb({ err: "NTBS: Session fermée. Reconnectez vous" });
 		else
-			db_login.run("UPDATE users SET " + champ + "=? WHERE id=" + session.user.id, [value], (err) => {
+			db_login.run("UPDATE users SET " + champ + "=? WHERE id=" + session.user.id_user, [value], (err) => {
 				if (err) cb(err.message);
 				else cb("OK");
 			});
@@ -619,7 +636,7 @@ io.on("connection", async (socket) => {
 	}
 
 	socket.on("register", (login, email, pw, cb) => {
-		let info = db_login.run("INSERT INTO  users (nom, email, hash) VALUES (?,?,?)", [login, email, pw == "" ? undefined : md5(pw)], (err) => {
+		db_login.run("INSERT INTO  users (nom, email, hash) VALUES (?,?,?)", [login, email, pw == "" ? undefined : md5(pw)], (err) => {
 			if (err) cb(err);
 			else {
 				GetUser(login).then((user) => {
@@ -633,7 +650,7 @@ io.on("connection", async (socket) => {
 	});
 
 	socket.on("updpwd", (old_pw, new_pw, cb) => {
-		CheckMP(session.user.id, old_pw)
+		CheckMP(session.user.id_user, old_pw)
 			.then((id) =>
 				ChangeMP(id, new_pw)
 					.then((r) => {
@@ -648,9 +665,9 @@ io.on("connection", async (socket) => {
 
 	socket.on("del_user", (id, cb) => {
 		// effacer la bdd de l'utilisateur
-		let info = db_login.run("DELETE FROM users WHERE id=?", [id], (err) => {
+		db_login.run("DELETE FROM users WHERE id=?", [id], function (err) {
 			if (err) cb(err);
-			else if (info.changes != 1) cb("Effacement impossible");
+			else if (this.changes != 1) cb("Effacement impossible");
 			else {
 				session.ok = "Utilisateur effacé";
 				session.save();
@@ -829,14 +846,15 @@ async function db_all(db, query, values = []) {
 }
 
 async function db_run(db, query, values = []) {
+	//console.log(query, values);
 	return new Promise(function (resolve, reject) {
-		db.run(query, values, function (err, row) {
+		db.run(query, values, function (err) {
 			if (err) {
 				return reject(err);
 			}
 			db.lastID = this.lastID;
 			db.changes = this.changes;
-			return resolve(row);
+			return resolve(this);
 		});
 	});
 }
