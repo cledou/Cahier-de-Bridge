@@ -477,7 +477,7 @@
 							<div class="level0" id="menu_user" style="background-image: url('/images/user_30px.png')" hlp="Gestion des utilisateurs">
 								<div class="level1">
 									<button class="itmh" onclick="window.location.href='/user'" hlp="Modifier mon profil enregistré"><img src="/images/user_edit.png" />Modifier mon profil</button>
-									<button class="itmh" onclick="OpenModalWnd('del_dlg')" hlp="Effacer mon profil de ce site. Vous ne pourrez plus vous connecter avec cet identifiant."><img src="/images/user_remove_30px.png" />Effacer mon profil</button>
+									<button class="itmh" id="del_profil" onclick="OpenModalWnd('del_dlg')" hlp="Effacer mon profil de ce site. Vous ne pourrez plus vous connecter avec cet identifiant."><img src="/images/user_remove_30px.png" />Effacer mon profil</button>
 								</div>
 							</div>
 							<div class="level0 si_admin" style="background-image: url('/images/settings_30px.png')" hlp="Paramètres de l'application et administration">
@@ -670,13 +670,13 @@
 			}
 			console.log("Session:", session);
 			// ajuster l'affichage au chargement
+			if (session.user.id_user < 3) document.getElementById("del_profil").remove();
 			if (!session.need_login || session.user.id_user != 1) document.getElementById("btn_register").remove();
 			if (!session.need_login) {
 				document.getElementById("btn_back").remove();
 				document.getElementById("menu_user").remove();
 			} else if (session.user.id_user == 1) document.getElementById("menu_user").remove();
 			if (!session.user.is_admin) for (let el of document.getElementsByClassName("si_admin")) el.remove();
-
 			mesChoix = session.user.choix;
 			if (mesChoix.flags == undefined) mesChoix.flags = 0;
 			Object.defineProperties(mesChoix, {

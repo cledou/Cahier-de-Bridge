@@ -163,12 +163,14 @@ openBase("login.db", "login.sql")
 //
 const SESSION_RELOAD_INTERVAL = 10 * 60 * 1000;
 
-async function GetUser(nom) {
+async function GetUser(str, nom) {
 	const stmt =
 		"SELECT U.id,U.nom,U.admin,U.last_db,B.filename,B.id_owner, UB.* FROM users U \
 	LEFT JOIN bases B ON B.id=U.last_db \
 	LEFT JOIN user_base UB ON UB.id_user=U.id AND UB.id_base=U.last_db \
-	WHERE U.nom=?";
+	WHERE U." +
+		str +
+		"=?";
 	let row = await db_get(db_login, stmt, [nom]);
 	//console.log(row);
 	return row != undefined
@@ -210,18 +212,80 @@ io.on("connection", async (socket) => {
 		});
 	}, SESSION_RELOAD_INTERVAL);
 
-	// récupérer user
-	if (session.user == undefined) {
-		session.user = await GetUser(app_config.user);
-		//console.log("Session user:", session.user);
-	}
-	const db_rw = session.user.id_user > 1; // si id=1, c'est un Anonyme
 	let db;
 	nbr_clients++;
 	// et maintenant, on attend le ping-pong
 
-	socket.on("session", (cb) => {
+	//*******************
+	//     login.db
+	//*******************
+	socket.on("get_login", (cb) => {
+		const obj = { mail: app_config.email_to };
+		if (session.user != undefined) obj.nom = session.user.nom;
+		cb(obj);
+	});
+
+	socket.on("get_user", (id, cb) => {
+		if (db_login == undefined) cb({ err: "NTBS: Liste des utilisateurs inaccessible" });
+		else
+			db_login.get("SELECT nom,email,admin,hash FROM users WHERE id=" + id, (err, row) => {
+				if (err) cb({ err: err.message });
+				else if (row == undefined) cb({ err: "NTBS: Utilisateur effacé" });
+				else cb({ nom: row.nom, email: row.email, admin: Boolean(row.admin), has_mp: Boolean(row.hash != undefined) });
+			});
+	});
+
+	function PasswordOK(pw, hash) {
+		// Pour une petite appli sans gros enjeux de sécurité, le md5 suffit largement.
+		// Pour une appli plus secure, utiliser bcrypt (mais install compliqué) ou Crypto
+		return (!hash && pw == "") || hash == md5(pw);
+	}
+
+	socket.on("connect_me", async function (nom, pw, cb) {
+		db_login.get("SELECT nom,hash FROM users WHERE nom LIKE ? OR email LIKE ?", [nom, nom], (err, row) => {
+			if (err) cb(err.message);
+			else if (PasswordOK(pw, row.hash))
+				GetUser("nom", row.nom).then((user) => {
+					session.user = user;
+					session.save();
+					cb("OK");
+				});
+			else cb("Mot de passe incorrect");
+		});
+	});
+
+	socket.on("is_user", (nom, cb) => {
+		if (db_login == undefined) cb("NTBS: Liste des utilisateurs inaccessible");
+		else
+			db_login.get("SELECT COUNT(*) as cnt FROM USERS WHERE nom LIKE ? OR email LIKE ?", [nom, nom], (err, row) => {
+				if (!err && row && row.cnt) cb("OK:" + row.cnt);
+				else cb("");
+			});
+	});
+
+	socket.on("is_dispo", (champ, value, cb) => {
+		if (db_login == undefined) cb({ err: "NTBS: Liste des utilisateurs inaccessible" });
+		else
+			db_login.get("SELECT COUNT(*) as cnt FROM USERS WHERE " + champ + " LIKE ? AND id <> " + session.user.id_user, [value], (err, row) => {
+				if (err) cb({ err: err.message });
+				else cb({ dispo: row.cnt == 0 });
+			});
+	});
+
+	//*******************
+	//     bridge.db
+	//*******************
+	socket.on("session", async (cb) => {
+		//console.log(session);
 		session.need_login = app_config.need_login;
+		if (!app_config.need_login) session.user = await GetUser("id", 2);
+		else if (session.user == undefined) {
+			//console.log("Session user:", session.user);
+			socket.emit("alert", "Pas d'utilisateur connecté");
+			socket.conn.close();
+			return;
+		}
+		const db_rw = session.user.id_user > 1; // si id=1, c'est un Anonyme
 		openBase(db_dir + session.user.filename).then((db1) => {
 			db = db1;
 			if (session.ok != undefined) {
@@ -246,26 +310,27 @@ io.on("connection", async (socket) => {
 		});
 	});
 
+	// disconnect depuis login.html: pas de session.user
 	socket.on("disconnect", async function () {
 		clearInterval(timer);
-		try {
-			if (session.dirty == true) {
-				if (db_rw) await db_run(db_login, "UPDATE user_base SET choix=? WHERE id_user=? AND id_base=?", [JSON.stringify(session.user.choix), session.user.id_user, session.user.id_base]);
-				session.dirty = false;
-				session.save();
-			}
-		} catch (err) {
-			console.error(err.message);
-		}
-
 		nbr_clients--;
-		let st = session.user.nom + " déconnecté. ";
-		if (nbr_clients > 1) st += "Encore " + nbr_clients + " connectés";
-		else if (nbr_clients == 1) st += "Reste un seul client connecté";
-		else st += "Plus personne n'est connecté";
-		console.log(st);
+		if (session.user != undefined) {
+			try {
+				if (session.dirty == true) {
+					if (db_rw) await db_run(db_login, "UPDATE user_base SET choix=? WHERE id_user=? AND id_base=?", [JSON.stringify(session.user.choix), session.user.id_user, session.user.id_base]);
+					session.dirty = false;
+					session.save();
+				}
+			} catch (err) {
+				console.error(err.message);
+			}
+			let st = session.user.nom + " déconnecté. ";
+			if (nbr_clients > 1) st += "Encore " + nbr_clients + " connectés";
+			else if (nbr_clients == 1) st += "Reste un seul client connecté";
+			else st += "Plus personne n'est connecté";
+			console.log(st);
+		}
 		if (db != undefined) {
-			// if (db.inTransaction) db_all(db,"ROLLBACK").run();
 			db.close();
 			db = undefined;
 		}
@@ -496,19 +561,6 @@ io.on("connection", async (socket) => {
 	/* Contrôle d'accès */
 	/********************/
 
-	socket.on("connect_me", async function (nom, pw, cb) {
-		db_login.get("SELECT nom,hash FROM users WHERE nom LIKE ? OR email LIKE ?", [nom, nom], (err, row) => {
-			if (err) cb(err.message);
-			else if (PasswordOK(pw, row.hash))
-				GetUser(row.nom).then((user) => {
-					session.user = user;
-					session.save();
-					cb("OK");
-				});
-			else cb("Mot de passe incorrect");
-		});
-	});
-
 	socket.on("forgot", (nom, cb) => {
 		if (db_login == undefined) cb("NTBS: Liste des utilisateurs inaccessible");
 		else
@@ -570,34 +622,6 @@ io.on("connection", async (socket) => {
 		}
 	});
 
-	socket.on("get_user", (id, cb) => {
-		if (db_login == undefined) cb({ err: "NTBS: Liste des utilisateurs inaccessible" });
-		else
-			db_login.get("SELECT nom,email,admin,hash FROM users WHERE id=" + id, (err, row) => {
-				if (err) cb({ err: err.message });
-				else if (row == undefined) cb({ err: "NTBS: Utilisateur effacé" });
-				else cb({ nom: row.nom, email: row.email, admin: Boolean(row.admin), has_mp: Boolean(row.hash != undefined) });
-			});
-	});
-
-	socket.on("is_user", (nom, cb) => {
-		if (db_login == undefined) cb("NTBS: Liste des utilisateurs inaccessible");
-		else
-			db_login.get("SELECT COUNT(*) as cnt FROM USERS WHERE nom LIKE ? OR email LIKE ?", [nom, nom], (err, row) => {
-				if (!err && row && row.cnt) cb("OK:" + row.cnt);
-				else cb("");
-			});
-	});
-
-	socket.on("is_dispo", (champ, value, cb) => {
-		if (db_login == undefined) cb({ err: "NTBS: Liste des utilisateurs inaccessible" });
-		else
-			db_login.get("SELECT COUNT(*) as cnt FROM USERS WHERE " + champ + " LIKE ? AND id <> " + session.user.id_user, [value], (err, row) => {
-				if (err) cb({ err: err.message });
-				else cb({ dispo: row.cnt == 0 });
-			});
-	});
-
 	socket.on("updUser", (champ, value, cb) => {
 		if (db_login == undefined) cb({ err: "NTBS: Session fermée. Reconnectez vous" });
 		else
@@ -608,12 +632,6 @@ io.on("connection", async (socket) => {
 	});
 
 	socket.on("get_admin_email", (cb) => cb(app_config.email_to));
-
-	function PasswordOK(pw, hash) {
-		// Pour une petite appli sans gros enjeux de sécurité, le md5 suffit largement.
-		// Pour une appli plus secure, utiliser bcrypt (mais install compliqué) ou Crypto
-		return (!hash && pw == "") || hash == md5(pw);
-	}
 
 	function ChangeMP(id, pw) {
 		return new Promise((resolve, reject) => {
@@ -639,7 +657,7 @@ io.on("connection", async (socket) => {
 		db_login.run("INSERT INTO  users (nom, email, hash) VALUES (?,?,?)", [login, email, pw == "" ? undefined : md5(pw)], (err) => {
 			if (err) cb(err);
 			else {
-				GetUser(login).then((user) => {
+				GetUser("nom", login).then((user) => {
 					console.log(user);
 					session.user = user;
 					session.save();

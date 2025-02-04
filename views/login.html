@@ -97,28 +97,23 @@
 	var io = io.connect(location.host);
 
 	io.on("connect", function () {
-		io.emit("session", (data) => {
-			session = data;
-			if (session.user) {
-				ed_login.value = session.user.nom;
+		io.emit("get_login", (obj) => {
+			if (obj.nom) {
+				ed_login.value = obj.nom;
 				onUser();
 				ed_pw.focus();
+			} else ed_login.focus();
+			if (obj.mail && obj.mail.indexOf("@") != -1) {
+				lk_admin.innerText = "Contacter l'administrateur";
+				lk_admin.setAttribute("href", "mailto:" + r);
+				lk_admin.setAttribute("hlp", "Cliquez pour envoyer un message à l'administrateur du site (" + obj.mail + ")");
+				lk_admin.classList.remove("hide_me");
 			}
-			io.emit("get_admin_email", (r) => {
-				//if (r != undefined && r.indexOf(" ") == -1 && r.indexOf("@") != -1) {
-				if (r != undefined && r.indexOf("@") != -1) {
-					lk_admin.innerText = "Contacter l'administrateur";
-					lk_admin.setAttribute("href", "mailto:" + r);
-					lk_admin.setAttribute("hlp", "Cliquez pour envoyer un message à l'administrateur du site (" + r + ")");
-					lk_admin.classList.remove("hide_me");
-				}
-			});
 		});
 	});
 
 	function onUser() {
 		io.emit("is_user", ed_login.value, (r) => {
-			console.log(r);
 			const b = r.startsWith("OK");
 			box_pw.style.opacity = b ? 1 : 0;
 			lk_forgot.style.opacity = b ? 1 : 0;
