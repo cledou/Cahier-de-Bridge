@@ -1113,7 +1113,7 @@
 			},
 			(r) => {
 				if (r.err) Erreur(r);
-				else if (r.changes == 1 && OpenID(r.lastInsertRowid)) {
+				else if (r.changes == 1 && OpenID(r.lastID)) {
 					SetElvisEdit(true);
 					if ("showPicker" in HTMLSelectElement.prototype) ed_donneur.showPicker();
 					else ed_donneur.focus();
@@ -1502,7 +1502,7 @@
 		try {
 			let pos = await SQL_get("SELECT MAX(pos)+1 as n FROM arbre");
 			let r = await SQL_run("INSERT INTO arbre (itm,pos) VALUES ('Nouveau dossier',?)", [pos.n || 0]);
-			MakeTree('details [node="' + r.lastInsertRowid + '"]');
+			MakeTree('details [node="' + r.lastID + '"]');
 		} catch (e) {
 			Erreur(e);
 		}
@@ -1733,9 +1733,9 @@
 	});
 
 	function openDB() {
-		SetChoix("db", cbx_db.value);
-		window.location.reload();
-		//io.emit("open_db", cbx_db.value, (r) => {			if (r != "OK") Erreur(r); // le reste par reload..		});
+		io.emit("open_db", cbx_db.value, (r) => {
+			if (r != "OK") Erreur(r); // le reste par reload..
+		});
 	}
 
 	function SendFile(f, dest, nom) {

@@ -20,7 +20,7 @@ CREATE TABLE users (
 CREATE TABLE bases (
   id INTEGER PRIMARY KEY,
   filename TEXT UNIQUE,
-  id_owner INTEGER key REFERENCES users(id) ON DELETE CASCADE
+  id_owner INTEGER key REFERENCES users(id)
 );
 
 INSERT INTO users (id,nom) VALUES (1,'Anonyme');
@@ -31,8 +31,8 @@ UPDATE users SET last_db = 1 WHERE id = 1;
 UPDATE users SET last_db = 2 WHERE id = 2;
 
 CREATE TABLE user_base (
-  id_user INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  id_base INTEGER REFERENCES bases(id) ON DELETE CASCADE,
+  id_user INTEGER REFERENCES users(id),
+  id_base INTEGER REFERENCES bases(id),
   can_edit BOOLEAN DEFAULT FALSE,
   can_delete BOOLEAN DEFAULT FALSE,
   choix TEXT DEFAULT '{"flags": 1}'
@@ -47,21 +47,37 @@ CREATE TABLE groupes (
 );
 
 CREATE TABLE user_groupe (
-  id_user INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  id_groupe INTEGER REFERENCES groupes(id) ON DELETE CASCADE
+  id_user INTEGER REFERENCES users(id),
+  id_groupe INTEGER REFERENCES groupes(id)
 );
 
 CREATE TABLE notifications (
-  id_user_de INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  id_user_vers INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  id_user_de INTEGER REFERENCES users(id),
+  id_user_vers INTEGER REFERENCES users(id),
   t TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   message TEXT,
   lu BOOLEAN DEFAULT FALSE
 );
 
+// ON DELETE CASCADE trop aléatoire (PRAGMA etc...)
+
 CREATE TRIGGER on_delete_user AFTER DELETE ON users
 BEGIN
   INSERT INTO notifications (id_user_de,id_user_vers,message) VALUES (OLD.id,2,'Effacement de ' || OLD.nom || ' (base: id_' || OLD.id || '.db)');
+  DELETE FROM user_base WHERE id_user=OLD.id;
+  DELETE FROM user_groupe WHERE id_user=OLD.id;
+  DELETE FROM notifications WHERE id_user_de=OLD.id OR id_user_vers=OLD.id;
+  DELETE FROM bases WHERE id_owner=OLD.id;
+END;
+
+CREATE TRIGGER on_delete_base AFTER DELETE ON bases
+BEGIN
+  DELETE FROM user_base WHERE id_base=OLD.id;
+END;
+
+CREATE TRIGGER on_delete_groupe AFTER DELETE ON groupes
+BEGIN
+DELETE FROM user_groupe WHERE id_groupe=OLD.id;
 END;
 
 CREATE TRIGGER on_add_user AFTER INSERT ON users

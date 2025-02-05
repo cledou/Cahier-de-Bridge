@@ -98,14 +98,15 @@
 
 	io.on("connect", function () {
 		io.emit("get_login", (obj) => {
+			console.log(obj);
 			if (obj.nom) {
 				ed_login.value = obj.nom;
 				onUser();
 				ed_pw.focus();
 			} else ed_login.focus();
-			if (obj.mail && obj.mail.indexOf("@") != -1) {
+			if (obj.mail && obj.mail.indexOf("@") != -1 && obj.mail.indexOf(":") == -1) {
 				lk_admin.innerText = "Contacter l'administrateur";
-				lk_admin.setAttribute("href", "mailto:" + r);
+				lk_admin.setAttribute("href", "mailto:" + obj.mail);
 				lk_admin.setAttribute("hlp", "Cliquez pour envoyer un message à l'administrateur du site (" + obj.mail + ")");
 				lk_admin.classList.remove("hide_me");
 			}

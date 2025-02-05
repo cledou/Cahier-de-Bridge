@@ -94,7 +94,6 @@ if (fs.existsSync(config_filename)) {
 //*******************************
 // Initialisation de la session
 //*******************************
-var nbr_clients = 0;
 
 //*********************************
 // Initialiser quelques variables !
@@ -198,8 +197,27 @@ async function GetUser(str, nom) {
 		  };
 }
 
+const files_to_remove = [];
+
+function NettoyerFichiers() {
+	let index = files_to_remove.length - 1;
+	while (index >= 0) {
+		let del_itm = true;
+		const path = files_to_remove[index];
+		if (fs.existsSync(path))
+			try {
+				fs.unlinkSync(path);
+			} catch (e) {
+				console.error("Effacer " + path, e.message);
+				del_itm = false;
+			}
+		if (del_itm) files_to_remove.splice(index, 1);
+		index -= 1;
+	}
+}
+
 io.on("connection", async (socket) => {
-	const files_to_remove = [];
+	let db_rw = false;
 	const session = socket.request.session;
 	// timeout si inactif...
 	const timer = setInterval(() => {
@@ -213,7 +231,6 @@ io.on("connection", async (socket) => {
 	}, SESSION_RELOAD_INTERVAL);
 
 	let db;
-	nbr_clients++;
 	// et maintenant, on attend le ping-pong
 
 	//*******************
@@ -244,6 +261,7 @@ io.on("connection", async (socket) => {
 	socket.on("connect_me", async function (nom, pw, cb) {
 		db_login.get("SELECT nom,hash FROM users WHERE nom LIKE ? OR email LIKE ?", [nom, nom], (err, row) => {
 			if (err) cb(err.message);
+			else if (row == undefined) cb("Utilisateur inconnu");
 			else if (PasswordOK(pw, row.hash))
 				GetUser("nom", row.nom).then((user) => {
 					session.user = user;
@@ -272,11 +290,77 @@ io.on("connection", async (socket) => {
 			});
 	});
 
+	function GetHashStr(pw) {
+		return pw == "" ? null : md5(pw);
+	}
+
+	socket.on("register", (login, email, pw, cb) => {
+		db_login.run("INSERT INTO users (nom, email, hash) VALUES (?,?,?)", [login, email, GetHashStr(pw)], function (err) {
+			if (err) cb(err);
+			else {
+				const id_user = this.lastID;
+				db_login.run("INSERT INTO bases (filename, id_owner) VALUES (?,?)", ["id_" + id_user + ".db", id_user], function (err) {
+					if (err) cb(err);
+					else {
+						const id_base = this.lastID;
+						db_login.run("INSERT INTO user_base (id_user,id_base,can_edit,can_delete) VALUES (?,?,1,1)", [id_user, id_base], function (err) {
+							if (err) cb(err);
+							else {
+								db_login.run("UPDATE users SET last_db=? WHERE id=?", [id_base, id_user], function (err) {
+									if (err) cb(err);
+									else {
+										GetUser("nom", login).then((user) => {
+											console.log(user);
+											session.user = user;
+											session.save();
+											cb();
+										});
+									}
+								});
+							}
+						});
+					}
+				});
+			}
+		});
+	});
+
+	socket.on("updpwd", (old_pw, new_pw, cb) => {
+		db_login.get("SELECT hash FROM users WHERE id=?", [session.user.id_user], (err, row) => {
+			if (err) cb(err.message);
+			else if (row.hash != GetHashStr(old_pw)) cb("Ancien mot de passe incorrect");
+			else
+				db_login.run("UPDATE users SET hash=? WHERE id=?", [GetHashStr(new_pw), session.user.id_user], function (err) {
+					if (err) cb(err.message);
+					else if (this.changes != 1) cb("NTBS: Échec inatendu de la mise à jour");
+					else {
+						session.ok = "Mot de passe modifié";
+						session.save();
+						cb();
+					}
+				});
+		});
+	});
+
+	socket.on("del_user", (id, cb) => {
+		// effacer la bdd de l'utilisateur
+		db_login.run("DELETE FROM users WHERE id=?", [id], function (err) {
+			console.log(this);
+			if (err) cb(err.message);
+			else if (this.changes != 1) cb("Effacement impossible");
+			else {
+				session.ok = "Utilisateur effacé";
+				session.save();
+				cb();
+				files_to_remove.push(db_dir + "id_" + id + ".db");
+			}
+		});
+	});
+
 	//*******************
 	//     bridge.db
 	//*******************
 	socket.on("session", async (cb) => {
-		//console.log(session);
 		session.need_login = app_config.need_login;
 		if (!app_config.need_login) session.user = await GetUser("id", 2);
 		else if (session.user == undefined) {
@@ -285,21 +369,25 @@ io.on("connection", async (socket) => {
 			socket.conn.close();
 			return;
 		}
-		const db_rw = session.user.id_user > 1; // si id=1, c'est un Anonyme
+		db_rw = session.user.id_user > 1; // si id=1, c'est un Anonyme
 		openBase(db_dir + session.user.filename).then((db1) => {
 			db = db1;
 			if (session.ok != undefined) {
 				socket.emit("OK", session.ok);
 				session.ok = undefined;
+				session.save();
 			} else if (session.info != undefined) {
 				socket.emit("info", session.info);
 				session.info = undefined;
+				session.save();
 			} else if (session.err != undefined) {
 				socket.emit("alert", session.err);
 				session.err = undefined;
+				session.save();
 			} else if (session.warning != undefined) {
 				socket.emit("warning", session.warning);
 				session.warning = undefined;
+				session.save();
 			} else {
 				const who = session.user.nom + " est connecté à " + session.user.filename;
 				console.log(who);
@@ -313,7 +401,10 @@ io.on("connection", async (socket) => {
 	// disconnect depuis login.html: pas de session.user
 	socket.on("disconnect", async function () {
 		clearInterval(timer);
-		nbr_clients--;
+		let nbr_str = "";
+		if (io.engine.clientsCount > 1) nbr_str += "Encore " + io.engine.clientsCount + " connectés";
+		else if (io.engine.clientsCount == 1) nbr_str += "Reste un seul socket connecté";
+		else nbr_str += "Aucune connexion";
 		if (session.user != undefined) {
 			try {
 				if (session.dirty == true) {
@@ -324,18 +415,16 @@ io.on("connection", async (socket) => {
 			} catch (err) {
 				console.error(err.message);
 			}
-			let st = session.user.nom + " déconnecté. ";
-			if (nbr_clients > 1) st += "Encore " + nbr_clients + " connectés";
-			else if (nbr_clients == 1) st += "Reste un seul client connecté";
-			else st += "Plus personne n'est connecté";
-			console.log(st);
+			nbr_str = session.user.nom + " déconnecté. " + nbr_str;
 		}
+		console.log(nbr_str);
 		if (db != undefined) {
 			db.close();
 			db = undefined;
+			db_rw = false;
 		}
-		/* Effacer les fichiers uploadés */
-		for (let path of files_to_remove) if (fs.existsSync(path)) fs.unlinkSync(path);
+		/* Effacer les fichiers uploadés ou les bases obsolètes (si pas lock par une autre page Web) */
+		NettoyerFichiers();
 	});
 
 	socket.onAny((event, p1, p2, p3, p4, p5) => {
@@ -400,32 +489,6 @@ io.on("connection", async (socket) => {
 			});
 	});
 
-	/* socket.on("chg_mp", function (id, old_val, new_val, cb) {
-		if (db == undefined) cb({ err: "Session fermée. Reconnectez vous" });
-		else
-			try {
-				let info = {};
-				let enr = db_login.prepare("SELECT id,hash,LENGTH(hash) AS pwl FROM users WHERE id=?").get(id);
-				if (enr == undefined) throw new Error("Erreur dans les identifiants");
-				else if ((old_val != "" || (enr.hash != undefined && enr.pwl != 0)) && bcrypt.compareSync(old_val, enr.hash) == false) throw new Error("Ancien mot de passe incorrect");
-				else if (new_val != "")
-					bcrypt.hash(new_val, 10, function (err, hash) {
-						if (err) throw new Error("Hash:" + err.message);
-						else info = db_login.prepare("UPDATE users SET hash=? WHERE id=" + enr.id).run(hash);
-						if (info.changes == 1) cb("Mot de passe modifié");
-						else throw new Error("Mot de passe inchangé..");
-					});
-				else {
-					info = db_login.prepare("UPDATE users SET hash=null WHERE id=" + enr.id).run();
-					if (info.changes == 1) cb("Mot de passe supprimé");
-					else throw new Error("Mot de passe inchangé..");
-				}
-			} catch (err) {
-				console.error(err.message);
-				cb({ err: err.message });
-			}
-	});*/
-
 	socket.on("upducfg", (nom, valeur) => {
 		let b = false;
 		if (typeof valeur == "object") b = JSON.stringify(session.user.choix[nom]) === JSON.stringify(valeur);
@@ -450,15 +513,23 @@ io.on("connection", async (socket) => {
 	socket.on("save_donne", async (enr, cb) => {
 		if (db == undefined) cb({ err: "Session fermée. Reconnectez-vous" });
 		else if (!db_rw) cb({ err: "Accès en écriture refusé en mode 'Visiteur'" });
-		else
-			try {
-				const contenu = JSON.stringify(enr.jeu);
-				if (enr.id == undefined) cb(await db_run(db, "INSERT INTO donnes (nom,data) VALUES (?,?)", [enr.nom, contenu]));
-				else cb(await db_run(db, "UPDATE donnes set nom=?,data=? WHERE id=?"), [enr.nom, contenu, enr.id]);
-			} catch (err) {
-				cb({ err: err.message });
-			}
+		else {
+			const contenu = JSON.stringify(enr.jeu);
+			if (enr.id == undefined)
+				db.run("INSERT INTO donnes (nom,data) VALUES (?,?)", [enr.nom, contenu], function () {
+					if (err) cb(err);
+					else cb(this);
+				});
+			else
+				db.run("UPDATE donnes set nom=?,data=? WHERE id=?"),
+					[enr.nom, contenu, enr.id],
+					function () {
+						if (err) cb(err);
+						else cb(this);
+					};
+		}
 	});
+
 	socket.on("export", async (ar, cb) => {
 		if (db == undefined) cb({ err: "Session fermée. Reconnectez-vous" });
 		else
@@ -540,21 +611,23 @@ io.on("connection", async (socket) => {
 	});
 
 	socket.on("open_db", async (nom, cb) => {
-		try {
-			if (db == undefined) throw new Error("Session fermée. Reconnectez-vous");
-			if (db_list.indexOf(nom) == -1) throw new Error("Base inconnue !");
-			cb("OK");
-			if (nom != session.user.last_db) {
-				session.user.last_db = nom;
-				const info = await db_all(db_login, "UPDATE users SET last_db=? WHERE id=" + session.user.id_user, [nom]);
-				session.dirty = true;
-				session.save();
-				socket.emit("reload");
+		db_login.get("SELECT id FROM bases WHERE filename=?", [nom], (err, row) => {
+			if (err) cb(err.message);
+			else if (row == undefined) cb("Base pas enregistrée");
+			else if (row.id == session.user.last_db) cb();
+			else {
+				session.user.last_db = row.id;
+				db_login.run("UPDATE users SET last_db=? WHERE id=?", [row.id, session.user.id_user], function (err) {
+					if (err) cb(err.message);
+					else {
+						session.dirty = true;
+						session.save();
+						cb();
+						socket.emit("reload");
+					}
+				});
 			}
-		} catch (e) {
-			console.error(e);
-			cb(e);
-		}
+		});
 	});
 
 	/********************/
@@ -614,7 +687,7 @@ io.on("connection", async (socket) => {
 	socket.on("set_hash", (reset_hash, pw, cb) => {
 		if (db_login == undefined) cb({ err: "NTBS: Liste des utilisateurs inaccessible" });
 		else {
-			db_login.run("UPDATE users SET hash=?,reset_hash=NULL WHERE reset_hash=?", [pw == "" ? "NULL" : md5(pw), reset_hash], function (err) {
+			db_login.run("UPDATE users SET hash=?,reset_hash=NULL WHERE reset_hash=?", [GetHashStr(pw), reset_hash], function (err) {
 				if (err) cb({ err: err.message });
 				else if (this.changes != 1) cb({ err: "Lien expiré" });
 				else cb("OK");
@@ -632,68 +705,6 @@ io.on("connection", async (socket) => {
 	});
 
 	socket.on("get_admin_email", (cb) => cb(app_config.email_to));
-
-	function ChangeMP(id, pw) {
-		return new Promise((resolve, reject) => {
-			db_login.run("UPDATE users SET hash=" + (pw == "" ? "NULL" : "'" + md5(pw) + "'") + " WHERE id=" + id, (err) => {
-				if (err) reject(err.message);
-				else resolve();
-			});
-		});
-	}
-
-	function CheckMP(id, pw) {
-		return new Promise((resolve, reject) => {
-			db_login.get("SELECT hash FROM users WHERE id=" + id, (err, row) => {
-				if (err) reject(err.message);
-				else if (row == undefined) reject("Utilisateur introuvable");
-				else if (!PasswordOK(pw, row.hash)) reject("Mot de passe incorrect");
-				else resolve(id);
-			});
-		});
-	}
-
-	socket.on("register", (login, email, pw, cb) => {
-		db_login.run("INSERT INTO  users (nom, email, hash) VALUES (?,?,?)", [login, email, pw == "" ? undefined : md5(pw)], (err) => {
-			if (err) cb(err);
-			else {
-				GetUser("nom", login).then((user) => {
-					console.log(user);
-					session.user = user;
-					session.save();
-					cb();
-				});
-			}
-		});
-	});
-
-	socket.on("updpwd", (old_pw, new_pw, cb) => {
-		CheckMP(session.user.id_user, old_pw)
-			.then((id) =>
-				ChangeMP(id, new_pw)
-					.then((r) => {
-						session.ok = "Mot de passe modifié";
-						session.save();
-						cb();
-					})
-					.catch((e) => cb(e))
-			)
-			.catch((e) => cb(e));
-	});
-
-	socket.on("del_user", (id, cb) => {
-		// effacer la bdd de l'utilisateur
-		db_login.run("DELETE FROM users WHERE id=?", [id], function (err) {
-			if (err) cb(err);
-			else if (this.changes != 1) cb("Effacement impossible");
-			else {
-				session.ok = "Utilisateur effacé";
-				session.save();
-				cb();
-				files_to_remove.push(db_dir + "id_" + id + ".db");
-			}
-		});
-	});
 }); // fin socket.io
 
 //*******************
@@ -701,7 +712,6 @@ io.on("connection", async (socket) => {
 //*******************
 
 app.get("/login", (req, res) => {
-	req.session.user = undefined;
 	res.render("login.html");
 });
 
@@ -870,8 +880,6 @@ async function db_run(db, query, values = []) {
 			if (err) {
 				return reject(err);
 			}
-			db.lastID = this.lastID;
-			db.changes = this.changes;
 			return resolve(this);
 		});
 	});
