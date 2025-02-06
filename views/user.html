@@ -197,7 +197,10 @@
 					ed_email.value = row.email;
 					const cl = document.getElementById("si_mp").classList;
 					if (row.has_mp) cl.remove("hide_me");
-					else cl.add("hide_me");
+					else {
+						cl.add("hide_me");
+						ed_pw_old.value = "";
+					}
 					for (let el of document.getElementsByClassName("is_admin")) {
 						if (row.admin) el.classList.remove("hide_me");
 						else el.classList.add("hide_me");
