@@ -327,6 +327,7 @@ io.on("connection", async (socket) => {
 
 	socket.on("updpwd", (old_pw, new_pw, cb) => {
 		db_login.get("SELECT hash FROM users WHERE id=?", [session.user.id_user], (err, row) => {
+			console.log(old_pw, "'" + old_pw + "'", row.hash, GetHashStr(old_pw));
 			if (err) cb(err.message);
 			else if (row.hash != GetHashStr(old_pw)) cb("Ancien mot de passe incorrect");
 			else
