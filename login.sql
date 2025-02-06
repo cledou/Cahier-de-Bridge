@@ -43,21 +43,33 @@ INSERT INTO user_base (id_user,id_base,can_edit, can_delete) VALUES (2,2,1,1);
 
 CREATE TABLE groupes (
   id INTEGER PRIMARY KEY,
-  nom VARCHAR(64)
+  nom VARCHAR(64),
+  hlp TEXT
 );
+
+INSERT INTO groupes (id,nom) VALUES (1,'Administrateurs');
+INSERT INTO groupes (id,nom,hlp) VALUES (2,'Notifications','peuvent recevoir et écrire des notifications');
+INSERT INTO groupes (id,nom,hlp) VALUES (3,'Profil privé','sont invisibles pour les autres membres');
 
 CREATE TABLE user_groupe (
   id_user INTEGER REFERENCES users(id),
   id_groupe INTEGER REFERENCES groupes(id)
 );
 
+INSERT INTO user_groupe (id_user,id_groupe) VALUES (1,3);
+INSERT INTO user_groupe (id_user,id_groupe) VALUES (2,1);
+INSERT INTO user_groupe (id_user,id_groupe) VALUES (2,2);
+
+
 CREATE TABLE notifications (
-  id_user_de INTEGER REFERENCES users(id),
+// 0=messages système
+  id_user_de INTEGER DEFAULT 0,
   id_user_vers INTEGER REFERENCES users(id),
   t TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   message TEXT,
   lu BOOLEAN DEFAULT FALSE
 );
+INSERT INTO notifications (id_user_vers,message) VALUES (2,'Création de la base login.db');
 
 // ON DELETE CASCADE trop aléatoire (PRAGMA etc...)
 
@@ -82,6 +94,7 @@ END;
 
 CREATE TRIGGER on_add_user AFTER INSERT ON users
 BEGIN
+  INSERT INTO user_groupe (id_user,id_groupe) VALUES (NEW.ID,2);
   INSERT INTO notifications (id_user_de,id_user_vers,message) VALUES (2,NEW.id,'Bienvenue ' || NEW.nom || ' !');
-  INSERT INTO notifications (id_user_de,id_user_vers,message) VALUES (NEW.id,2,'Inscription de ' || NEW.nom);
+  INSERT INTO notifications (id_user_vers,message) VALUES (2,'Inscription de ' || NEW.nom);
 END;

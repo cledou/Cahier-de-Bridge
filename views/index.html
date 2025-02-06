@@ -14,6 +14,7 @@
 		<link rel="stylesheet" href="/css/menu.css" />
 		<link rel="stylesheet" href="/css/modal.css" />
 		<link rel="stylesheet" href="/css/hamburger.css" />
+		<link rel="stylesheet" href="/css/notifs.css" />
 		<style type="text/css">
 			body {
 				box-sizing: border-box;
@@ -492,6 +493,24 @@
 									<label for="get_import" class="itmh" hlp="Importer des donnes depuis un fichier SQL"> <img src="/images/import_24px.png" />Importer donne(s) </label>
 								</div>
 							</div>
+							<div class="level0" id="menu_notif" style="background-image: url('/images/Notification.png')" hlp="Lire et envoyer des notifications">
+								<div class="level1">
+									<div class="notifs">
+										<div class="topbar">
+											<select id="sel_who">
+												<option>Toutes</option>
+												<option>Non lues</option>
+											</select>
+										</div>
+										<div class="reception" id="notifs_liste"></div>
+										<div class="footbar">
+											<div id="ed_notif" contenteditable="true"></div>
+											<div id="if_no_text" class="placeholder">Tapez votre message ici</div>
+											<img id="notif_send" class="no_way" src="/images/Send_30px.png" />
+										</div>
+									</div>
+								</div>
+							</div>
 							<div class="level0" style="background-image: url('/images/link_30px.png')" hlp="Liens en relations avec ce logiciel (aide, mise à jour..)">
 								<div class="level1">
 									<a href="https://github.com/cledou/Cahier-de-Bridge/blob/main/interface.md">Aide à la saisie</a>
@@ -964,10 +983,11 @@
 			// différencier le bouton du menu des sous-menus
 			if (e.target.classList.contains("level0")) {
 				let foo = e.target.classList.contains("open");
-				level0.forEach((el1) => {
-					el1.classList.remove("open");
-				});
-				if (!foo) e.target.classList.add("open");
+				level0.forEach((el1) => el1.classList.remove("open"));
+				if (!foo) {
+					e.target.classList.add("open");
+					if (e.target.id == "menu_notif") setNotifs();
+				}
 			}
 		});
 	});
@@ -1004,7 +1024,7 @@
 		if (mesChoix.edit != b) SetChoix("edit", b);
 		if (b != sw_edit.checked) sw_edit.checked = b;
 		document.querySelectorAll('[contenteditable="' + (b ? "false" : "true") + '"]').forEach((el) => {
-			el.setAttribute("contenteditable", b);
+			if (el.id != "ed_notif") el.setAttribute("contenteditable", b);
 		});
 		SetSelectorDisplay(".si_edit", b ? "flex" : "none");
 		document.getElementById("tbe").innerHTML = MakeEncheres(enr.jeu.enchere);
@@ -1771,5 +1791,73 @@
 		menu2.classList.toggle("open");
 		const foo = hamburger.getAttribute("aria-expanded") === "true" ? "false" : "true";
 		hamburger.setAttribute("aria-expanded", foo);
+	}
+	//*********************
+	//   Notifications
+	//*********************
+	const ed_notif = document.getElementById("ed_notif");
+	const if_no_text = document.getElementById("if_no_text");
+	const notif_send = document.getElementById("notif_send");
+	const notifs_liste = document.getElementById("notifs_liste");
+
+	const test = [
+		{ de: "Machin hier 20h", txt: "Bla bla bla" },
+		{ a: "12h30", txt: "azdfjkùmfj" },
+		{ de: "Machin hier 21h", txt: "wx,cvbn:;,wv" },
+		{ de: "Machin hier 20h", txt: "Bla bla bla" },
+		{ a: "12h30", txt: "azdfjkùmfj" },
+		{ de: "Machin hier 21h", txt: "wx,cvbn:;,wv" },
+		{ de: "Machin hier 20h", txt: "Bla bla bla" },
+		{ a: "12h30", txt: "azdfjkùmfj" },
+		{ de: "Machin hier 21h", txt: "wx,cvbn:;,wv" },
+		{ de: "Machin hier 20h", txt: "Bla bla bla" },
+		{ a: "12h30", txt: "azdfjkùmfj" },
+		{ de: "Machin hier 21h", txt: "wx,cvbn:;,wv" },
+		{ de: "Machin hier 20h", txt: "Bla bla bla" },
+		{ a: "12h30", txt: "azdfjkùmfj" },
+		{ de: "Machin hier 21h", txt: "wx,cvbn:;,wv" },
+		{ de: "Machin hier 20h", txt: "Bla bla bla" },
+		{ a: "12h30", txt: "azdfjkùmfj" },
+		{ de: "Machin hier 21h", txt: "wx,cvbn:;,wv" },
+		{ de: "Machin hier 20h", txt: "Bla bla bla" },
+		{ a: "12h30", txt: "azdfjkùmfj" },
+		{ de: "Machin hier 21h", txt: "wx,cvbn:;,wv" },
+		{ de: "Machin hier 20h", txt: "Bla bla bla" },
+		{ a: "12h30", txt: "azdfjkùmfj" },
+		{ de: "Machin hier 21h", txt: "wx,cvbn:;,wv" },
+	];
+
+	ed_notif.addEventListener("input", function () {
+		const empty = this.innerText.trim().length == 0;
+		if_no_text.style.opacity = empty ? 1 : 0;
+		if (empty) notif_send.classList.add("no_way");
+		else notif_send.classList.remove("no_way");
+	});
+
+	function onNotifsRecues(ar) {
+		let st = "";
+		ar.forEach((el, idx) => {
+			st += '<div onclick="bulle(' + idx + ')" class="notif_';
+			if (el.a != undefined) st += 'droite" >' + el.a;
+			else st += 'gauche" >' + el.de;
+			st += '<br/><div class="texte">' + el.txt + "</div></div>";
+		});
+		notifs_liste.innerHTML = st;
+	}
+
+	function bulle(idx) {
+		console.log("bulle", idx);
+	}
+	onNotifsRecues(test);
+
+	function setNotifs() {
+		try {
+			const r = await SQL_get("SELECT id FROM donnes LIMIT 1");
+			DisableSelector(".si_un", r == undefined);
+			return r && OpenID(r.id);
+		} catch (e) {
+			Erreur(e);
+			return false;
+		}
 	}
 </script>
