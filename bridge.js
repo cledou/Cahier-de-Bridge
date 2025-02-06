@@ -700,7 +700,7 @@ io.on("connection", async (socket) => {
 	socket.on("updUser", (champ, value, cb) => {
 		if (db_login == undefined) cb({ err: "NTBS: Session fermée. Reconnectez vous" });
 		else
-			db_login.run("UPDATE users SET " + champ + "=? WHERE id=" + session.user.id_user, [value], (err) => {
+			db_login.run("UPDATE users SET " + champ + "=? WHERE id=?", [value, session.user.id_user], (err) => {
 				if (err) cb(err.message);
 				else cb("OK");
 			});
