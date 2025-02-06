@@ -221,6 +221,7 @@ io.on("connection", async (socket) => {
 	const session = socket.request.session;
 	// timeout si inactif...
 	const timer = setInterval(() => {
+		console.log("timer", io.engine.clientsCount);
 		socket.request.session.reload((err) => {
 			if (err) {
 				// forces the client to reconnect
@@ -232,7 +233,7 @@ io.on("connection", async (socket) => {
 
 	let db;
 	// et maintenant, on attend le ping-pong
-
+	console.log("connexion", socket.handshake.address);
 	//*******************
 	//     login.db
 	//*******************
