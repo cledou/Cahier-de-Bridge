@@ -44,6 +44,9 @@
 	border: black 1px solid;
 	border-radius: 5px;
 }
+.notifs .reception .texte.gras {
+	font-weight: bolder;
+}
 
 .notifs .footbar {
 	border: 1px solid grey;

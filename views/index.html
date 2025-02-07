@@ -625,9 +625,9 @@
 <script src="/js/status.js"></script>
 <script>
 	/*
-		 TODO: voir traduction avec gettext https://github.com/guillaumepotier/gettext.js/
-		 TODO: Undo/Redo
-		*/
+			 TODO: voir traduction avec gettext https://github.com/guillaumepotier/gettext.js/
+			 TODO: Undo/Redo
+			*/
 	//*********************
 	//  Variables globales
 	//*********************
@@ -764,13 +764,13 @@
 		});
 		io.onAny((event, p1, p2, p3, p4, p5) => {
 			/*
-				if (p5 != undefined) console.log("IO WEB->", event, p1, p2, p3, p4, p5);
-				else if (p4 != undefined) console.log("IO WEB->", event, p1, p2, p3, p4);
-				else if (p3 != undefined) console.log("IO WEB->", event, p1, p2, p3.toString().substring(0, 20));
-				else if (p2 != undefined) console.log("IO WEB->", event, p1, p2);
-				else if (p1 != undefined) console.log("IO WEB->", event, p1);
-				else console.log("IO WEB->", event);
-				*/
+					if (p5 != undefined) console.log("IO WEB->", event, p1, p2, p3, p4, p5);
+					else if (p4 != undefined) console.log("IO WEB->", event, p1, p2, p3, p4);
+					else if (p3 != undefined) console.log("IO WEB->", event, p1, p2, p3.toString().substring(0, 20));
+					else if (p2 != undefined) console.log("IO WEB->", event, p1, p2);
+					else if (p1 != undefined) console.log("IO WEB->", event, p1);
+					else console.log("IO WEB->", event);
+					*/
 		});
 
 		io.on("db_list", (ar) => {
@@ -1318,20 +1318,20 @@
 	/*   ARBRE DE SELECTION     */
 	/****************************/
 	/* Crédit: https://iamkate.com/code/tree-views/
-			 structure de base d'un noeud simple:  <li>noeud</li>
-			 structure de base d'un noeud avec enfants:
-			  <li>
-			    <details>
-			      <summary>Nom du noeud</summary>
-			      <ul>
-			        <li>Enfant 1</li>
-			        <li>Enfant 2</li>
-			      </ul>
-			    </details>
-			  </li>
-			  les enfants peuvent aussi imbriquer cette structure
-			// ATTENTION: ontoggle se déclenche si 'open' dans le HTML de départ
-			*/
+				 structure de base d'un noeud simple:  <li>noeud</li>
+				 structure de base d'un noeud avec enfants:
+				  <li>
+				    <details>
+				      <summary>Nom du noeud</summary>
+				      <ul>
+				        <li>Enfant 1</li>
+				        <li>Enfant 2</li>
+				      </ul>
+				    </details>
+				  </li>
+				  les enfants peuvent aussi imbriquer cette structure
+				// ATTENTION: ontoggle se déclenche si 'open' dans le HTML de départ
+				*/
 	function AddJeux(ar, id_node) {
 		let st = "";
 		ar.forEach((el) => {
@@ -1801,33 +1801,6 @@
 	const notifs_liste = document.getElementById("notifs_liste");
 	const sel_who = document.getElementById("sel_who");
 
-	const test = [
-		{ de: "Machin hier 20h", txt: "Bla bla bla" },
-		{ a: "12h30", txt: "azdfjkùmfj" },
-		{ de: "Machin hier 21h", txt: "wx,cvbn:;,wv" },
-		{ de: "Machin hier 20h", txt: "Bla bla bla" },
-		{ a: "12h30", txt: "azdfjkùmfj" },
-		{ de: "Machin hier 21h", txt: "wx,cvbn:;,wv" },
-		{ de: "Machin hier 20h", txt: "Bla bla bla" },
-		{ a: "12h30", txt: "azdfjkùmfj" },
-		{ de: "Machin hier 21h", txt: "wx,cvbn:;,wv" },
-		{ de: "Machin hier 20h", txt: "Bla bla bla" },
-		{ a: "12h30", txt: "azdfjkùmfj" },
-		{ de: "Machin hier 21h", txt: "wx,cvbn:;,wv" },
-		{ de: "Machin hier 20h", txt: "Bla bla bla" },
-		{ a: "12h30", txt: "azdfjkùmfj" },
-		{ de: "Machin hier 21h", txt: "wx,cvbn:;,wv" },
-		{ de: "Machin hier 20h", txt: "Bla bla bla" },
-		{ a: "12h30", txt: "azdfjkùmfj" },
-		{ de: "Machin hier 21h", txt: "wx,cvbn:;,wv" },
-		{ de: "Machin hier 20h", txt: "Bla bla bla" },
-		{ a: "12h30", txt: "azdfjkùmfj" },
-		{ de: "Machin hier 21h", txt: "wx,cvbn:;,wv" },
-		{ de: "Machin hier 20h", txt: "Bla bla bla" },
-		{ a: "12h30", txt: "azdfjkùmfj" },
-		{ de: "Machin hier 21h", txt: "wx,cvbn:;,wv" },
-	];
-
 	ed_notif.addEventListener("input", function () {
 		const empty = this.innerText.trim().length == 0;
 		if_no_text.style.opacity = empty ? 1 : 0;
@@ -1835,34 +1808,20 @@
 		else notif_send.classList.remove("no_way");
 	});
 
-	function onNotifsRecues(ar) {
-		let st = "";
-		ar.forEach((el, idx) => {
-			st += '<div onclick="bulle(' + idx + ')" class="notif_';
-			if (el.a != undefined) st += 'droite" >' + el.a;
-			else st += 'gauche" >' + el.de;
-			st += '<br/><div class="texte">' + el.txt + "</div></div>";
-		});
-		notifs_liste.innerHTML = st;
-	}
-
-	function bulle(idx) {
-		console.log("bulle", idx);
-	}
-
+	var notif_users = [];
+	// 0: Toutes 1: Non-lues 2..n: User
 	async function setNotifs() {
 		io.emit("login_all", "SELECT U.id,U.nom FROM user_groupe UG INNER JOIN users U ON U.id=UG.id_user WHERE UG.id_groupe=? ORDER BY U.nom", [2], (r) => {
 			if (r.err) Erreur(r.err.message);
 			else {
-				console.log(r);
-				let st = "";
-				if (r.length > 1) st += "<option value=0>Toutes</option>";
+				notif_users = r;
 				// notifs non-lues
 				io.emit("login_get", "SELECT COUNT(*) as cnt FROM notifications WHERE id_user_vers=? AND lu=0", [session.user.id_user], (r1) => {
 					if (r1.err) Erreur(r1.err.message);
 					else {
-						console.log(r1);
-						if (r1.cnt > 0) st += "<option value=1 checked>Non lus</option>";
+						let st = "<option value=0";
+						if (r1.cnt > 0) st += ">Toutes</option><option value=1 checked>Non lus</option>";
+						else st += " checked>Toutes</option>";
 						r.forEach((el) => {
 							st += "<option value=" + el.id + ">" + el.nom + "</option>";
 						});
@@ -1874,14 +1833,72 @@
 		});
 	}
 
-	function selectUserVers(val) {
-		console.log(val);
-		if (val == 1) {
-			io.emit("login_all", "SELECT * FROM notifications WHERE id_user_vers=" + session.user.id_user + " ORDER BY t", [], (r) => {
-				if (r.err) Erreur(r.err.message);
+	var lesNotifs = [];
+
+	function onNotifsRecues(obj) {
+		console.log(obj);
+		if (obj.err) Erreur(obj.err.message || obj.err.code);
+		else {
+			let st = "";
+			lesNotifs = obj;
+			lesNotifs.forEach((ntf, idx) => {
+				const trash = '<img src="images/Trash.png" hlp="Effacer cette notification" onclick="delNotif(' + ntf.id + ')" />';
+				let d1 = new Date();
+				let d2 = new Date(Date.parse(ntf.t.substr(0, 10).replace(/-/g, "/")));
+				const diffInDays = Math.floor((d1 - d2) / (1000 * 60 * 60 * 24));
+				let ts = ntf.t.substr(11, 5);
+				if (diffInDays == 1) ts = "Hier " + ts;
+				else if (diffInDays > 1) ts = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" }).format(d2) + " " + ts;
+				console.log(diffInDays, d1, d2, ts);
+				st += '<div onclick="bulle(' + idx + ')" class="notif_';
+				if (ntf.id_user_vers != session.user.id_user) st += 'droite" >';
 				else {
-					console.log(r);
+					if (ntf.id_user_de == 0) ts = "Système " + ts;
+					else {
+						let foo = notif_users.find((el) => el.id == ntf.id_user_de);
+						if (foo != undefined) ts = foo.nom + " " + ts;
+					}
+					st += 'gauche" >';
 				}
+				const trash_gauche = session.user.is_admin || ntf.id_user_de == 0 || ntf.id_user_de == session.user.id_user;
+				const trash_droite = !trash_gauche && ntf.id_user_vers == session.user.id_user;
+				st += ts + "<br/>";
+				if (trash_gauche || trash_droite) {
+					st += '<div class="flexH">';
+					if (trash_droite) st += trash;
+				}
+				st += '<div class="texte';
+				if (ntf.lu == false) st += " gras";
+				st += '">' + ntf.message + "</div>";
+				if (trash_gauche || trash_droite) {
+					if (trash_gauche) st += trash;
+					st += "</div>";
+				}
+				st += "</div>";
+			});
+			notifs_liste.innerHTML = st;
+		}
+	}
+
+	function selectUserVers(val) {
+		if (val == 0)
+			// Tous
+			io.emit("login_all", "SELECT * FROM notifications ORDER BY t", [], onNotifsRecues);
+		else if (val == 1)
+			// non-lus
+			io.emit("login_all", "SELECT * FROM notifications WHERE id_user_vers=? AND lu=0 ORDER BY t", [session.user.id_user], onNotifsRecues);
+		// depuis/vers qq un
+		else io.emit("login_all", "SELECT * FROM notifications WHERE (id_user_de=? AND id_user_vers=?) OR (id_user_de=? AND id_user_vers=?) ORDER BY t", [val, session.user.id_user, session.user.id_user, val], onNotifsRecues);
+	}
+
+	function bulle(idx) {
+		let foo = lesNotifs[idx];
+		console.log("bulle", foo);
+		if (foo.lu == false && foo.id_user_vers == session.user.id_user) {
+			// retirer le status non-lu
+			io.emit("login_run", "UPDATE notifications SET lu=1 WHERE id=?", [foo.id], (r) => {
+				if (r.err) Erreur(r.err.message || r.err.code);
+				else setNotifs();
 			});
 		}
 	}

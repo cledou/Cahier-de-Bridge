@@ -62,6 +62,8 @@ INSERT INTO user_groupe (id_user,id_groupe) VALUES (2,2);
 
 
 CREATE TABLE notifications (
+  id INTEGER PRIMARY KEY,
+  id_thread INTEGER KEY,
 // 0=messages système
   id_user_de INTEGER DEFAULT 0,
   id_user_vers INTEGER REFERENCES users(id),
@@ -85,6 +87,11 @@ END;
 CREATE TRIGGER on_delete_base AFTER DELETE ON bases
 BEGIN
   DELETE FROM user_base WHERE id_base=OLD.id;
+END;
+
+CREATE TRIGGER on_delete_notif AFTER DELETE ON notifications
+BEGIN
+  DELETE FROM notifications WHERE id_thread=OLD.id;
 END;
 
 CREATE TRIGGER on_delete_groupe AFTER DELETE ON groupes
