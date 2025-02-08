@@ -367,8 +367,8 @@ io.on("connection", async (socket) => {
 
 	socket.on("login_run", (stm, values, cb) => {
 		db_login.run(stm, values || [], function (err) {
-			if (err) cb({ err: err });
-			else cb(this);
+			if (err) socket.emit("alert", err.message || err.code);
+			cb(this);
 		});
 	});
 

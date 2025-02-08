@@ -45,11 +45,11 @@ INSERT INTO user_base (id_user,id_base,can_edit, can_delete) VALUES (2,2,1,1);
 CREATE TABLE groupes (
   id INTEGER PRIMARY KEY,
   nom VARCHAR(64),
-  hlp TEXT
+  hlp TEXT DEFAULT ''
 );
 
 // catégories système
-INSERT INTO groupes (id,nom) VALUES (1,'Administrateurs');
+INSERT INTO groupes (id,nom,hlp) VALUES (1,'Administrateurs','Responsables de la maintenance des données');
 INSERT INTO groupes (id,nom,hlp) VALUES (2,'Notifications','peuvent recevoir et écrire des notifications');
 INSERT INTO groupes (id,nom,hlp) VALUES (3,'Profil privé','sont invisibles pour les autres membres');
 // catégories libres

@@ -16,6 +16,7 @@
 	border-radius: 5px;
 	justify-content: space-between;
 	align-items: center;
+	padding-left: 0.5em;
 	padding-right: 0.5em;
 	box-sizing: inherit;
 }
@@ -47,7 +48,30 @@
 .notifs .reception .texte.gras {
 	font-weight: bolder;
 }
+.notifs .who2 {
+	display: flex;
+	flex-direction: row;
+	justify-content: flex-start;
+	align-items: center;
+}
+.notifs .who2 img {
+	margin-left: 4px;
+	padding: 2px;
+	box-sizing: border-box;
+}
 
+.notifs .who2 img.sel {
+	border: rgb(253, 198, 126) 4px inset;
+	background-color: rgb(247, 223, 192);
+	cursor: default;
+}
+
+.notifs .who2 select {
+	margin-left: 1em;
+}
+.notifs .who2 select option {
+	padding: 0.5em;
+}
 .notifs .footbar {
 	border: 1px solid grey;
 	border-radius: 10px;
