@@ -25,6 +25,7 @@ CREATE TABLE bases (
 
 INSERT INTO users (id,nom) VALUES (1,'Anonyme');
 INSERT INTO users (id,nom,admin) VALUES (2,'Administrateur',true);
+
 INSERT INTO bases (id,filename,id_owner) VALUES (1,'example.db',1);
 INSERT INTO bases (id,filename,id_owner) VALUES (2,'bridge.db',2);
 UPDATE users SET last_db = 1 WHERE id = 1;
@@ -47,9 +48,14 @@ CREATE TABLE groupes (
   hlp TEXT
 );
 
+// catégories système
 INSERT INTO groupes (id,nom) VALUES (1,'Administrateurs');
 INSERT INTO groupes (id,nom,hlp) VALUES (2,'Notifications','peuvent recevoir et écrire des notifications');
 INSERT INTO groupes (id,nom,hlp) VALUES (3,'Profil privé','sont invisibles pour les autres membres');
+// catégories libres
+INSERT INTO groupes (nom,hlp) VALUES ('Débutants','Moins de 2 ans de pratique');
+INSERT INTO groupes (nom,hlp) VALUES ('En retard de cotisation','Penser à faire un rappel');
+INSERT INTO groupes (nom,hlp) VALUES ('Jeunes','Jusqu''à 25 ans');
 
 CREATE TABLE user_groupe (
   id_user INTEGER REFERENCES users(id),
@@ -105,3 +111,7 @@ BEGIN
   INSERT INTO notifications (id_user_de,id_user_vers,message) VALUES (2,NEW.id,'Bienvenue ' || NEW.nom || ' !');
   INSERT INTO notifications (id_user_vers,message) VALUES (2,'Inscription de ' || NEW.nom);
 END;
+INSERT INTO users (nom) VALUES ('Harry Cover');
+INSERT INTO users (nom) VALUES ('Mélusine Enfayite');
+INSERT INTO users (nom) VALUES ('Richard Dassault');
+INSERT INTO users (nom) VALUES ('Agripine De Cheuvalle');

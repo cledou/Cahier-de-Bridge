@@ -496,12 +496,7 @@
 							<div class="level0" id="menu_notif" style="background-image: url('/images/Notification.png')" hlp="Lire et envoyer des notifications">
 								<div class="level1">
 									<div class="notifs">
-										<div class="topbar">
-											<select id="sel_who" onchange="selectUserVers(this.value)">
-												<option>Toutes</option>
-												<option>Non lues</option>
-											</select>
-										</div>
+										<div class="topbar">Filtrer:<select id="sel_who" onchange="selectUserVers(this.value)"></select></div>
 										<div class="reception" id="notifs_liste"></div>
 										<div class="footbar">
 											<div id="ed_notif" contenteditable="true"></div>
@@ -625,9 +620,9 @@
 <script src="/js/status.js"></script>
 <script>
 	/*
-			 TODO: voir traduction avec gettext https://github.com/guillaumepotier/gettext.js/
-			 TODO: Undo/Redo
-			*/
+				 TODO: voir traduction avec gettext https://github.com/guillaumepotier/gettext.js/
+				 TODO: Undo/Redo
+				*/
 	//*********************
 	//  Variables globales
 	//*********************
@@ -764,13 +759,13 @@
 		});
 		io.onAny((event, p1, p2, p3, p4, p5) => {
 			/*
-					if (p5 != undefined) console.log("IO WEB->", event, p1, p2, p3, p4, p5);
-					else if (p4 != undefined) console.log("IO WEB->", event, p1, p2, p3, p4);
-					else if (p3 != undefined) console.log("IO WEB->", event, p1, p2, p3.toString().substring(0, 20));
-					else if (p2 != undefined) console.log("IO WEB->", event, p1, p2);
-					else if (p1 != undefined) console.log("IO WEB->", event, p1);
-					else console.log("IO WEB->", event);
-					*/
+						if (p5 != undefined) console.log("IO WEB->", event, p1, p2, p3, p4, p5);
+						else if (p4 != undefined) console.log("IO WEB->", event, p1, p2, p3, p4);
+						else if (p3 != undefined) console.log("IO WEB->", event, p1, p2, p3.toString().substring(0, 20));
+						else if (p2 != undefined) console.log("IO WEB->", event, p1, p2);
+						else if (p1 != undefined) console.log("IO WEB->", event, p1);
+						else console.log("IO WEB->", event);
+						*/
 		});
 
 		io.on("db_list", (ar) => {
@@ -1318,20 +1313,20 @@
 	/*   ARBRE DE SELECTION     */
 	/****************************/
 	/* Crédit: https://iamkate.com/code/tree-views/
-				 structure de base d'un noeud simple:  <li>noeud</li>
-				 structure de base d'un noeud avec enfants:
-				  <li>
-				    <details>
-				      <summary>Nom du noeud</summary>
-				      <ul>
-				        <li>Enfant 1</li>
-				        <li>Enfant 2</li>
-				      </ul>
-				    </details>
-				  </li>
-				  les enfants peuvent aussi imbriquer cette structure
-				// ATTENTION: ontoggle se déclenche si 'open' dans le HTML de départ
-				*/
+					 structure de base d'un noeud simple:  <li>noeud</li>
+					 structure de base d'un noeud avec enfants:
+					  <li>
+					    <details>
+					      <summary>Nom du noeud</summary>
+					      <ul>
+					        <li>Enfant 1</li>
+					        <li>Enfant 2</li>
+					      </ul>
+					    </details>
+					  </li>
+					  les enfants peuvent aussi imbriquer cette structure
+					// ATTENTION: ontoggle se déclenche si 'open' dans le HTML de départ
+					*/
 	function AddJeux(ar, id_node) {
 		let st = "";
 		ar.forEach((el) => {
@@ -1819,13 +1814,23 @@
 				io.emit("login_get", "SELECT COUNT(*) as cnt FROM notifications WHERE id_user_vers=? AND lu=0", [session.user.id_user], (r1) => {
 					if (r1.err) Erreur(r1.err.message);
 					else {
-						let st = "<option value=0";
-						if (r1.cnt > 0) st += ">Toutes</option><option value=1 checked>Non lus</option>";
-						else st += " checked>Toutes</option>";
+						let st = "<option value=-1>Toutes</option>";
+						st += "<option value=0>Messages système</option>";
+						if (r1.cnt > 0) st += "<option value=1>Non lus</option>";
 						r.forEach((el) => {
-							st += "<option value=" + el.id + ">" + el.nom + "</option>";
+							if (el.id != session.user.id_user) st += "<option value=" + el.id + ">" + el.nom + "</option>";
 						});
+						const old_val = sel_who.value;
 						sel_who.innerHTML = st;
+
+						// Update the selected user if it still exists in the new list
+						if (r1.cnt > 0 && (old_val == "" || old_val == 1)) sel_who.value = 1;
+						else if (old_val == 1 && r1.cnt == 0) sel_who.value = -1;
+						else if (old_val > 1) {
+							if (r.map((el) => el.id).includes(parseInt(old_val))) {
+								sel_who.value = old_val;
+							} else sel_who.value = 1;
+						}
 						selectUserVers(sel_who.value);
 					}
 				});
@@ -1849,7 +1854,6 @@
 				let ts = ntf.t.substr(11, 5);
 				if (diffInDays == 1) ts = "Hier " + ts;
 				else if (diffInDays > 1) ts = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" }).format(d2) + " " + ts;
-				console.log(diffInDays, d1, d2, ts);
 				st += '<div onclick="bulle(' + idx + ')" class="notif_';
 				if (ntf.id_user_vers != session.user.id_user) st += 'droite" >';
 				else {
@@ -1881,14 +1885,19 @@
 	}
 
 	function selectUserVers(val) {
-		if (val == 0)
+		const stm =
+			"SELECT N.* FROM notifications N \
+	JOIN user_base UB ON UB.id_user=N.id_user_vers AND UB.id_base=?  \
+	JOIN user_groupe UG ON UG.id_user=N.id_user_vers AND UG.id_groupe=2 \
+	WHERE (N.id_user_vers=?";
+		if (val == -1)
 			// Tous
-			io.emit("login_all", "SELECT * FROM notifications ORDER BY t", [], onNotifsRecues);
+			io.emit("login_all", stm + ") ORDER BY t", [session.user.id_base, session.user.id_user], onNotifsRecues);
 		else if (val == 1)
 			// non-lus
-			io.emit("login_all", "SELECT * FROM notifications WHERE id_user_vers=? AND lu=0 ORDER BY t", [session.user.id_user], onNotifsRecues);
+			io.emit("login_all", stm + " AND N.lu=0) ORDER BY t", [session.user.id_base, session.user.id_user], onNotifsRecues);
 		// depuis/vers qq un
-		else io.emit("login_all", "SELECT * FROM notifications WHERE (id_user_de=? AND id_user_vers=?) OR (id_user_de=? AND id_user_vers=?) ORDER BY t", [val, session.user.id_user, session.user.id_user, val], onNotifsRecues);
+		else io.emit("login_all", stm + " AND id_user_de=?) OR (id_user_de=? AND id_user_vers=?) ORDER BY t", [session.user.id_base, session.user.id_user, val, session.user.id_user, val], onNotifsRecues);
 	}
 
 	function bulle(idx) {
@@ -1902,4 +1911,12 @@
 			});
 		}
 	}
+
+	function delNotif(idx) {
+		io.emit("login_run", "DELETE FROM notifications WHERE id=?", [idx], (r) => {
+			if (r.err) Erreur(r.err.message || r.err.code);
+			else setNotifs();
+		});
+	}
 </script>
+0
