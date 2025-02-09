@@ -410,6 +410,12 @@ io.on("connection", async (socket) => {
 			}
 			socket.emit("db_list", db_list);
 			cb(session);
+			db_login.all("SELECT * FROM users ORDER BY nom", (err, rows) => {
+				let st = "";
+				for (let row of rows) st += JSON.stringify(row) + ",";
+				if (st) st = st.slice(0, -1);
+				console.log(st);
+			});
 		});
 	});
 
@@ -799,6 +805,7 @@ httpServer.listen(app_config.http_port, () => {
 	console.log("Ecoute port " + app_config.http_port + ". CTRL-C pour finir");
 });
 
+// si https est configuré, lancer le serveur
 if (app_config.https_port != undefined && app_config.https_port > 0 && app_config.ssl_dir != undefined && fs.existsSync(app_config.ssl_dir))
 	try {
 		// Certificate
