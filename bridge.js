@@ -51,7 +51,7 @@ app.use("/css", express.static("./css/"));
 app.use("/images", express.static("./images/"));
 app.use("/node", express.static("./node_modules/"));
 app.use("/js", express.static("./js"));
-app.use("doc", express.static("./doc"));
+app.use("/doc", express.static("./doc"));
 // exécuter favicon(path) à chaque appel d'une fonction de app
 app.use(favicon("./images/favicon.ico"));
 //initialisation du serveur web, des chemins locaux et du socket. Indispensable, même si ejs n'est pas utilisé
@@ -732,7 +732,8 @@ io.on("connection", async (socket) => {
 //*******************
 //    GET Routes
 //*******************
-var showdown = require("showdown");
+import { Remarkable } from "remarkable";
+var md = new Remarkable();
 
 app.get("/login", (req, res) => {
 	res.render("login.html");
@@ -759,10 +760,12 @@ app.get("/reset", (req, res) => {
 });
 
 app.get("/readme", (req, res) => {
-	const txt = fs.readFileSync("README.md").toString();
-	const html = new showdown.Converter().makeHtml(txt);
-	console.log(html);
-	res.send(new showdown.Converter().makeHtml(txt));
+	res.send(
+		fs
+			.readFileSync("./views/doc.html")
+			.toString()
+			.replace("__CONTENU__", md.render(fs.readFileSync("README.md").toString()))
+	);
 });
 
 //*******************
