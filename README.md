@@ -2,7 +2,9 @@
 
 ## Introduction
 
-![Vue générale en mode lecture](doc/general.png)
+Consultez notre site de test ici (cliquez sur 'Entrer comme visiteur'): http://jeu-bridge.fr/
+
+![Vue générale en mode lecture](./doc/general.png)
 J'ai écrit ce logiciel Open-source suite à une demande de ma sœur qui enseigne le bridge à des débutants. Elle utilise un cahier pour noter les donnes qu'elle commente avec ses élèves et passe beaucoup de temps à transcrire ses notes manuscrites en support de cours.
 J'ai donc créé cette application pour qu'elle puisse:
 
@@ -10,6 +12,16 @@ J'ai donc créé cette application pour qu'elle puisse:
 2. Les sauvegarder
 3. Les imprimer
 4. Et même éventuellement les partager en ligne avec ses élèves.
+
+## Application gratuite et [open-source](https://github.com/cledou/Cahier-de-Bridge)
+
+'Cahier de Bridge' est une application gratuite et open-source, et le sera toujours. Toutefois, maintenir le serveur et améliorer cette application coûte du temps et de l'argent.
+
+Si vous aimez ce travail et le trouvez utile, vous pouvez contribuer, me payer un café ou des croquettes pour le chat sur [ma page Tipeee](https://fr.tipeee.com/createur-open-source/)
+
+Votre apport sera grandement apprécié et m'aidera à maintenir cette application.
+
+## Plus d'info ?
 
 [Informations sur l'installation](./install.md)
 
@@ -32,5 +44,3 @@ A la date de Février 2025, l'application est fonctionnelle et utilisable en mod
 -   [ ] Undo-Redo (Possibilité d'annuler une action)
 -   [ ] Tutoriels vidéos
 -   [ ] Version anglaise
-
-Vous pouvez me payer un café ou des croquettes pour le chat sur [ma page Tipeee](https://fr.tipeee.com/createur-open-source/)

@@ -51,6 +51,7 @@ app.use("/css", express.static("./css/"));
 app.use("/images", express.static("./images/"));
 app.use("/node", express.static("./node_modules/"));
 app.use("/js", express.static("./js"));
+app.use("doc", express.static("./doc"));
 // exécuter favicon(path) à chaque appel d'une fonction de app
 app.use(favicon("./images/favicon.ico"));
 //initialisation du serveur web, des chemins locaux et du socket. Indispensable, même si ejs n'est pas utilisé
@@ -731,6 +732,7 @@ io.on("connection", async (socket) => {
 //*******************
 //    GET Routes
 //*******************
+var showdown = require("showdown");
 
 app.get("/login", (req, res) => {
 	res.render("login.html");
@@ -756,8 +758,15 @@ app.get("/reset", (req, res) => {
 	res.render("resetpw.html");
 });
 
+app.get("/readme", (req, res) => {
+	const txt = fs.readFileSync("README.md").toString();
+	const html = new showdown.Converter().makeHtml(txt);
+	console.log(html);
+	res.send(new showdown.Converter().makeHtml(txt));
+});
+
 //*******************
-//    GET Routes
+//    POST Routes
 //*******************
 // L'utilisation de multer pour charger un fichier dans un répertoire fourni lors du POST
 // est assez complexe. https://stackoverflow.com/questions/75157185/how-to-upload-a-file-using-multer-in-a-specific-directory-defined-by-the-fronten
