@@ -173,20 +173,26 @@
 			h1 {
 				margin: auto;
 			}
-			.find {
+			#find {
 				width: 80%;
 				display: flex;
 				flex-direction: row;
 				align-items: center;
 			}
-			.find > input {
+			#find > input {
 				width: 100%;
 				height: 100%;
 			}
-			.find > img {
+			#find > img {
 				padding: 4px;
 			}
 			#del_rch {
+				cursor: pointer;
+			}
+			#find.hide_me {
+				display: none;
+			}
+			summary {
 				cursor: pointer;
 			}
 		</style>
@@ -201,7 +207,7 @@
 			<div class="container">
 				<div class="card">
 					<div class="flexV">
-						<div class="find">
+						<div id="find">
 							<img src="/images/Search.png" />
 							<input type="search" id="ed_find" hlp="Rechercher une donne, un mot dans les textes" />
 							<img src="/images/cancel_16px.png" id="del_rch" hlp="Effacer le champ de recherche" />
@@ -414,6 +420,7 @@
 			else el.classList.remove("disable");
 		});
 		document.getElementById("btn_new").disabled = disabled;
+		hide_me("find", disabled);
 	}
 
 	/****************************/
