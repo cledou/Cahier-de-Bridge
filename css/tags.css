@@ -1,0 +1,87 @@
+.tags {
+	/*  border: 2px solid #00f;*/
+	width: 100%;
+	display: flex;
+	flex-flow: row wrap;
+	box-sizing: border-box;
+	justify-content: center;
+	align-items: center;
+	z-index: 2;
+	/* passe devant menu nav fermé */
+}
+
+.tags label {
+	min-width: 80px;
+	margin: 8px;
+	color: #818181;
+	background-image: linear-gradient(top, #383838 0%, #1f1f1f 5%, #161616 100%);
+	background-image: -webkit-gradient(linear, left top, left bottom, from(#1f1f1f), to(#161616));
+	float: left;
+	box-shadow: 0 0 1px 1px rgb(10, 10, 10);
+	cursor: pointer;
+	position: relative;
+	font: normal 16px arial;
+	/*text-transform: uppercase;*/
+	padding-top: 18px;
+	padding-left: 5px;
+	padding-right: 5px;
+	vertical-align: bottom;
+	transition: color 0.3s ease;
+}
+
+.tags input:checked + label {
+	color: white;
+}
+
+/* Dessine le voyant en haut */
+
+.tags label:before {
+	position: absolute;
+	content: "";
+	right: 5px;
+	top: 5px;
+
+	width: 12px;
+	height: 12px;
+	background: #646464;
+	background-image: radial-gradient(top, #616161 0%, #616161 20%, #535353 60%);
+	border-radius: 50%;
+	box-shadow: 0 0 4px #1c1c17;
+	transition: all 0.3s ease;
+}
+
+/* Et change la couleur du voyant si souris */
+
+.tags input:checked + label:before {
+	background: #4fff4f;
+	box-shadow: 0 0 4px #1c1c17, 0 0 5px #42ff42;
+}
+
+.tags input:checked + .tagbleu:before {
+	background: #4f4fff;
+	box-shadow: 0 0 4px #1c1c17, 0 0 5px #4242ff;
+}
+
+.tags input {
+	position: absolute;
+	left: -9999px;
+}
+
+.tags.hide_me {
+	display: none;
+}
+
+.tags input:disabled,
+.tags input:disabled + label {
+	cursor: not-allowed;
+	opacity: 0.5;
+}
+
+@media only screen and (min-device-width: 320px) and (max-device-width: 640px) {
+	/* Vos règles CSS pour les mobiles ici */
+	.tags label {
+		min-width: 30px;
+		margin: 2px;
+		font-size: 10px;
+	}
+}

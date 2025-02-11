@@ -1,3 +1,10 @@
+.jolicbx {
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+	align-items: center;
+}
+
 .jolicbx input[type="checkbox"] {
 	position: relative;
 	width: 50px;
@@ -51,4 +58,14 @@
 .jolicbx input:checked[type="checkbox"]:after {
 	left: 40px;
 	background: #63cdff;
+}
+
+.jolicbx.hide_me {
+	display: none;
+}
+
+.jolicbx input:disabled,
+.jolicbx input:disabled + label {
+	cursor: not-allowed;
+	opacity: 0.5;
 }
