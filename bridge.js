@@ -732,8 +732,30 @@ io.on("connection", async (socket) => {
 //*******************
 //    GET Routes
 //*******************
-import { Remarkable } from "remarkable";
-var md = new Remarkable();
+var showdown = require("showdown"),
+	converter = new showdown.Converter({ tables: true });
+converter.setFlavor("github");
+
+const { Remarkable } = require("remarkable");
+var md = new Remarkable({
+	html: false, // Enable HTML tags in source
+	xhtmlOut: false, // Use '/' to close single tags (<br />)
+	breaks: true, // Convert '\n' in paragraphs into <br>
+	langPrefix: "language-", // CSS language prefix for fenced blocks
+
+	// Enable some language-neutral replacement + quotes beautification
+	typographer: false,
+
+	// Double + single quotes replacement pairs, when typographer enabled,
+	// and smartquotes on. Set doubles to '«»' for Russian, '„“' for German.
+	quotes: "“”‘’",
+
+	// Highlighter function. Should return escaped HTML,
+	// or '' if the source string is not changed
+	highlight: function (/*str, lang*/) {
+		return "";
+	},
+});
 
 app.get("/login", (req, res) => {
 	res.render("login.html");
@@ -764,7 +786,34 @@ app.get("/readme", (req, res) => {
 		fs
 			.readFileSync("./views/doc.html")
 			.toString()
-			.replace("__CONTENU__", md.render(fs.readFileSync("README.md").toString()))
+			.replace("__CONTENU__", converter.makeHtml(fs.readFileSync("README.md").toString()))
+	);
+});
+
+app.get("/install", (req, res) => {
+	res.send(
+		fs
+			.readFileSync("./views/doc.html")
+			.toString()
+			.replace("__CONTENU__", converter.makeHtml(fs.readFileSync("install.md").toString()))
+	);
+});
+
+app.get("/assistance", (req, res) => {
+	res.send(
+		fs
+			.readFileSync("./views/doc.html")
+			.toString()
+			.replace("__CONTENU__", converter.makeHtml(fs.readFileSync("assistance.md").toString()))
+	);
+});
+
+app.get("/help", (req, res) => {
+	res.send(
+		fs
+			.readFileSync("./views/doc.html")
+			.toString()
+			.replace("__CONTENU__", md.render(fs.readFileSync("interface.md").toString()))
 	);
 });
 

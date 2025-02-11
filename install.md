@@ -56,7 +56,7 @@ Donc vous pouvez installer les sources dans un sous-dossier de 'Mes Documents'.
 
 -   Méthode 2:
     -   Récupérer l'[archive](https://github.com/cledou/Cahier-de-Bridge/archive/refs/heads/main.zip) sur le site, et la décompresser avec les outils de Windows dans un dossier, idéalement 'Mes Documents'
-    -   ![Unzip](doc/unzip.png)
+    -   ![Unzip](./doc/unzip.png)
     -   Se placer dans le nouveau dossier qui vient d'être créé par la décompression: `cd Cahier-de-Bridge-main`
 
 ### Pré-compilation des sources
@@ -64,7 +64,7 @@ Donc vous pouvez installer les sources dans un sous-dossier de 'Mes Documents'.
 -   Se placer dans le dossier contenant les sources (voir plus haut)
 -   `npm install`
 -   Windows étant un système assez peu coopératif, si vous avez une erreur de ce type
-    ![Erreur Policy](doc/erreur_policy.png)
+    ![Erreur Policy](./doc/erreur_policy.png)
     tapez `Set-ExecutionPolicy -Scope CurrentUser unrestricted` dans le terminal, et réessayez.
 
 Normalement, le gestionnaire de paquet devrait gérer correctement la compilation. En cas de problème à cette étape, vérifiez que vous êtes bien en mode 'Administrateur', et que vous avez les droits d'écrire dans les dossiers système.
@@ -77,7 +77,7 @@ Dans le terminal, tapez
 
 Sous Windows, ceci lancera aussi le navigateur Web sur la page d'accueil
 
-![Exemple de lancement du serveur réussi](doc/lancement.png)
+![Exemple de lancement du serveur réussi](./doc/lancement.png)
 
 Se connecter par la suite sur la [page locale](http://localhost:3005/) pour ré-ouvrir la page d'accueil
 
@@ -91,7 +91,7 @@ Cible: "C:\Program Files\nodejs\node.exe" "bridge.js"
 
 Démarrer dans: C:\Users\....mon_dossier_d_installation....
 
-![Raccourci](doc/link.png)
+![Raccourci](./doc/link.png)
 
 ## Exemple 2: Installation sur une plateforme Linux type Debian
 
