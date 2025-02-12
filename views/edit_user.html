@@ -377,7 +377,7 @@
 	let email_ok = false;
 
 	function onUsers(users) {
-		let st = '<button id="btn_new"><img src="/images/add_user_30px.png" onclick="addUser()"/>Ajouter un utilisateur</button>';
+		let st = '<button id="btn_new" onclick="handleUserClick(0)"><img src="/images/add_user_30px.png" />Ajouter un utilisateur</button>';
 		users.forEach((user) => {
 			// on ne peut éditer l'utilisateur anonyme
 			if (user.id != 1) st += `<div class="user" id="u_${user.id}" onclick="handleUserClick(${user.id})">${user.nom}</div>`;
@@ -385,16 +385,17 @@
 		document.getElementById("user-list").innerHTML = st; // Display user info in the HTML
 		document.getElementById("u_" + users[0].id).click();
 	}
-
+	var lastUser = 2; // retour à un utilisateur connu si annulation nouvelle fiche
 	function handleUserClick(id) {
-		const previouslySelected = document.querySelector(".user.sel");
-		if (previouslySelected) {
-			previouslySelected.classList.remove("sel");
-		}
-		const el = document.getElementById(`u_${id}`);
-		el.classList.add("sel");
-		// Logic to display user details can be added here
+		if (id != 0) lastUser = id;
+		for (const el of document.querySelectorAll(".user.sel")) el.classList.remove("sel");
 		currentUser = users.find((el) => el.id == id);
+		console.log("currentUser", currentUser, id);
+		if (!currentUser && id == 0) {
+			currentUser = { id: 0, nom: "Nouvel utilisateur", email: "", admin: 0 };
+		} else document.getElementById(`u_${id}`).classList.add("sel");
+
+		// Logic to display user details can be added here
 		l_nom.innerText = currentUser.nom;
 		ed_login.value = currentUser.nom;
 		ed_email.value = currentUser.email;
@@ -426,7 +427,7 @@
 	}
 
 	function isDirty() {
-		let b = currentUser.nom != ed_login.value || (currentUser.email || "") != ed_email.value;
+		let b = currentUser.nom != ed_login.value || (currentUser.email || "") != ed_email.value || currentUser.id == 0;
 		// comparer groupes
 		if (!b)
 			groupes.forEach((groupe) => {
@@ -512,16 +513,18 @@
 		if (currentUser.nom != ed_login.value) modif.nom = ed_login.value;
 		if (currentUser.email != ed_email.value) modif.email = ed_email.value;
 		//io.emit("modif_user", currentUser.id, modif, (r) => {}
-		handleUserClick(currentUser.id);
+		handleUserClick(lastUser);
 	});
 
 	btn_nok.addEventListener("click", function () {
-		handleUserClick(currentUser.id);
+		handleUserClick(lastUser);
 	});
+
 	//start
 	initGroupes();
 	initBases();
 	onUsers(users);
+
 	/****************************/
 	/*        RECHERCHER        */
 	/****************************/
