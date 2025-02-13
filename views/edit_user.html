@@ -270,15 +270,6 @@
 	const tb_base = document.getElementById("ubase");
 	const groupes = document.getElementById("groupes");
 
-	// pour test hors connexion
-	const ubase = [
-		{ base: "bridge.db", in_use: true, can_edit: true, can_delete: true },
-		{ base: "example.db", in_use: false, can_edit: false, can_delete: false },
-		{ base: "test.db", in_use: true, can_edit: false, can_delete: true },
-	];
-	// test si admin
-	// fin def test
-
 	const hide_me = (id, hide) => {
 		const el = document.getElementById(id);
 		if (hide) el.classList.add("hide_me");
@@ -335,7 +326,7 @@
 				else {
 					let st = "";
 					grp.forEach((groupe) => {
-						st += `<div class="tags"><input type="checkbox" id="tag${groupe.id}" ${groupe.checked ? "checked" : ""} onchange="setSaveState()" /><label for="tag${groupe.id}">${groupe.nom}</label></div>`;
+						st += `<div class="tags"><input type="checkbox" id="tag${groupe.id}" onchange="setSaveState()" /><label for="tag${groupe.id}">${groupe.nom}</label></div>`;
 					});
 					groupes.innerHTML = st;
 					// faire les bases
@@ -347,9 +338,20 @@
 							}
 							st = "<table><thead><tr><th>Base</th><th>Voir</th><th>Éditer</th><th>Supprimer</th></tr></thead><tbody>";
 							rows.forEach((row) => {
-								st += '<tr id="base' + row.id + `"><td>${row.filename}</td><td>${getJoliCbx("in_use")}</td><td>${getJoliCbx("can_edit")}</td><td>${getJoliCbx("can_delete")}</td></tr>`;
+								st +=
+									'<tr id="base' +
+									row.id +
+									`"><td>${row.filename}</td><td>${getJoliCbx("in_use")}</td><td>${getJoliCbx("can_edit")}</td><td>${getJoliCbx(
+										"can_delete"
+									)}</td></tr>`;
 							});
 							tb_base.innerHTML = st;
+							document.querySelectorAll(".in_use").forEach((el) =>
+								el.addEventListener("change", function () {
+									console.log(el);
+									console.log(el.parentElement);
+								})
+							);
 							GetUsersHTML()
 								.then((st) => {
 									document.getElementById("user-list").innerHTML = st;
