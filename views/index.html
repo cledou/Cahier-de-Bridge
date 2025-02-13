@@ -483,6 +483,7 @@
 							</div>
 							<div class="level0 si_admin" style="background-image: url('/images/settings_30px.png')" hlp="Paramètres de l'application et administration">
 								<div class="level1">
+									<button class="itmh" onclick="window.location.href='/edit_user'" hlp="Créer/Modifier un utilisateur"><img src="/images/user_edit.png" />Editer utilisateur</button>
 									<input type="file" style="display: none" id="btn_bkp" />
 									<a class="hide_me" id="bkp_lnk" href="/public/bridge.db" download>Télécharger</a>
 									<button class="itmh" onclick="onBkp()" hlp="Sauvegarder la base de donnée dans un backup"><img src="/images/database_export_24px.png" />Sauvegarde</button>
@@ -690,12 +691,12 @@
 			}
 			console.log("Session:", session);
 			// ajuster l'affichage au chargement
-			if (session.user.id_user < 3) document.getElementById("del_profil").remove();
-			if (!session.need_login || session.user.id_user != 1) document.getElementById("btn_register").remove();
+			if (session.user.id < 3) document.getElementById("del_profil").remove();
+			if (!session.need_login || session.user.id != 1) document.getElementById("btn_register").remove();
 			if (!session.need_login) {
 				document.getElementById("btn_back").remove();
 				document.getElementById("menu_user").remove();
-			} else if (session.user.id_user == 1) document.getElementById("menu_user").remove();
+			} else if (session.user.id == 1) document.getElementById("menu_user").remove();
 			if (!session.user.is_admin) for (let el of document.getElementsByClassName("si_admin")) el.remove();
 			mesChoix = session.user.choix;
 			if (mesChoix.flags == undefined) mesChoix.flags = 0;
@@ -1149,7 +1150,7 @@
 		);
 	});
 	document.getElementById("btn_del_user").addEventListener("click", () => {
-		io.emit("del_user", session.user.id_user, (err) => {
+		io.emit("del_user", session.user.id, (err) => {
 			if (err) Erreur(err);
 			else window.location.href = "/login";
 		});
@@ -1827,14 +1828,14 @@
 				notif_users = r;
 				if (mesChoix.vers_un) vers_un.click();
 				else vers_plus.click(); // notifs non-lues
-				io.emit("login_get", "SELECT COUNT(*) as cnt FROM notifications WHERE id_user_vers=? AND lu=0", [session.user.id_user], (r1) => {
+				io.emit("login_get", "SELECT COUNT(*) as cnt FROM notifications WHERE id_user_vers=? AND lu=0", [session.user.id], (r1) => {
 					if (r1.err) Erreur(r1.err.message);
 					else {
 						let st = "<option value=-1>Toutes</option>";
 						st += "<option value=0>Messages système</option>";
 						if (r1.cnt > 0) st += "<option value=1>Non lus</option>";
 						r.forEach((el) => {
-							if (el.id != session.user.id_user) st += "<option value=" + el.id + ">" + el.nom + "</option>";
+							if (el.id != session.user.id) st += "<option value=" + el.id + ">" + el.nom + "</option>";
 						});
 						const old_val = sel_who.value;
 						sel_who.innerHTML = st;
@@ -1871,7 +1872,7 @@
 				if (diffInDays == 1) ts = "Hier " + ts;
 				else if (diffInDays > 1) ts = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" }).format(d2) + " " + ts;
 				st += '<div onclick="bulle(' + idx + ')" class="notif_';
-				if (ntf.id_user_vers != session.user.id_user) st += 'droite" >';
+				if (ntf.id_user_vers != session.user.id) st += 'droite" >';
 				else {
 					if (ntf.id_user_de == 0) ts = "Système " + ts;
 					else {
@@ -1880,8 +1881,8 @@
 					}
 					st += 'gauche" >';
 				}
-				const trash_gauche = session.user.is_admin || ntf.id_user_de == 0 || ntf.id_user_de == session.user.id_user;
-				const trash_droite = !trash_gauche && ntf.id_user_vers == session.user.id_user;
+				const trash_gauche = session.user.is_admin || ntf.id_user_de == 0 || ntf.id_user_de == session.user.id;
+				const trash_droite = !trash_gauche && ntf.id_user_vers == session.user.id;
 				st += ts + "<br/>";
 				if (trash_gauche || trash_droite) {
 					st += '<div class="flexH">';
@@ -1908,18 +1909,18 @@
 		WHERE (N.id_user_vers=?";
 		if (val == -1)
 			// Tous
-			io.emit("login_all", stm + ") ORDER BY t", [session.user.id_base, session.user.id_user], onNotifsRecues);
+			io.emit("login_all", stm + ") ORDER BY t", [session.user.id_base, session.user.id], onNotifsRecues);
 		else if (val == 1)
 			// non-lus
-			io.emit("login_all", stm + " AND N.lu=0) ORDER BY t", [session.user.id_base, session.user.id_user], onNotifsRecues);
+			io.emit("login_all", stm + " AND N.lu=0) ORDER BY t", [session.user.id_base, session.user.id], onNotifsRecues);
 		// depuis/vers qq un
-		else io.emit("login_all", stm + " AND id_user_de=?) OR (id_user_de=? AND id_user_vers=?) ORDER BY t", [session.user.id_base, session.user.id_user, val, session.user.id_user, val], onNotifsRecues);
+		else io.emit("login_all", stm + " AND id_user_de=?) OR (id_user_de=? AND id_user_vers=?) ORDER BY t", [session.user.id_base, session.user.id, val, session.user.id, val], onNotifsRecues);
 	}
 
 	function bulle(idx) {
 		let foo = lesNotifs[idx];
 		console.log("bulle", foo);
-		if (foo.lu == false && foo.id_user_vers == session.user.id_user) {
+		if (foo.lu == false && foo.id_user_vers == session.user.id) {
 			// retirer le status non-lu
 			io.emit("login_run", "UPDATE notifications SET lu=1 WHERE id=?", [foo.id], (r) => {
 				if (r.err) Erreur(r.err.message || r.err.code);
@@ -1940,7 +1941,7 @@
 		// Handle the change event for vers_un
 		SetChoix("vers_un", true);
 		let st = "";
-		for (let el of notif_users) if (el.id != session.user.id_user) st += "<option value=" + el.id + ">" + el.nom + "</option>";
+		for (let el of notif_users) if (el.id != session.user.id) st += "<option value=" + el.id + ">" + el.nom + "</option>";
 		sel_who2.innerHTML = st;
 		vers_plus.classList.remove("sel");
 		vers_un.classList.add("sel");
@@ -1975,7 +1976,7 @@
 		ed_notif.innerText = "";
 		if (txt.length == 0) return;
 		if (mesChoix.vers_un)
-			io.emit("login_run", "INSERT INTO notifications (id_user_de,id_user_vers,message) VALUES (?,?,?)", [session.user.id_user, val, txt], (r) => {
+			io.emit("login_run", "INSERT INTO notifications (id_user_de,id_user_vers,message) VALUES (?,?,?)", [session.user.id, val, txt], (r) => {
 				if (r.err) Erreur(r.err.message);
 				else setNotifs();
 			});
@@ -1984,7 +1985,7 @@
 				if (r.err) Erreur(r.err.message);
 				else {
 					r.forEach((el) => {
-						io.emit("login_run", "INSERT INTO notifications (id_user_de,id_user_vers,message) VALUES (?,?,?)", [session.user.id_user, el.id_user, txt], (r) => {
+						io.emit("login_run", "INSERT INTO notifications (id_user_de,id_user_vers,message) VALUES (?,?,?)", [session.user.id, el.id_user, txt], (r) => {
 							if (r.err) Erreur(r.err.message);
 						});
 					});

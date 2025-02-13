@@ -8,3 +8,4 @@ upload/*
 ssl/*
 config.json
 login.db
+./test.sql

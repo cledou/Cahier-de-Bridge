@@ -166,7 +166,7 @@ async function GetUser(str, nom) {
 	//console.log(row);
 	return row != undefined
 		? {
-				id_user: row.id,
+				id: row.id,
 				id_base: row.last_db,
 				nom: row.nom,
 				filename: row.filename,
@@ -177,7 +177,7 @@ async function GetUser(str, nom) {
 				can_erase: Boolean(row.id_user > 1 && row.id_owner == row.id_user),
 		  }
 		: {
-				id_user: 1,
+				id: 1,
 				id_base: 1,
 				nom: "Anonyme",
 				filename: "example.db",
@@ -277,7 +277,7 @@ io.on("connection", async (socket) => {
 	socket.on("is_dispo", (champ, value, cb) => {
 		if (db_login == undefined) cb({ err: "NTBS: Liste des utilisateurs inaccessible" });
 		else
-			db_login.get("SELECT COUNT(*) as cnt FROM USERS WHERE " + champ + " LIKE ? AND id <> " + session.user.id_user, [value], (err, row) => {
+			db_login.get("SELECT COUNT(*) as cnt FROM USERS WHERE " + champ + " LIKE ? AND id <> " + session.user.id, [value], (err, row) => {
 				if (err) cb({ err: err.message });
 				else cb({ dispo: row.cnt == 0 });
 			});
@@ -319,12 +319,12 @@ io.on("connection", async (socket) => {
 	});
 
 	socket.on("updpwd", (old_pw, new_pw, cb) => {
-		db_login.get("SELECT hash FROM users WHERE id=?", [session.user.id_user], (err, row) => {
+		db_login.get("SELECT hash FROM users WHERE id=?", [session.user.id], (err, row) => {
 			console.log(old_pw, "'" + old_pw + "'", row.hash, GetHashStr(old_pw));
 			if (err) cb(err.message);
 			else if (row.hash != GetHashStr(old_pw)) cb("Ancien mot de passe incorrect");
 			else
-				db_login.run("UPDATE users SET hash=? WHERE id=?", [GetHashStr(new_pw), session.user.id_user], function (err) {
+				db_login.run("UPDATE users SET hash=? WHERE id=?", [GetHashStr(new_pw), session.user.id], function (err) {
 					if (err) cb(err.message);
 					else if (this.changes != 1) cb("NTBS: Échec inatendu de la mise à jour");
 					else {
@@ -360,6 +360,7 @@ io.on("connection", async (socket) => {
 	});
 
 	socket.on("login_all", (stm, values, cb) => {
+		console.log(stm, values);
 		db_login.all(stm, values || [], (err, rows) => {
 			if (err) cb({ err: err });
 			else cb(rows);
@@ -367,6 +368,7 @@ io.on("connection", async (socket) => {
 	});
 
 	socket.on("login_run", (stm, values, cb) => {
+		console.log(stm, values);
 		db_login.run(stm, values || [], function (err) {
 			if (err) socket.emit("alert", err.message || err.code);
 			cb(this);
@@ -385,7 +387,7 @@ io.on("connection", async (socket) => {
 			socket.conn.close();
 			return;
 		}
-		db_rw = session.user.id_user > 1; // si id=1, c'est un Anonyme
+		db_rw = session.user.id > 1; // si id=1, c'est un Anonyme
 		openBase(db_dir + session.user.filename).then((db1) => {
 			db = db1;
 			if (session.ok != undefined) {
@@ -411,12 +413,14 @@ io.on("connection", async (socket) => {
 			}
 			socket.emit("db_list", db_list);
 			cb(session);
+			/*
 			db_login.all("SELECT * FROM users ORDER BY nom", (err, rows) => {
 				let st = "";
 				for (let row of rows) st += JSON.stringify(row) + ",";
 				if (st) st = st.slice(0, -1);
 				console.log(st);
 			});
+			*/
 		});
 	});
 
@@ -430,7 +434,7 @@ io.on("connection", async (socket) => {
 		if (session.user != undefined) {
 			try {
 				if (session.dirty == true) {
-					if (db_rw) await db_run(db_login, "UPDATE user_base SET choix=? WHERE id_user=? AND id_base=?", [JSON.stringify(session.user.choix), session.user.id_user, session.user.id_base]);
+					if (db_rw) await db_run(db_login, "UPDATE user_base SET choix=? WHERE id_user=? AND id_base=?", [JSON.stringify(session.user.choix), session.user.id, session.user.id_base]);
 					session.dirty = false;
 					session.save();
 				}
@@ -639,7 +643,7 @@ io.on("connection", async (socket) => {
 			else if (row.id == session.user.last_db) cb();
 			else {
 				session.user.last_db = row.id;
-				db_login.run("UPDATE users SET last_db=? WHERE id=?", [row.id, session.user.id_user], function (err) {
+				db_login.run("UPDATE users SET last_db=? WHERE id=?", [row.id, session.user.id], function (err) {
 					if (err) cb(err.message);
 					else {
 						session.dirty = true;
@@ -720,7 +724,7 @@ io.on("connection", async (socket) => {
 	socket.on("updUser", (champ, value, cb) => {
 		if (db_login == undefined) cb({ err: "NTBS: Session fermée. Reconnectez vous" });
 		else
-			db_login.run("UPDATE users SET " + champ + "=? WHERE id=?", [value, session.user.id_user], (err) => {
+			db_login.run("UPDATE users SET " + champ + "=? WHERE id=?", [value, session.user.id], (err) => {
 				if (err) cb(err.message);
 				else cb("OK");
 			});
@@ -779,6 +783,10 @@ app.get("/register", (req, res) => {
 
 app.get("/reset", (req, res) => {
 	res.render("resetpw.html");
+});
+
+app.get("/edit_user", (req, res) => {
+	res.render("edit_user.html");
 });
 
 app.get("/readme", (req, res) => {

@@ -72,12 +72,14 @@
 				display: flex;
 				flex-direction: column;
 				flex-wrap: wrap;
-				justify-content: center;
 				padding: 1em;
 				margin-right: 1em;
 				border-right: solid 2px antiquewhite;
 				overflow: auto;
-				min-width: 20em;
+				height: 100%;
+			}
+			#btn_new {
+				align-self: center;
 			}
 			#user-edit {
 				position: relative;
@@ -134,26 +136,23 @@
 				width: 100%;
 				margin-top: 1em;
 			}
-			#btn_new,
-			.wrap button {
+			button {
 				padding: 0.2em;
 				display: flex;
 				flex-direction: row;
 				align-items: center;
 				font-size: large;
 				cursor: pointer;
-				justify-content: space-around; /* Re-added justify-content for proper alignment */
+				width: max-content;
 			}
 
-			#btn_new:disabled,
-			.wrap button:disabled {
+			button:disabled {
 				cursor: not-allowed;
 			}
 			#groupes {
 				display: flex;
 				flex-direction: row;
 				justify-content: flex-start;
-				margin-top: 0.5em;
 				margin-bottom: 0.5em;
 				flex-wrap: auto;
 			}
@@ -192,6 +191,9 @@
 			#find.hide_me {
 				display: none;
 			}
+			details {
+				margin-top: 1em;
+			}
 			summary {
 				cursor: pointer;
 			}
@@ -224,11 +226,12 @@
 							Email:
 							<input type="text" id="ed_email" />
 						</div>
-						<details open>
+						<button style="align-self: center" onclick="resetMP()"><img src="/images/erase_25px.png" />Effacer le mot de passe</button>
+						<details>
 							<summary>Groupes d'utilisateurs</summary>
-							<div id="groupes" class="open"></div>
+							<div id="groupes"></div>
 						</details>
-						<details open>
+						<details>
 							<summary>Accès aux bases de données</summary>
 							<div id="ubase"></div>
 						</details>
@@ -247,15 +250,13 @@
 		</div>
 	</body>
 </html>
-<!-- 
-<script src="/node_modules/socket.io/client-dist/socket.io.min.js"></script>
+<script src="/socket.io/socket.io.min.js"></script>
 <script src="/js/status.js"></script>
--->
 <script>
 	//*********************
 	//  Variables globales
 	//*********************
-	//	var io = io.connect("http://localhost:3005");
+	var io = io.connect("http://localhost:3005");
 	var session;
 	var mesChoix;
 	var currentUser;
@@ -267,52 +268,9 @@
 	const not_nom = document.getElementById("not_nom");
 	const not_email = document.getElementById("not_email");
 	const tb_base = document.getElementById("ubase");
+	const groupes = document.getElementById("groupes");
 
 	// pour test hors connexion
-	var session = { user: { id_user: 2, admin: 1 } };
-	const users = [
-		{ id: 2, nom: "Administrateur", email: null, hash: null, reset_hash: null, last_db: 2, binette: null, admin: 1 },
-		{ id: 6, nom: "Agripine De Cheuvalle", email: null, hash: null, reset_hash: null, last_db: null, binette: null, admin: 0 },
-		{ id: 1, nom: "Anonyme", email: null, hash: null, reset_hash: null, last_db: 1, binette: null, admin: 0 },
-		{ id: 3, nom: "Harry Cover", email: null, hash: null, reset_hash: null, last_db: null, binette: null, admin: 0 },
-		{ id: 4, nom: "Mélusine Enfayite", email: null, hash: null, reset_hash: null, last_db: null, binette: null, admin: 0 },
-		{ id: 5, nom: "Richard Dassault", email: null, hash: null, reset_hash: null, last_db: null, binette: null, admin: 0 },
-		{ id: 12, nom: "Administrateur", email: null, hash: null, reset_hash: null, last_db: 2, binette: null, admin: 1 },
-		{ id: 16, nom: "Agripine De Cheuvalle", email: null, hash: null, reset_hash: null, last_db: null, binette: null, admin: 0 },
-		{ id: 11, nom: "Anonyme", email: null, hash: null, reset_hash: null, last_db: 1, binette: null, admin: 0 },
-		{ id: 13, nom: "Harry Cover", email: null, hash: null, reset_hash: null, last_db: null, binette: null, admin: 0 },
-		{ id: 14, nom: "Mélusine Enfayite", email: null, hash: null, reset_hash: null, last_db: null, binette: null, admin: 0 },
-		{ id: 15, nom: "Richard Dassault", email: null, hash: null, reset_hash: null, last_db: null, binette: null, admin: 0 },
-		{ id: 2, nom: "Administrateur", email: null, hash: null, reset_hash: null, last_db: 2, binette: null, admin: 1 },
-		{ id: 6, nom: "Agripine De Cheuvalle", email: null, hash: null, reset_hash: null, last_db: null, binette: null, admin: 0 },
-		{ id: 1, nom: "Anonyme", email: null, hash: null, reset_hash: null, last_db: 1, binette: null, admin: 0 },
-		{ id: 3, nom: "Harry Cover", email: null, hash: null, reset_hash: null, last_db: null, binette: null, admin: 0 },
-		{ id: 4, nom: "Mélusine Enfayite", email: null, hash: null, reset_hash: null, last_db: null, binette: null, admin: 0 },
-		{ id: 5, nom: "Richard Dassault", email: null, hash: null, reset_hash: null, last_db: null, binette: null, admin: 0 },
-		{ id: 12, nom: "Administrateur", email: null, hash: null, reset_hash: null, last_db: 2, binette: null, admin: 1 },
-		{ id: 16, nom: "Agripine De Cheuvalle", email: null, hash: null, reset_hash: null, last_db: null, binette: null, admin: 0 },
-		{ id: 11, nom: "Anonyme", email: null, hash: null, reset_hash: null, last_db: 1, binette: null, admin: 0 },
-		{ id: 13, nom: "Harry Cover", email: null, hash: null, reset_hash: null, last_db: null, binette: null, admin: 0 },
-		{ id: 14, nom: "Mélusine Enfayite", email: null, hash: null, reset_hash: null, last_db: null, binette: null, admin: 0 },
-		{ id: 15, nom: "Richard Dassault", email: null, hash: null, reset_hash: null, last_db: null, binette: null, admin: 0 },
-		{ id: 2, nom: "Administrateur", email: null, hash: null, reset_hash: null, last_db: 2, binette: null, admin: 1 },
-		{ id: 6, nom: "Agripine De Cheuvalle", email: null, hash: null, reset_hash: null, last_db: null, binette: null, admin: 0 },
-		{ id: 1, nom: "Anonyme", email: null, hash: null, reset_hash: null, last_db: 1, binette: null, admin: 0 },
-		{ id: 3, nom: "Harry Cover", email: null, hash: null, reset_hash: null, last_db: null, binette: null, admin: 0 },
-		{ id: 4, nom: "Mélusine Enfayite", email: null, hash: null, reset_hash: null, last_db: null, binette: null, admin: 0 },
-		{ id: 5, nom: "Richard Dassault", email: null, hash: null, reset_hash: null, last_db: null, binette: null, admin: 0 },
-		{ id: 12, nom: "Administrateur", email: null, hash: null, reset_hash: null, last_db: 2, binette: null, admin: 1 },
-		{ id: 16, nom: "Agripine De Cheuvalle", email: null, hash: null, reset_hash: null, last_db: null, binette: null, admin: 0 },
-		{ id: 11, nom: "Anonyme", email: null, hash: null, reset_hash: null, last_db: 1, binette: null, admin: 0 },
-		{ id: 13, nom: "Harry Cover", email: null, hash: null, reset_hash: null, last_db: null, binette: null, admin: 0 },
-		{ id: 14, nom: "Mélusine Enfayite", email: null, hash: null, reset_hash: null, last_db: null, binette: null, admin: 0 },
-		{ id: 15, nom: "Richard Dassault", email: null, hash: null, reset_hash: null, last_db: null, binette: null, admin: 0 },
-	];
-	const groupes = [
-		{ id: 1, nom: "Administrateur", checked: 1 },
-		{ id: 2, nom: "Anonyme", checked: 0 },
-		{ id: 3, nom: "Utilisateur", checked: 0 },
-	];
 	const ubase = [
 		{ base: "bridge.db", in_use: true, can_edit: true, can_delete: true },
 		{ base: "example.db", in_use: false, can_edit: false, can_delete: false },
@@ -330,51 +288,81 @@
 	//*********************
 	// SESSION socket I/O
 	//*********************
-	/*
-			function SetChoix(nom, val) {
-				mesChoix[nom] = val;
-				io.emit("upducfg", nom, val);
-			}
 
-			io.on("connect", function () {
-				io.emit("session", (r) => {
-					session = r;
-					console.log("session", r);
-					mesChoix = session.user.choix;
-					io.emit("get_user", session.user.id_user, (row) => {
-						if (row.err) Erreur(row.err);
+	function SetChoix(nom, val) {
+		mesChoix[nom] = val;
+		io.emit("upducfg", nom, val);
+	}
+
+	function GetUsersHTML() {
+		return new Promise((resolve, reject) => {
+			io.emit("login_all", "SELECT id,nom FROM users", [], (users) => {
+				if (users.err) reject(users.err);
+				else {
+					let st = '<button id="btn_new" onclick="handleUserClick(0)"><img src="/images/add_user_30px.png" />Ajouter un utilisateur</button>';
+					users.forEach((user) => {
+						// on ne peut éditer l'utilisateur anonyme
+						if (user.id != 1) st += `<div class="user" id="u_${user.id}" onclick="handleUserClick(${user.id})">${user.nom}</div>`;
+					});
+					resolve(st);
+				}
+			});
+		});
+	}
+
+	io.on("connect", function () {
+		io.emit("session", (r) => {
+			session = r;
+			console.log("session", r);
+			console.assert(session.user.is_admin, "Vous n'êtes pas administrateur");
+			console.assert(session.user.id != 1, "Vous êtes Anonyme");
+			mesChoix = session.user.choix;
+			if (mesChoix.carets2 == undefined) mesChoix.carets2 = "XXXX";
+			document.querySelectorAll(".card summary").forEach((caret, id) => {
+				while (mesChoix.carets2.length <= id) mesChoix.carets2 += "X";
+				caret.addEventListener("click", function () {
+					// En js, string est inmutable
+					let ar = mesChoix.carets2.split("");
+					ar[id] = ar[id] == "X" ? "-" : "X";
+					SetChoix("carets2", ar.join(""));
+				});
+				if (mesChoix.carets2[id] == "X") caret.parentElement.setAttribute("open", true);
+				else caret.parentElement.removeAttribute("open");
+			});
+			// faire les groupes
+			io.emit("login_all", "SELECT id,nom,hlp FROM groupes ORDER BY id", [], (grp) => {
+				if (grp.err) Erreur(grp.err);
+				else {
+					let st = "";
+					grp.forEach((groupe) => {
+						st += `<div class="tags"><input type="checkbox" id="tag${groupe.id}" ${groupe.checked ? "checked" : ""} onchange="setSaveState()" /><label for="tag${groupe.id}">${groupe.nom}</label></div>`;
+					});
+					groupes.innerHTML = st;
+					// faire les bases
+					io.emit("login_all", "SELECT id,filename,id_owner FROM bases ORDER BY id", [], (rows) => {
+						if (rows.err) Erreur(grp.err);
 						else {
-							ed_login.value = row.nom;
-							l_nom.innerText = row.nom;
-							ed_email.value = row.email;
-							const cl = document.getElementById("si_mp").classList;
-							if (row.has_mp) cl.remove("hide_me");
-							else {
-								cl.add("hide_me");
-								ed_pw_old.value = "";
+							function getJoliCbx(id) {
+								return `<div class="jolicbx"><input type="checkbox" class="${id}" onchange="setSaveState()" /></div>`;
 							}
-							for (let el of document.getElementsByClassName("is_admin")) {
-								if (row.admin) el.classList.remove("hide_me");
-								else el.classList.add("hide_me");
-							}
-							if (mesChoix.carets1 == undefined) mesChoix.carets1 = "XXXX";
-							document.querySelectorAll(".card summary").forEach((caret, id) => {
-								while (mesChoix.carets1.length <= id) mesChoix.carets1 += "X";
-								caret.addEventListener("click", function () {
-									// En js, string est inmutable
-									let ar = mesChoix.carets1.split("");
-									ar[id] = ar[id] == "X" ? "-" : "X";
-									SetChoix("carets1", ar.join(""));
-								});
-								if (mesChoix.carets1[id] == "X") caret.parentElement.setAttribute("open", true);
-								else caret.parentElement.removeAttribute("open");
+							st = "<table><thead><tr><th>Base</th><th>Voir</th><th>Éditer</th><th>Supprimer</th></tr></thead><tbody>";
+							rows.forEach((row) => {
+								st += '<tr id="base' + row.id + `"><td>${row.filename}</td><td>${getJoliCbx("in_use")}</td><td>${getJoliCbx("can_edit")}</td><td>${getJoliCbx("can_delete")}</td></tr>`;
 							});
+							tb_base.innerHTML = st;
+							GetUsersHTML()
+								.then((st) => {
+									document.getElementById("user-list").innerHTML = st;
+									handleUserClick(session.user.id);
+								})
+								.catch((err) => Erreur(err));
 						}
 					});
-					ed_login.value = session.user.nom;
-				});
-			}); // io connect
-		*/
+				}
+			});
+		});
+	}); // io connect
+
 	/****************************/
 	/*       Volet Gauche       */
 	/****************************/
@@ -382,36 +370,58 @@
 	let nom_ok = false;
 	let email_ok = false;
 
-	function onUsers(users) {
-		let st = '<button id="btn_new" onclick="handleUserClick(0)"><img src="/images/add_user_30px.png" />Ajouter un utilisateur</button>';
-		users.forEach((user) => {
-			// on ne peut éditer l'utilisateur anonyme
-			if (user.id != 1) st += `<div class="user" id="u_${user.id}" onclick="handleUserClick(${user.id})">${user.nom}</div>`;
-		});
-		document.getElementById("user-list").innerHTML = st; // Display user info in the HTML
-		document.getElementById("u_" + users[0].id).click();
-	}
 	var lastUser = 2; // retour à un utilisateur connu si annulation nouvelle fiche
 	function handleUserClick(id) {
-		if (id != 0) lastUser = id;
-		for (const el of document.querySelectorAll(".user.sel")) el.classList.remove("sel");
-		currentUser = users.find((el) => el.id == id);
-		console.log("currentUser", currentUser, id);
-		if (!currentUser && id == 0) {
-			currentUser = { id: 0, nom: "Nouvel utilisateur", email: "", admin: 0 };
-		} else document.getElementById(`u_${id}`).classList.add("sel");
-
-		// Logic to display user details can be added here
-		l_nom.innerText = currentUser.nom;
-		ed_login.value = currentUser.nom;
-		ed_email.value = currentUser.email;
-		nom_ok = true;
-		email_ok = true;
-		setGroupes();
-		setBases();
-		// on ne peut pas changer son propre status admin
-		document.getElementById("tag1").disabled = currentUser.id == session.user.id_user;
-		setSaveState();
+		io.emit("login_get", "SELECT id,nom,email,admin,last_db FROM users WHERE id=?", [id], (enr) => {
+			if (enr.err) Erreur(enr.err);
+			else {
+				if (id != 0) lastUser = id;
+				for (const el of document.querySelectorAll(".user.sel")) el.classList.remove("sel");
+				currentUser = enr;
+				if (!currentUser && id == 0) {
+					currentUser = { id: 0, nom: "Nouvel utilisateur", email: "", admin: 0 };
+				} else document.getElementById(`u_${id}`).classList.add("sel");
+				// Logic to display user details can be added here
+				l_nom.innerText = currentUser.nom;
+				ed_login.value = currentUser.nom;
+				ed_email.value = currentUser.email;
+				nom_ok = true;
+				email_ok = true;
+				io.emit("login_all", "SELECT id_groupe FROM user_groupe WHERE id_user=?", [id], (rows) => {
+					if (rows.err) Erreur(rows.err);
+					else {
+						groupes.querySelectorAll("input").forEach((el) => {
+							el.checked = rows.find((row) => row.id_groupe == el.id.substr(3)) != undefined;
+						});
+						// on ne peut pas changer son propre status admin
+						document.getElementById("tag1").disabled = currentUser.id == session.user.id;
+						io.emit("login_all", "SELECT id_base,can_edit,can_delete FROM user_base WHERE id_user=?", [id], (rows) => {
+							if (rows.err) Erreur(rows.err);
+							else {
+								tb_base.querySelectorAll("input").forEach((el) => {
+									el.checked = false;
+								});
+								tb_base.querySelectorAll(".can_edit,.can_delete").forEach((el) => {
+									el.style.display = "none";
+								});
+								console.log(rows);
+								rows.forEach((row) => {
+									const tr = document.getElementById("base" + row.id_base);
+									tr.querySelector(".in_use").checked = true;
+									tr.querySelector(".can_edit").checked = row.can_edit;
+									tr.querySelector(".can_edit").style.display = "block";
+									tr.querySelector(".can_delete").checked = row.can_delete;
+									tr.querySelector(".can_delete").style.display = "block";
+								});
+								// on ne peut pas changer son propre status admin
+								document.getElementById("tag1").disabled = currentUser.id == session.user.id;
+								setSaveState();
+							}
+						});
+					}
+				});
+			}
+		});
 	}
 
 	// Add more user handling logic as needed here
@@ -433,15 +443,13 @@
 		setDisabled(!btn_ok.disabled);
 	}
 
-	function isDirty() {
-		let b = currentUser.nom != ed_login.value || (currentUser.email || "") != ed_email.value || currentUser.id == 0;
-		// comparer groupes
-		if (!b)
-			groupes.forEach((groupe) => {
-				const el = document.getElementById("tag" + groupe.id);
-				if (el.checked != groupe.checked) b = true;
-			});
-		// comparer bases
+	function isGroupesDirty() {
+		let b = false;
+		return b;
+	}
+	function idBasesDirty() {
+		let b = false;
+		/* comparer bases
 		if (!b) {
 			const in_use = tb_base.querySelectorAll(".in_use");
 			const can_edit = tb_base.querySelectorAll(".can_edit");
@@ -449,45 +457,14 @@
 			ubase.forEach((base, idx) => {
 				if (in_use[idx].checked != base.in_use || can_edit[idx].checked != base.can_edit || can_delete[idx].checked != base.can_delete) b = true;
 			});
-		}
-		btn_nok.disabled = !b;
+		}*/
 		return b;
 	}
 
-	function initGroupes() {
-		let st = "";
-		groupes.forEach((groupe) => {
-			st += `<div class="tags"><input type="checkbox" id="tag${groupe.id}" ${groupe.checked ? "checked" : ""} onchange="setSaveState()" /><label for="tag${groupe.id}">${groupe.nom}</label></div>`;
-		});
-		document.getElementById("groupes").innerHTML = st;
-	}
-	function setGroupes() {
-		groupes.forEach((groupe) => {
-			const el = document.getElementById("tag" + groupe.id);
-			el.checked = groupe.checked;
-		});
-	}
-
-	function getJoliCbx(id, b) {
-		return `<div class="jolicbx"><input type="checkbox" class="${id}" ${b ? "checked" : ""} onchange="setSaveState()" /></div>`;
-	}
-
-	function initBases() {
-		let st = "<table><thead><tr><th>Base</th><th>Voir</th><th>Éditer</th><th>Supprimer</th></tr></thead><tbody>";
-		ubase.forEach((base) => {
-			st += `<tr><td>${base.base}</td><td>${getJoliCbx("in_use", base.in_use)}</td><td>${getJoliCbx("can_edit", base.can_edit)}</td><td>${getJoliCbx("can_delete", base.can_delete)}</td></tr>`;
-		});
-		tb_base.innerHTML = st;
-	}
-	function setBases() {
-		const in_use = tb_base.querySelectorAll(".in_use");
-		const can_edit = tb_base.querySelectorAll(".can_edit");
-		const can_delete = tb_base.querySelectorAll(".can_delete");
-		ubase.forEach((base, idx) => {
-			in_use[idx].checked = base.in_use;
-			can_edit[idx].checked = base.can_edit;
-			can_delete[idx].checked = base.can_delete;
-		});
+	function isDirty() {
+		let b = currentUser.id == 0 || currentUser.nom != ed_login.value || (currentUser.email || "") != ed_email.value || isGroupesDirty() || idBasesDirty();
+		btn_nok.disabled = !b;
+		return b;
 	}
 
 	ed_login.parentElement.nextElementSibling.disabled = true;
@@ -526,11 +503,6 @@
 	btn_nok.addEventListener("click", function () {
 		handleUserClick(lastUser);
 	});
-
-	//start
-	initGroupes();
-	initBases();
-	onUsers(users);
 
 	/****************************/
 	/*        RECHERCHER        */
