@@ -224,8 +224,25 @@ io.on("connection", async (socket) => {
 	}, SESSION_RELOAD_INTERVAL);
 
 	let db;
+	if (session.ok != undefined) {
+		socket.emit("OK", session.ok);
+		session.ok = undefined;
+		session.save();
+	} else if (session.info != undefined) {
+		socket.emit("info", session.info);
+		session.info = undefined;
+		session.save();
+	} else if (session.err != undefined) {
+		socket.emit("alert", session.err);
+		session.err = undefined;
+		session.save();
+	} else if (session.warning != undefined) {
+		socket.emit("warning", session.warning);
+		session.warning = undefined;
+		session.save();
+	}
 	// et maintenant, on attend le ping-pong
-	console.log("connexion", socket.handshake.address);
+	//console.log("connexion", socket.handshake.address);
 	//*******************
 	//     login.db
 	//*******************
@@ -407,7 +424,7 @@ io.on("connection", async (socket) => {
 		session.need_login = app_config.need_login;
 		if (!app_config.need_login) session.user = await GetUser("id", 2);
 		else if (session.user == undefined) {
-			session.error = "Vous avez été déconnecté";
+			session.err = "Vous avez été déconnecté";
 			session.save();
 			socket.emit("eject");
 			return;
@@ -415,27 +432,9 @@ io.on("connection", async (socket) => {
 		db_rw = session.user.id > 1; // si id=1, c'est un Anonyme
 		openBase(db_dir + session.user.filename).then((db1) => {
 			db = db1;
-			if (session.ok != undefined) {
-				socket.emit("OK", session.ok);
-				session.ok = undefined;
-				session.save();
-			} else if (session.info != undefined) {
-				socket.emit("info", session.info);
-				session.info = undefined;
-				session.save();
-			} else if (session.err != undefined) {
-				socket.emit("alert", session.err);
-				session.err = undefined;
-				session.save();
-			} else if (session.warning != undefined) {
-				socket.emit("warning", session.warning);
-				session.warning = undefined;
-				session.save();
-			} else {
-				const who = session.user.nom + " est connecté à " + session.user.filename;
-				console.log(who);
-				socket.emit("info", who);
-			}
+			const who = session.user.nom + " est connecté à " + session.user.filename;
+			console.log(who);
+			socket.emit("info", who);
 			socket.emit("db_list", db_list);
 			cb(session);
 			/*
