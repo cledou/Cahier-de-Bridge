@@ -211,7 +211,7 @@
 					<div class="flexV">
 						<div id="find">
 							<img src="/images/Search.png" />
-							<input type="search" id="ed_find" hlp="Rechercher une donne, un mot dans les textes" />
+							<input type="search" id="ed_find" hlp="Rechercher un nom" />
 							<img src="/images/cancel_16px.png" id="del_rch" hlp="Effacer le champ de recherche" />
 						</div>
 						<div id="user-list" class="disable"></div>
@@ -226,7 +226,7 @@
 							Email:
 							<input type="text" id="ed_email" />
 						</div>
-						<button style="align-self: center" onclick="resetMP()"><img src="/images/erase_25px.png" />Effacer le mot de passe</button>
+						<button id="btn_MP" style="align-self: center"><img src="/images/erase_25px.png" />Effacer le mot de passe</button>
 						<details>
 							<summary>Groupes d'utilisateurs</summary>
 							<div id="groupes"></div>
@@ -269,6 +269,7 @@
 	const not_email = document.getElementById("not_email");
 	const tb_base = document.getElementById("ubase");
 	const groupes = document.getElementById("groupes");
+	const btn_MP = document.getElementById("btn_MP");
 
 	const hide_me = (id, hide) => {
 		const el = document.getElementById(id);
@@ -285,19 +286,22 @@
 		io.emit("upducfg", nom, val);
 	}
 
-	function GetUsersHTML() {
-		return new Promise((resolve, reject) => {
-			io.emit("login_all", "SELECT id,nom FROM users", [], (users) => {
-				if (users.err) reject(users.err);
-				else {
-					let st = '<button id="btn_new" onclick="handleUserClick(0)"><img src="/images/add_user_30px.png" />Ajouter un utilisateur</button>';
-					users.forEach((user) => {
-						// on ne peut éditer l'utilisateur anonyme
-						if (user.id != 1) st += `<div class="user" id="u_${user.id}" onclick="handleUserClick(${user.id})">${user.nom}</div>`;
-					});
-					resolve(st);
-				}
-			});
+	function setUsers() {
+		let st = '<button id="btn_new" onclick="handleUserClick(0)"><img src="/images/add_user_30px.png" />Ajouter un utilisateur</button>';
+		let rch = ed_find.value != "" ? ` AND nom LIKE '%${ed_find.value}%'` : "";
+		let moi = false;
+		let firstUser = 0;
+		io.emit("login_all", "SELECT id,nom FROM users WHERE id > 1" + rch, [], (users) => {
+			if (users.err) Erreur(users.err);
+			else {
+				users.forEach((user) => {
+					if (firstUser == 0) firstUser = user.id;
+					if (user.id == session.user.id) moi = true;
+					st += `<div class="user" id="u_${user.id}" onclick="handleUserClick(${user.id})">${user.nom}</div>`;
+				});
+			}
+			document.getElementById("user-list").innerHTML = st;
+			handleUserClick(moi ? session.user.id : firstUser);
 		});
 	}
 
@@ -308,6 +312,7 @@
 			console.assert(session.user.is_admin, "Vous n'êtes pas administrateur");
 			console.assert(session.user.id != 1, "Vous êtes Anonyme");
 			mesChoix = session.user.choix;
+			ed_find.value = mesChoix.findNom || "";
 			if (mesChoix.carets2 == undefined) mesChoix.carets2 = "XXXX";
 			document.querySelectorAll(".card summary").forEach((caret, id) => {
 				while (mesChoix.carets2.length <= id) mesChoix.carets2 += "X";
@@ -338,26 +343,17 @@
 							}
 							st = "<table><thead><tr><th>Base</th><th>Voir</th><th>Éditer</th><th>Supprimer</th></tr></thead><tbody>";
 							rows.forEach((row) => {
-								st +=
-									'<tr id="base' +
-									row.id +
-									`"><td>${row.filename}</td><td>${getJoliCbx("in_use")}</td><td>${getJoliCbx("can_edit")}</td><td>${getJoliCbx(
-										"can_delete"
-									)}</td></tr>`;
+								st += '<tr id="base' + row.id + `"><td>${row.filename}</td><td>${getJoliCbx("in_use")}</td><td>${getJoliCbx("can_edit")}</td><td>${getJoliCbx("can_delete")}</td></tr>`;
 							});
 							tb_base.innerHTML = st;
 							document.querySelectorAll(".in_use").forEach((el) =>
 								el.addEventListener("change", function () {
-									console.log(el);
-									console.log(el.parentElement);
+									el.parentElement.parentElement.parentElement.querySelectorAll(".can_edit,.can_delete").forEach((el1) => {
+										el1.style.display = el.checked ? "block" : "none";
+									});
 								})
 							);
-							GetUsersHTML()
-								.then((st) => {
-									document.getElementById("user-list").innerHTML = st;
-									handleUserClick(session.user.id);
-								})
-								.catch((err) => Erreur(err));
+							setUsers();
 						}
 					});
 				}
@@ -375,18 +371,20 @@
 	var lastUser = 2; // retour à un utilisateur connu si annulation nouvelle fiche
 	function handleUserClick(id) {
 		io.emit("login_get", "SELECT id,nom,email,admin,last_db FROM users WHERE id=?", [id], (enr) => {
-			if (enr.err) Erreur(enr.err);
+			if (enr && enr.err) Erreur(enr.err);
 			else {
 				if (id != 0) lastUser = id;
 				for (const el of document.querySelectorAll(".user.sel")) el.classList.remove("sel");
 				currentUser = enr;
-				if (!currentUser && id == 0) {
+				const btn = document.getElementById("u_" + id);
+				if (!btn) {
 					currentUser = { id: 0, nom: "Nouvel utilisateur", email: "", admin: 0 };
-				} else document.getElementById(`u_${id}`).classList.add("sel");
+				} else btn.classList.add("sel");
 				// Logic to display user details can be added here
 				l_nom.innerText = currentUser.nom;
 				ed_login.value = currentUser.nom;
 				ed_email.value = currentUser.email;
+				btn_MP.disabled = currentUser.id == 0;
 				nom_ok = true;
 				email_ok = true;
 				io.emit("login_all", "SELECT id_groupe FROM user_groupe WHERE id_user=?", [id], (rows) => {
@@ -394,6 +392,7 @@
 					else {
 						groupes.querySelectorAll("input").forEach((el) => {
 							el.checked = rows.find((row) => row.id_groupe == el.id.substr(3)) != undefined;
+							el.setAttribute("old_chk", el.checked.toString());
 						});
 						// on ne peut pas changer son propre status admin
 						document.getElementById("tag1").disabled = currentUser.id == session.user.id;
@@ -406,7 +405,6 @@
 								tb_base.querySelectorAll(".can_edit,.can_delete").forEach((el) => {
 									el.style.display = "none";
 								});
-								console.log(rows);
 								rows.forEach((row) => {
 									const tr = document.getElementById("base" + row.id_base);
 									tr.querySelector(".in_use").checked = true;
@@ -414,6 +412,9 @@
 									tr.querySelector(".can_edit").style.display = "block";
 									tr.querySelector(".can_delete").checked = row.can_delete;
 									tr.querySelector(".can_delete").style.display = "block";
+								});
+								tb_base.querySelectorAll("input").forEach((el) => {
+									el.setAttribute("old_chk", el.checked.toString());
 								});
 								// on ne peut pas changer son propre status admin
 								document.getElementById("tag1").disabled = currentUser.id == session.user.id;
@@ -426,6 +427,41 @@
 		});
 	}
 
+	function updateGroupes() {
+		groupes.querySelectorAll("input").forEach((el) => {
+			if (el.checked.toString() != el.getAttribute("old_chk")) {
+				const stm = el.checked ? "INSERT INTO user_groupe (id_user, id_groupe) VALUES (?,?)" : "DELETE FROM user_groupe WHERE id_user=? AND id_groupe=?";
+				io.emit("login_run", stm, [currentUser.id, el.id.substr(3)], (r) => {
+					if (r.err) Erreur(r.err);
+					else el.setAttribute("old_chk", el.checked.toString());
+				});
+			}
+		});
+	}
+	function updateBases() {
+		tb_base.querySelectorAll('[id^="base"]').forEach((el) => {
+			let id_base = Number(el.id.substr(4));
+			let in_use = el.querySelector(".in_use");
+			let can_edit = el.querySelector(".can_edit");
+			let can_delete = el.querySelector(".can_delete");
+			if (in_use.checked.toString() != in_use.getAttribute("old_chk")) {
+				if (in_use.checked) {
+					io.emit("login_run", "INSERT INTO user_base (id_user, id_base, can_edit, can_delete) VALUES (?,?,?,?)", [currentUser.id, id_base, can_edit.checked, can_delete.checked], (r) => {
+						if (r.err) Erreur(r.err);
+					});
+				} else {
+					io.emit("login_run", "DELETE FROM user_base WHERE id_user=? AND id_base=?", [currentUser.id, id_base], (r) => {
+						if (r.err) Erreur(r.err);
+					});
+				}
+			} else if (can_edit.checked.toString() != can_edit.getAttribute("old_chk") || can_delete.checked.toString() != can_delete.getAttribute("old_chk")) {
+				io.emit("login_run", "UPDATE user_base SET can_edit=?, can_delete=? WHERE id_user=? AND id_base=?", [can_edit.checked, can_delete.checked, currentUser.id, id_base], (r) => {
+					if (r.err) Erreur(r.err);
+				});
+			}
+		});
+	}
+
 	// Add more user handling logic as needed here
 	function setDisabled(disabled) {
 		document.querySelectorAll(".user").forEach((el) => {
@@ -433,7 +469,6 @@
 			else el.classList.remove("disable");
 		});
 		document.getElementById("btn_new").disabled = disabled;
-		hide_me("find", disabled);
 	}
 
 	/****************************/
@@ -446,25 +481,20 @@
 	}
 
 	function isGroupesDirty() {
-		let b = false;
-		return b;
+		for (let el of groupes.querySelectorAll("input")) if (el.checked.toString() != el.getAttribute("old_chk")) return true;
+		return false;
 	}
 	function idBasesDirty() {
-		let b = false;
-		/* comparer bases
-		if (!b) {
-			const in_use = tb_base.querySelectorAll(".in_use");
-			const can_edit = tb_base.querySelectorAll(".can_edit");
-			const can_delete = tb_base.querySelectorAll(".can_delete");
-			ubase.forEach((base, idx) => {
-				if (in_use[idx].checked != base.in_use || can_edit[idx].checked != base.can_edit || can_delete[idx].checked != base.can_delete) b = true;
-			});
-		}*/
-		return b;
+		for (let el of tb_base.querySelectorAll("input")) if (el.checked.toString() != el.getAttribute("old_chk")) return true;
+		return false;
+	}
+
+	function isUserDirty() {
+		return currentUser.nom != ed_login.value || (currentUser.email || "") != ed_email.value;
 	}
 
 	function isDirty() {
-		let b = currentUser.id == 0 || currentUser.nom != ed_login.value || (currentUser.email || "") != ed_email.value || isGroupesDirty() || idBasesDirty();
+		let b = currentUser.id == 0 || isUserDirty() || isGroupesDirty() || idBasesDirty();
 		btn_nok.disabled = !b;
 		return b;
 	}
@@ -493,27 +523,56 @@
 		}
 	});
 
-	btn_ok.addEventListener("click", function () {
-		// Faire un objet pour la base sql
-		let modif = {};
-		if (currentUser.nom != ed_login.value) modif.nom = ed_login.value;
-		if (currentUser.email != ed_email.value) modif.email = ed_email.value;
-		//io.emit("modif_user", currentUser.id, modif, (r) => {}
-		handleUserClick(lastUser);
+	function modifUser() {
+		return new Promise((resolve, reject) => {
+			io.emit("login_modifs", currentUser, (r) => {
+				if (r.err) reject(r.err);
+				else {
+					console.log(r);
+					if (currentUser.id == 0) currentUser.id = r.lastID;
+					resolve();
+				}
+			});
+		});
+	}
+
+	btn_MP.addEventListener("click", function () {
+		if (confirm("Effacer le mot de passe de " + currentUser.nom + " ?")) {
+			io.emit("login_run", "UPDATE users SET mp=NULL WHERE id=?", [currentUser.id], (r) => {
+				if (r.err) Erreur(r.err);
+				else {
+					OK("Mot de passe de " + currentUser.nom + " effacé");
+				}
+			});
+		}
+	});
+
+	btn_ok.addEventListener("click", async function () {
+		try {
+			if (currentUser.id == 0 || isUserDirty()) await modifUser();
+			if (isGroupesDirty()) updateGroupes();
+			if (idBasesDirty()) updateBases();
+			handleUserClick(currentUser.id);
+		} catch (err) {
+			Erreur(err);
+		}
 	});
 
 	btn_nok.addEventListener("click", function () {
-		handleUserClick(lastUser);
+		if (ed_find.value != "") del_rch.click();
+		else handleUserClick(lastUser);
 	});
 
 	/****************************/
 	/*        RECHERCHER        */
 	/****************************/
 	const ed_find = document.getElementById("ed_find");
+	const del_rch = document.getElementById("del_rch");
 
 	const onRchChg = (val) => {
-		//SetChoix("find", val);
-		//MakeTree();
+		console.log(val);
+		SetChoix("findNom", val);
+		setUsers();
 	};
 
 	ed_find.addEventListener("input", function () {

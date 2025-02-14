@@ -375,6 +375,31 @@ io.on("connection", async (socket) => {
 		});
 	});
 
+	socket.on("updUser", (champ, value, cb) => {
+		if (db_login == undefined) cb({ err: "NTBS: Session fermée. Reconnectez vous" });
+		else
+			db_login.run("UPDATE users SET " + champ + "=? WHERE id=?", [value, session.user.id], (err) => {
+				if (err) cb(err.message);
+				else cb("OK");
+			});
+	});
+
+	socket.on("login_modifs", (user, cb) => {
+		console.log(user);
+		if (db_login == undefined) cb({ err: "NTBS: Session fermée. Reconnectez vous" });
+		else if (user.id == undefined || user.id == 0) {
+			db_login.run("INSERT INTO users (nom,email,admin) VALUES (?,?,?)", [user.nom, user.email, user.admin], function (err) {
+				if (err) cb(err.message);
+				else cb(this);
+			});
+		} else {
+			db_login.run("UPDATE users SET nom=?,email=?,admin=? WHERE id=?", [user.nom, user.email, user.admin, user.id], function (err) {
+				if (err) cb(err.message);
+				else cb(this);
+			});
+		}
+	});
+
 	//*******************
 	//     bridge.db
 	//*******************
@@ -721,15 +746,6 @@ io.on("connection", async (socket) => {
 		}
 	});
 
-	socket.on("updUser", (champ, value, cb) => {
-		if (db_login == undefined) cb({ err: "NTBS: Session fermée. Reconnectez vous" });
-		else
-			db_login.run("UPDATE users SET " + champ + "=? WHERE id=?", [value, session.user.id], (err) => {
-				if (err) cb(err.message);
-				else cb("OK");
-			});
-	});
-
 	socket.on("get_admin_email", (cb) => cb(app_config.email_to));
 }); // fin socket.io
 
@@ -739,27 +755,6 @@ io.on("connection", async (socket) => {
 var showdown = require("showdown"),
 	converter = new showdown.Converter({ tables: true });
 converter.setFlavor("github");
-
-const { Remarkable } = require("remarkable");
-var md = new Remarkable({
-	html: false, // Enable HTML tags in source
-	xhtmlOut: false, // Use '/' to close single tags (<br />)
-	breaks: true, // Convert '\n' in paragraphs into <br>
-	langPrefix: "language-", // CSS language prefix for fenced blocks
-
-	// Enable some language-neutral replacement + quotes beautification
-	typographer: false,
-
-	// Double + single quotes replacement pairs, when typographer enabled,
-	// and smartquotes on. Set doubles to '«»' for Russian, '„“' for German.
-	quotes: "“”‘’",
-
-	// Highlighter function. Should return escaped HTML,
-	// or '' if the source string is not changed
-	highlight: function (/*str, lang*/) {
-		return "";
-	},
-});
 
 app.get("/login", (req, res) => {
 	res.render("login.html");
