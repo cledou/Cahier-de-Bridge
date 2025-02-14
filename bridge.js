@@ -407,7 +407,7 @@ io.on("connection", async (socket) => {
 		session.need_login = app_config.need_login;
 		if (!app_config.need_login) session.user = await GetUser("id", 2);
 		else if (session.user == undefined) {
-			//console.log("Session user:", session.user);
+			console.log("Session user:", session.user);
 			socket.emit("alert", "Pas d'utilisateur connecté");
 			socket.conn.close();
 			return;
