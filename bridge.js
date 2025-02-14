@@ -162,14 +162,16 @@ const SESSION_RELOAD_INTERVAL = 10 * 60 * 1000;
 
 async function GetUser(str, nom) {
 	const stmt =
-		"SELECT U.id,U.nom,U.admin,U.last_db,B.filename,B.id_owner, UB.* FROM users U \
-	LEFT JOIN bases B ON B.id=U.last_db \
-	LEFT JOIN user_base UB ON UB.id_user=U.id AND UB.id_base=U.last_db \
+		"SELECT U.id,U.nom,U.admin,U.last_db,B.filename,B.id_owner, UB.*, UG.id_user as admin1, UG1.id_user as admin2 FROM users U \
+	INNER JOIN bases B ON B.id=U.last_db \
+	INNER JOIN user_base UB ON UB.id_user=U.id AND UB.id_base=U.last_db \
+	INNER JOIN user_groupe UG ON UG.id_user=U.id AND UG.id_groupe=1 \
+	INNER JOIN user_groupe UG1 ON UG1.id_user=U.id AND UG1.id_groupe=2 \
 	WHERE U." +
 		str +
 		"=?";
 	let row = await db_get(db_login, stmt, [nom]);
-	//console.log(row);
+	console.log(row);
 	return row != undefined
 		? {
 				id: row.id,

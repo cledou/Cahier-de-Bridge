@@ -49,9 +49,10 @@ CREATE TABLE groupes (
 );
 
 // catégories système
-INSERT INTO groupes (id,nom,hlp) VALUES (1,'Administrateurs','Responsables de la maintenance des données');
-INSERT INTO groupes (id,nom,hlp) VALUES (2,'Notifications','peuvent recevoir et écrire des notifications');
-INSERT INTO groupes (id,nom,hlp) VALUES (3,'Profil privé','sont invisibles pour les autres membres');
+INSERT INTO groupes (id,nom,hlp) VALUES (1,'Gourou','Responsable technique du site');
+INSERT INTO groupes (id,nom,hlp) VALUES (2,'Administrateurs','Responsables de la maintenance des données et des utilisateurs');
+INSERT INTO groupes (id,nom,hlp) VALUES (3,'Notifications','peuvent recevoir et écrire des notifications');
+INSERT INTO groupes (id,nom,hlp) VALUES (4,'Profil privé','sont invisibles pour les autres membres');
 // catégories libres
 INSERT INTO groupes (nom,hlp) VALUES ('Débutants','Moins de 2 ans de pratique');
 INSERT INTO groupes (nom,hlp) VALUES ('En retard de cotisation','Penser à faire un rappel');
@@ -62,9 +63,10 @@ CREATE TABLE user_groupe (
   id_groupe INTEGER REFERENCES groupes(id)
 );
 
-INSERT INTO user_groupe (id_user,id_groupe) VALUES (1,3);
+INSERT INTO user_groupe (id_user,id_groupe) VALUES (1,4);
 INSERT INTO user_groupe (id_user,id_groupe) VALUES (2,1);
 INSERT INTO user_groupe (id_user,id_groupe) VALUES (2,2);
+INSERT INTO user_groupe (id_user,id_groupe) VALUES (2,3);
 
 
 CREATE TABLE notifications (
