@@ -127,25 +127,31 @@ if (!fs.existsSync(dir_upload)) {
 
 // base des users
 var db_login;
-var db_list = [];
 openBase("login.db", "login.sql")
 	.then((db) => {
 		db_login = db;
-		// s'assurer qu'il existe bien une base par défaut
 		openBase(db_dir + "bridge.db").then((db1) => {
 			db1.close();
-			fs.readdir(db_dir, function (err, files) {
-				//handling error
-				if (!err) {
-					for (let f of files) {
-						if ((f.endsWith(".db") || f.endsWith(".bkp")) && IsBridge(f)) db_list.push(f);
-					}
-					console.log(db_list);
-				}
-			});
 		});
+		// lancer un timer horaire pour vérifier les BDD
+		setInterval(everyHour, 3600000);
+		everyDay();
 	})
 	.catch((e) => console.error(e));
+
+function everyHour() {
+	let d = new Date();
+	console.log("tick", d.toLocaleDateString());
+	if (d.getDate() != old_date) {
+		old_date = d.getDate();
+		everyDay();
+	}
+}
+
+function everyDay() {
+	console.log("every day");
+	CheckBases();
+}
 
 //*******************
 //    Socket.io
@@ -206,6 +212,55 @@ function NettoyerFichiers() {
 		if (del_itm) files_to_remove.splice(index, 1);
 		index -= 1;
 	}
+}
+
+function CheckBases() {
+	db_login.all("SELECT id,filename FROM bases", (err, rows) => {
+		if (err) console.error(err.message);
+		else
+			for (let row of rows)
+				if (!fs.existsSync(db_dir + row.filename))
+					db_login.run("DELETE FROM bases WHERE id=?", [row.id], (err) => {
+						if (err) console.error(err.message);
+						else console.log(row.filename + " a été effacé des datas");
+					});
+	});
+
+	fs.readdir(db_dir, function (err, files) {
+		//handling error
+		if (!err) {
+			for (let f of files) {
+				if (f.endsWith(".db") || f.endsWith(".bkp")) {
+					if (f.endsWith(".bkp")) {
+						// effacer les fichiers de backup après 7 jours
+						const stats = fs.statSync(db_dir + f);
+						const now = new Date().getTime();
+						if (now - stats.mtime.getTime() > 604800000) {
+							fs.unlink(db_dir + f, (err) => {
+								if (err) console.error(err.message);
+								else console.log(f + " effacé");
+							});
+						}
+					} else if (f.endsWith(".db")) {
+						console.log("Vérifier " + f);
+						IsBridge(f).then((b) => {
+							if (!b) console.log(f + " n'est pas un BDD de Bridge. Effacement...");
+							else
+								db_login.get("SELECT id FROM bases WHERE filename=?", [f], (err, row) => {
+									if (err) console.error(err.message);
+									else if (row == undefined) {
+										console.log("Ajouter " + f + " aux datas");
+										db_login.run("INSERT INTO bases (filename) VALUES (?)", [f], function (err) {
+											if (err) console.error(err.message);
+										});
+									}
+								});
+						});
+					}
+				}
+			}
+		}
+	});
 }
 
 io.on("connection", async (socket) => {
@@ -435,7 +490,6 @@ io.on("connection", async (socket) => {
 			const who = session.user.nom + " est connecté à " + session.user.filename;
 			console.log(who);
 			socket.emit("info", who);
-			socket.emit("db_list", db_list);
 			cb(session);
 			/*
 			db_login.all("SELECT * FROM users ORDER BY nom", (err, rows) => {
@@ -649,8 +703,8 @@ io.on("connection", async (socket) => {
 							console.log("Copier " + file + " dans " + dest);
 							fs.copyFileSync(file, dest);
 							files_to_remove.push(file);
+							CheckBases();
 						}
-						if (db_list.indexOf(nom) == -1) db_list.push(nom);
 						cb("OK"); // le reste par appel à open_db
 					})
 					.catch((e) => cb(e.message));
@@ -980,18 +1034,18 @@ async function openBase(path, sql = "bridge.sql") {
 }
 
 async function IsBridge(nom) {
-	let ok = false;
-	const db = new sqlite3.Database(db_dir + nom);
-	let version = await getVersion(db);
-	if (version) {
-		const row = await db_get(db, "SELECT paramValue FROM parametres WHERE paramName='NATURE_BASE'");
-		const nature = row.paramValue.toLowerCase();
-		if (nature == "bridge") {
-			while (await MakeSQLfile(db, nature + version + "vers" + (version + 1) + ".sql", false)) version++;
-			ok = true;
-		}
-	}
-	db.close();
-	return ok;
+	return new Promise(async (resolve, reject) => {
+		const db = new sqlite3.Database(db_dir + nom);
+		let version = await getVersion(db);
+		if (version) {
+			const row = await db_get(db, "SELECT paramValue FROM parametres WHERE paramName='NATURE_BASE'");
+			const nature = row.paramValue.toLowerCase();
+			if (nature == "bridge") {
+				while (await MakeSQLfile(db, nature + version + "vers" + (version + 1) + ".sql", false)) version++;
+				resolve(true);
+			} else resolve(false);
+		} else resolve(false);
+		db.close();
+	});
 }
 //******************
