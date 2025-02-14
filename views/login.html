@@ -111,6 +111,18 @@
 				lk_admin.classList.remove("hide_me");
 			}
 		});
+		io.on("info", function (msg) {
+			Info(msg);
+		});
+		io.on("OK", function (msg) {
+			OK(msg);
+		});
+		io.on("alert", function (msg) {
+			Erreur(msg);
+		});
+		io.on("warning", function (msg) {
+			Warning(msg);
+		});
 	});
 
 	function onUser() {
