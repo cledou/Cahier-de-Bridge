@@ -1,11 +1,10 @@
 .vscode/numbered-bookmarks.json
 node_modules/*
 *.tlp
-./test.html
 db/*
 upload/*
 *.key
 ssl/*
 config.json
 login.db
-./test.sql
+test.*
