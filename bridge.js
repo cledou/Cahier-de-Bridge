@@ -752,10 +752,6 @@ io.on("connection", async (socket) => {
 //*******************
 //    GET Routes
 //*******************
-var showdown = require("showdown"),
-	converter = new showdown.Converter({ tables: true });
-converter.setFlavor("github");
-
 app.get("/login", (req, res) => {
 	res.render("login.html");
 });
@@ -782,42 +778,6 @@ app.get("/reset", (req, res) => {
 
 app.get("/edit_user", (req, res) => {
 	res.render("edit_user.html");
-});
-
-app.get("/readme", (req, res) => {
-	res.send(
-		fs
-			.readFileSync("./views/doc.html")
-			.toString()
-			.replace("__CONTENU__", converter.makeHtml(fs.readFileSync("README.md").toString()))
-	);
-});
-
-app.get("/install", (req, res) => {
-	res.send(
-		fs
-			.readFileSync("./views/doc.html")
-			.toString()
-			.replace("__CONTENU__", converter.makeHtml(fs.readFileSync("install.md").toString()))
-	);
-});
-
-app.get("/assistance", (req, res) => {
-	res.send(
-		fs
-			.readFileSync("./views/doc.html")
-			.toString()
-			.replace("__CONTENU__", converter.makeHtml(fs.readFileSync("assistance.md").toString()))
-	);
-});
-
-app.get("/help", (req, res) => {
-	res.send(
-		fs
-			.readFileSync("./views/doc.html")
-			.toString()
-			.replace("__CONTENU__", md.render(fs.readFileSync("interface.md").toString()))
-	);
 });
 
 //*******************
