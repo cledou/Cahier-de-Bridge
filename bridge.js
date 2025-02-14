@@ -407,9 +407,9 @@ io.on("connection", async (socket) => {
 		session.need_login = app_config.need_login;
 		if (!app_config.need_login) session.user = await GetUser("id", 2);
 		else if (session.user == undefined) {
-			console.log("Session user:", session.user);
-			socket.emit("alert", "Pas d'utilisateur connecté");
-			socket.conn.close();
+			session.error = "Vous avez été déconnecté";
+			session.save();
+			socket.emit("eject");
 			return;
 		}
 		db_rw = session.user.id > 1; // si id=1, c'est un Anonyme

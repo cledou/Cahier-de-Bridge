@@ -792,6 +792,9 @@
 		io.on("reload", () => {
 			window.location.reload();
 		});
+		io.on("eject", () => {
+			window.location.href = "/login";
+		});
 	}); // connect
 
 	//*********************
