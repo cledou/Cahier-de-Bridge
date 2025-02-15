@@ -17,7 +17,6 @@
 				position: absolute;
 				display: flex;
 				flex-direction: column;
-				justify-content: space-between;
 				width: 100%;
 				height: 100%;
 				box-sizing: border-box;
@@ -26,109 +25,80 @@
 				position: relative;
 				display: flex;
 				flex-direction: row;
-				justify-content: center;
 				align-items: center;
-				width: 100%;
-				height: 100%;
 				box-sizing: inherit;
 				flex-wrap: wrap;
 			}
-			.notifs {
-				min-height: 40%;
-				min-width: 40%;
-				max-height: 60%;
-				display: flex;
-				flex-direction: column;
-				justify-content: flex-start;
-			}
-			.notifs .topbar {
-				width: 100%;
-				min-height: 32px;
-				background-color: whitesmoke;
-				display: flex;
-				flex-direction: row;
-				border: 1px gray solid;
-				border-radius: 5px;
-				justify-content: space-between;
-				align-items: center;
-				padding-right: 0.5em;
-				box-sizing: inherit;
-			}
-			.notifs .reception {
-				background-color: lightgray;
-				flex-grow: 2;
-				display: flex;
-				flex-direction: column;
-				justify-content: flex-start;
-				overflow-y: auto;
-				background: linear-gradient(rgba(211, 211, 211, 0.5), rgba(211, 211, 211, 0.5)), url("/images/Notification.png");
-			}
 
-			.notifs .notif_droite {
-				display: flex;
-				flex-direction: column;
-				align-items: flex-end;
-			}
-
-			.notifs .reception .texte {
-				min-width: 45%;
-				width: max-content;
-				padding: 0.3em;
-				background-color: aliceblue;
-				border: black 1px solid;
-				border-radius: 5px;
-			}
-
-			.notifs .footbar {
-				border: 1px solid grey;
-				border-radius: 10px;
-				width: 100%;
-				min-height: 40px;
-				display: flex;
-				flex-direction: row;
-				padding: 0.2em;
-			}
-			.notifs .footbar div {
-				flex-grow: 2;
-				margin-right: 1em;
-				z-index: 2;
-			}
-			.notifs .footbar .placeholder {
-				position: absolute;
-				padding: 5px;
-				z-index: 1;
-				color: gray;
-			}
-			#notif_send {
-				margin: auto;
-				padding: 2px;
+			.tag + label {
+				width: 25px;
+				height: 25px;
+				margin: 2px;
+				color: #818181;
+				background-image: linear-gradient(top, #383838 0%, #1f1f1f 5%, #161616 100%);
+				background-image: -webkit-gradient(linear, left top, left bottom, from(#1f1f1f), to(#161616));
+				float: left;
+				box-shadow: 0 0 1px 1px rgb(10, 10, 10);
 				cursor: pointer;
+				position: relative;
+				font: normal 16px arial;
+				/*text-transform: uppercase;*/
+				vertical-align: bottom;
+				transition: color 0.3s ease;
+				border-radius: 25%;
 			}
-			#notif_send.no_way {
-				cursor: not-allowed;
-				opacity: 0.4;
+
+			/* Dessine le voyant en haut */
+
+			.tag + label:before {
+				position: absolute;
+				content: "";
+				left: 7px; /* Fixed unit here */
+				top: 7px;
+
+				width: 12px;
+				height: 12px;
+				background: #646464;
+				background-image: radial-gradient(top, #616161 0%, #616161 20%, #535353 60%);
+				border-radius: 50%;
+				box-shadow: 0 0 4px #1c1c17;
+				transition: all 0.3s ease;
+			}
+
+			/* Et change la couleur du voyant si souris */
+
+			.tag:checked + label:before {
+				background: #4fff4f;
+				box-shadow: 0 0 4px #1c1c17, 0 0 5px #42ff42;
+			}
+
+			input.tag {
+				display: none;
+			}
+
+			.tag.hide_me + label {
+				display: none;				
 			}
 		</style>
 	</head>
 	<body>
 		<div class="main">
 			<div class="container">
-				<div class="notifs">
-					<div class="topbar">
-						<select id="sel_who">
-							<option>Toutes</option>
-							<option>Non lues</option>
-							<option>Machin</option>
-							<option>Truc</option>
-						</select>
-					</div>
-					<div class="reception" id="notifs_liste"></div>
-					<div class="footbar">
-						<div id="ed_notif" contenteditable="true"></div>
-						<div id="if_no_text" class="placeholder">Tapez votre message ici</div>
-						<img id="notif_send" class="no_way" src="/images/Send_30px.png" />
-					</div>
-				</div>
+				<div class="tags">
+					<input type="radio" name="tag" class="tag" id="tag1" checked />
+					<label for="tag1"></label>
+					<input type="radio" name="tag" class="tag" id="tag2" />
+					<label for="tag2"></label>
+					<input type="radio" name="tag" class="tag hide_me" id="tag3" />
+					<label for="tag3"></label>
+					<input type="radio" name="tag" class="tag" id="tag4" />
+					<label for="tag4"></label>
+					<input type="radio" name="tag" class="tag" id="tag5" />
+					<label for="tag5"></label>
+					<input type="radio" name="tag" class="tag" id="tag6" />
+					<label for="tag6"></label>
+					<input type="radio" name="tag" class="tag" id="tag7" />
+					<label for="tag7"></label>
 			</div>
 		</div>
 	</body>
@@ -137,58 +107,4 @@
 	//*********************
 	//  Variables globales
 	//*********************
-	const ed_notif = document.getElementById("ed_notif");
-	const if_no_text = document.getElementById("if_no_text");
-	const notif_send = document.getElementById("notif_send");
-	const notifs_liste = document.getElementById("notifs_liste");
-
-	const test = [
-		{ de: "Machin hier 20h", txt: "Bla bla bla" },
-		{ a: "12h30", txt: "azdfjkùmfj" },
-		{ de: "Machin hier 21h", txt: "wx,cvbn:;,wv" },
-		{ de: "Machin hier 20h", txt: "Bla bla bla" },
-		{ a: "12h30", txt: "azdfjkùmfj" },
-		{ de: "Machin hier 21h", txt: "wx,cvbn:;,wv" },
-		{ de: "Machin hier 20h", txt: "Bla bla bla" },
-		{ a: "12h30", txt: "azdfjkùmfj" },
-		{ de: "Machin hier 21h", txt: "wx,cvbn:;,wv" },
-		{ de: "Machin hier 20h", txt: "Bla bla bla" },
-		{ a: "12h30", txt: "azdfjkùmfj" },
-		{ de: "Machin hier 21h", txt: "wx,cvbn:;,wv" },
-		{ de: "Machin hier 20h", txt: "Bla bla bla" },
-		{ a: "12h30", txt: "azdfjkùmfj" },
-		{ de: "Machin hier 21h", txt: "wx,cvbn:;,wv" },
-		{ de: "Machin hier 20h", txt: "Bla bla bla" },
-		{ a: "12h30", txt: "azdfjkùmfj" },
-		{ de: "Machin hier 21h", txt: "wx,cvbn:;,wv" },
-		{ de: "Machin hier 20h", txt: "Bla bla bla" },
-		{ a: "12h30", txt: "azdfjkùmfj" },
-		{ de: "Machin hier 21h", txt: "wx,cvbn:;,wv" },
-		{ de: "Machin hier 20h", txt: "Bla bla bla" },
-		{ a: "12h30", txt: "azdfjkùmfj" },
-		{ de: "Machin hier 21h", txt: "wx,cvbn:;,wv" },
-	];
-
-	ed_notif.addEventListener("input", function () {
-		const empty = this.innerText.trim().length == 0;
-		if_no_text.style.opacity = empty ? 1 : 0;
-		if (empty) notif_send.classList.add("no_way");
-		else notif_send.classList.remove("no_way");
-	});
-
-	function onNotifsRecues(ar) {
-		let st = "";
-		ar.forEach((el, idx) => {
-			st += '<div onclick="bulle(' + idx + ')" class="notif_';
-			if (el.a != undefined) st += 'droite" >' + el.a;
-			else st += 'gauche" >' + el.de;
-			st += '<br/><div class="texte">' + el.txt + "</div></div>";
-		});
-		notifs_liste.innerHTML = st;
-	}
-
-	function bulle(idx) {
-		console.log("bulle", idx);
-	}
-	onNotifsRecues(test);
 </script>

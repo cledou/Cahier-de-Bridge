@@ -1955,19 +1955,25 @@
 		SetChoix("vers_un", false);
 		vers_un.classList.remove("sel");
 		vers_plus.classList.add("sel");
+		// Récupérer le nom et nbr d'inscrits dans un groupe (sauf les groupes 'Gourou','Notifications',Privé')
 		const stm =
 			"SELECT id_groupe, COUNT(*) as cnt,G.nom,G.hlp FROM user_groupe UG \
 	INNER JOIN groupes G ON G.id=UG.id_groupe \
-	WHERE UG.id_groupe NOT IN (2,3) \
+	WHERE UG.id_groupe NOT IN (1,3,4) \
 	GROUP BY id_groupe ORDER BY G.nom";
 		io.emit("login_all", stm, [], (r) => {
 			if (r.err) Erreur(r.err.message);
 			else {
 				let st = "";
 				r.forEach((el) => {
-					st += "<option onmousehover=\"Info('" + el.hlp + "')\" value=" + el.id_groupe + ">" + el.nom + "</option>";
+					if (el.cnt > 0) st += "<option onmousehover=\"Info('" + el.hlp + "')\" value=" + el.id_groupe + ">" + el.nom + "</option>";
 				});
 				sel_who2.innerHTML = st;
+				// Add a message to inform users if no groups are available
+				if (st === "") {
+					sel_who2.innerHTML = "<option value=''>Aucun groupe disponible</option>";
+					Warning('Il n\'y a pas de groupe disponible pour l\'envoi de notifications');
+				}
 			}
 		});
 	});

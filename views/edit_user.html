@@ -12,6 +12,7 @@
 		<link rel="stylesheet" href="/css/status.css" />
 		<link rel="stylesheet" href="/css/jolicbx.css" />
 		<link rel="stylesheet" href="/css/tags.css" />
+		<link rel="stylesheet" href="/css/jolirbt.css" />
 		<title>Editer un utilisateur</title>
 		<style>
 			.main {
@@ -341,9 +342,10 @@
 							function getJoliCbx(id) {
 								return `<div class="jolicbx"><input type="checkbox" class="${id}" onchange="setSaveState()" /></div>`;
 							}
-							st = "<table><thead><tr><th>Base</th><th>Voir</th><th>Éditer</th><th>Supprimer</th></tr></thead><tbody>";
+							st = "<table><thead><tr><th>Base</th><th>Voir</th><th>Éditer</th><th>Supprimer</th><th>Login</th></tr></thead><tbody>";
 							rows.forEach((row) => {
-								st += '<tr id="base' + row.id + `"><td>${row.filename}</td><td>${getJoliCbx("in_use")}</td><td>${getJoliCbx("can_edit")}</td><td>${getJoliCbx("can_delete")}</td></tr>`;
+								st += '<tr id="base' + row.id + `"><td>${row.filename}</td><td>${getJoliCbx("in_use")}</td><td>${getJoliCbx("can_edit")}</td><td>${getJoliCbx("can_delete")}</td>`;
+								st += `<td><input type="radio" class="jrbt" name="log_first" id="jrbt${row.id}" /><label for="jrbt${row.id}"></label></td></tr>`;
 							});
 							tb_base.innerHTML = st;
 							document.querySelectorAll(".in_use").forEach((el) =>
@@ -370,7 +372,7 @@
 
 	var lastUser = 2; // retour à un utilisateur connu si annulation nouvelle fiche
 	function handleUserClick(id) {
-		io.emit("login_get", "SELECT id,nom,email,admin,last_db FROM users WHERE id=?", [id], (enr) => {
+		io.emit("login_get", "SELECT id,nom,email,last_db FROM users WHERE id=?", [id], (enr) => {
 			if (enr && enr.err) Erreur(enr.err);
 			else {
 				if (id != 0) lastUser = id;
@@ -378,7 +380,7 @@
 				currentUser = enr;
 				const btn = document.getElementById("u_" + id);
 				if (!btn) {
-					currentUser = { id: 0, nom: "Nouvel utilisateur", email: "", admin: 0 };
+					currentUser = { id: 0, nom: "Nouvel utilisateur", email: "", is_admin: false };
 				} else btn.classList.add("sel");
 				// Logic to display user details can be added here
 				l_nom.innerText = currentUser.nom;

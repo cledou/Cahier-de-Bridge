@@ -161,39 +161,42 @@ function everyDay() {
 const SESSION_RELOAD_INTERVAL = 10 * 60 * 1000;
 
 async function GetUser(str, nom) {
+	console.log("getuser", str, nom);
 	const stmt =
-		"SELECT U.id,U.nom,U.admin,U.last_db,B.filename,B.id_owner, UB.*, UG.id_user as admin1, UG1.id_user as admin2 FROM users U \
-	INNER JOIN bases B ON B.id=U.last_db \
-	INNER JOIN user_base UB ON UB.id_user=U.id AND UB.id_base=U.last_db \
-	INNER JOIN user_groupe UG ON UG.id_user=U.id AND UG.id_groupe=1 \
-	INNER JOIN user_groupe UG1 ON UG1.id_user=U.id AND UG1.id_groupe=2 \
+		"SELECT U.id,U.nom,U.last_db,B.filename,B.id_owner, UB.*, UG.id_user as is_guru, UG1.id_user as is_admin FROM users U \
+	LEFT JOIN bases B ON B.id=U.last_db \
+	LEFT JOIN user_base UB ON UB.id_user=U.id AND UB.id_base=U.last_db \
+	LEFT JOIN user_groupe UG ON UG.id_user=U.id AND UG.id_groupe=1 \
+	LEFT JOIN user_groupe UG1 ON UG1.id_user=U.id AND UG1.id_groupe=2 \
 	WHERE U." +
 		str +
 		"=?";
 	let row = await db_get(db_login, stmt, [nom]);
-	console.log(row);
+	console.log("getuser", row);
 	return row != undefined
 		? {
 				id: row.id,
 				id_base: row.last_db,
 				nom: row.nom,
 				filename: row.filename,
-				is_admin: Boolean(row.admin),
 				choix: JSON.parse(row.choix),
-				can_edit: Boolean(row.admin || row.can_edit),
-				can_delete: Boolean(row.admin || row.can_delete),
+				can_edit: Boolean(row.is_guru == row.id || row.is_admin == row.id || row.can_edit),
+				can_delete: Boolean(row.is_guru == row.id || row.is_admin == row.id || row.can_delete),
 				can_erase: Boolean(row.id_user > 1 && row.id_owner == row.id_user),
+				is_guru: Boolean(row.is_guru == row.id),
+				is_admin: Boolean(row.is_guru == row.id || row.is_admin == row.id),
 		  }
 		: {
 				id: 1,
 				id_base: 1,
 				nom: "Anonyme",
 				filename: "example.db",
-				is_admin: false,
 				choix: { flags: 1 },
 				can_edit: false,
 				can_delete: false,
 				can_erase: false,
+				is_guru: false,
+				is_admin: false,
 		  };
 }
 
@@ -312,10 +315,10 @@ io.on("connection", async (socket) => {
 	socket.on("get_user", (id, cb) => {
 		if (db_login == undefined) cb({ err: "NTBS: Liste des utilisateurs inaccessible" });
 		else
-			db_login.get("SELECT nom,email,admin,hash FROM users WHERE id=" + id, (err, row) => {
+			db_login.get("SELECT nom,email,hash FROM users WHERE id=" + id, (err, row) => {
 				if (err) cb({ err: err.message });
 				else if (row == undefined) cb({ err: "NTBS: Utilisateur effacé" });
-				else cb({ nom: row.nom, email: row.email, admin: Boolean(row.admin), has_mp: Boolean(row.hash != undefined) });
+				else cb({ nom: row.nom, email: row.email, has_mp: Boolean(row.hash != undefined) });
 			});
 	});
 
@@ -349,6 +352,8 @@ io.on("connection", async (socket) => {
 	});
 
 	socket.on("is_dispo", (champ, value, cb) => {
+		console.log("is_dispo", champ, value);
+		s;
 		if (db_login == undefined) cb({ err: "NTBS: Liste des utilisateurs inaccessible" });
 		else
 			db_login.get("SELECT COUNT(*) as cnt FROM USERS WHERE " + champ + " LIKE ? AND id <> " + session.user.id, [value], (err, row) => {
@@ -462,12 +467,12 @@ io.on("connection", async (socket) => {
 		console.log(user);
 		if (db_login == undefined) cb({ err: "NTBS: Session fermée. Reconnectez vous" });
 		else if (user.id == undefined || user.id == 0) {
-			db_login.run("INSERT INTO users (nom,email,admin) VALUES (?,?,?)", [user.nom, user.email, user.admin], function (err) {
+			db_login.run("INSERT INTO users (nom,email) VALUES (?,?)", [user.nom, user.email], function (err) {
 				if (err) cb(err.message);
 				else cb(this);
 			});
 		} else {
-			db_login.run("UPDATE users SET nom=?,email=?,admin=? WHERE id=?", [user.nom, user.email, user.admin, user.id], function (err) {
+			db_login.run("UPDATE users SET nom=?,email=? WHERE id=?", [user.nom, user.email, user.id], function (err) {
 				if (err) cb(err.message);
 				else cb(this);
 			});
