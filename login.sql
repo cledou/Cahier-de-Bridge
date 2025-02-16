@@ -95,6 +95,7 @@ END;
 CREATE TRIGGER on_delete_base AFTER DELETE ON bases
 BEGIN
   DELETE FROM user_base WHERE id_base=OLD.id;
+  UPDATE users SET last_db = (SELECT id FROM bases WHERE id_owner=OLD.id ORDER BY id DESC LIMIT 1) WHERE last_db=OLD.id;
 END;
 
 CREATE TRIGGER on_delete_notif AFTER DELETE ON notifications

@@ -86,6 +86,7 @@ else console.error("Pas de configuration mail");
 //*******************************
 // Initialisation de la session
 //*******************************
+var old_date = new Date().getDate();
 
 //*********************************
 // Initialiser quelques variables !

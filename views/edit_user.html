@@ -198,6 +198,12 @@
 			summary {
 				cursor: pointer;
 			}
+			#ubase table th {
+				padding: 4px;
+			}
+			#ubase table tr td * {
+				margin-left: 8px;
+			}
 		</style>
 	</head>
 	<body>
@@ -345,14 +351,15 @@
 							st = "<table><thead><tr><th>Base</th><th>Voir</th><th>Éditer</th><th>Supprimer</th><th>Login</th></tr></thead><tbody>";
 							rows.forEach((row) => {
 								st += '<tr id="base' + row.id + `"><td>${row.filename}</td><td>${getJoliCbx("in_use")}</td><td>${getJoliCbx("can_edit")}</td><td>${getJoliCbx("can_delete")}</td>`;
-								st += `<td><input type="radio" class="jrbt" name="log_first" id="jrbt${row.id}" /><label for="jrbt${row.id}"></label></td></tr>`;
+								st += '<td><input type="radio" class="jrbt" name="log_first" id="jrbt' + row.id + '" onchange="setSaveState()"/><label for="jrbt' + row.id + '"></label></td></tr>';
 							});
 							tb_base.innerHTML = st;
 							document.querySelectorAll(".in_use").forEach((el) =>
 								el.addEventListener("change", function () {
-									el.parentElement.parentElement.parentElement.querySelectorAll(".can_edit,.can_delete").forEach((el1) => {
-										el1.style.display = el.checked ? "block" : "none";
-									});
+									const tr = el.parentElement.parentElement.parentElement;
+									tr.querySelector(".can_edit").style.display = el.checked ? "block" : "none";
+									tr.querySelector(".can_delete").style.display = el.checked ? "block" : "none";
+									tr.querySelector(".jrbt").classList.toggle("hide_me", !el.checked);
 								})
 							);
 							setUsers();
@@ -398,6 +405,7 @@
 						});
 						// on ne peut pas changer son propre status admin
 						document.getElementById("tag1").disabled = currentUser.id == session.user.id;
+						document.getElementById("tag2").disabled = currentUser.id == session.user.id;
 						io.emit("login_all", "SELECT id_base,can_edit,can_delete FROM user_base WHERE id_user=?", [id], (rows) => {
 							if (rows.err) Erreur(rows.err);
 							else {
@@ -407,6 +415,9 @@
 								tb_base.querySelectorAll(".can_edit,.can_delete").forEach((el) => {
 									el.style.display = "none";
 								});
+								tb_base.querySelectorAll(".jrbt").forEach((el) => {
+									el.classList.add("hide_me");
+								});
 								rows.forEach((row) => {
 									const tr = document.getElementById("base" + row.id_base);
 									tr.querySelector(".in_use").checked = true;
@@ -414,7 +425,9 @@
 									tr.querySelector(".can_edit").style.display = "block";
 									tr.querySelector(".can_delete").checked = row.can_delete;
 									tr.querySelector(".can_delete").style.display = "block";
+									tr.querySelector(".jrbt").classList.remove("hide_me");
 								});
+								tb_base.querySelector("#jrbt" + currentUser.last_db).checked = true;
 								tb_base.querySelectorAll("input").forEach((el) => {
 									el.setAttribute("old_chk", el.checked.toString());
 								});
@@ -441,6 +454,13 @@
 		});
 	}
 	function updateBases() {
+		let bsel = Number(tb_base.querySelector("input.jrbt:checked").id.substr(4)); // Fixing to select the first checked jrbt
+		if (currentUser.last_db != bsel) {
+			io.emit("login_run", "UPDATE users SET last_db=? WHERE id=?", [bsel, currentUser.id], (r) => {
+				if (r.err) Erreur(r.err);
+				else currentUser.last_db = bsel;
+			});
+		}
 		tb_base.querySelectorAll('[id^="base"]').forEach((el) => {
 			let id_base = Number(el.id.substr(4));
 			let in_use = el.querySelector(".in_use");
@@ -492,7 +512,7 @@
 	}
 
 	function isUserDirty() {
-		return currentUser.nom != ed_login.value || (currentUser.email || "") != ed_email.value;
+		return currentUser.nom != ed_login.value || (currentUser.email || "") != ed_email.value || tb_base.querySelector("#jrbt" + currentUser.last_db).checked != true;
 	}
 
 	function isDirty() {

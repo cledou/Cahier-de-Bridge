@@ -1,47 +1,43 @@
 .jrbt + label {
-    width: 25px;
-    height: 25px;
-    margin: 2px;
-    color: #818181;
-    background-image: linear-gradient(top, #383838 0%, #1f1f1f 5%, #161616 100%);
-    background-image: -webkit-gradient(linear, left top, left bottom, from(#1f1f1f), to(#161616));
-    float: left;
-    box-shadow: 0 0 1px 1px rgb(10, 10, 10);
-    cursor: pointer;
-    position: relative;
-    font: normal 16px arial;
-    /*text-transform: uppercase;*/
-    vertical-align: bottom;
-    transition: color 0.3s ease;
-    border-radius: 25%;
+	width: 25px;
+	height: 25px;
+	position: relative;
+	float: left;
+	color: #818181;
+	background-image: linear-gradient(top, #383838 0%, #1f1f1f 5%, #161616 100%);
+	background-image: -webkit-gradient(linear, left top, left bottom, from(#1f1f1f), to(#161616));
+	box-shadow: 0 0 1px 1px rgb(10, 10, 10);
+	cursor: pointer;
+	transition: color 0.3s ease;
+	border-radius: 25%;
 }
 
 /* Dessine le voyant en haut */
 
 .jrbt + label:before {
-    position: absolute;
-    content: "";
-    left: 7px; /* Fixed unit here */
-    top: 7px;
+	position: absolute;
+	content: "";
+	left: 7px; /* Fixed unit here */
+	top: 7px;
 
-    width: 12px;
-    height: 12px;
-    background: #646464;
-    background-image: radial-gradient(top, #616161 0%, #616161 20%, #535353 60%);
-    border-radius: 50%;
-    box-shadow: 0 0 4px #1c1c17;
-    transition: all 0.3s ease;
+	width: 12px;
+	height: 12px;
+	background: #646464;
+	background-image: radial-gradient(top, #616161 0%, #616161 20%, #535353 60%);
+	border-radius: 50%;
+	box-shadow: 0 0 4px #1c1c17;
+	transition: all 0.3s ease;
 }
 
 .jrbt:checked + label:before {
-    background: #4fff4f;
-    box-shadow: 0 0 4px #1c1c17, 0 0 5px #42ff42;
+	background: #4fff4f;
+	box-shadow: 0 0 4px #1c1c17, 0 0 5px #42ff42;
 }
 
 input.jrbt {
-    display: none;
+	display: none;
 }
 
 .jrbt.hide_me + label {
-    display: none;				
+	display: none;
 }
