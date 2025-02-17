@@ -162,7 +162,6 @@ function everyDay() {
 const SESSION_RELOAD_INTERVAL = 10 * 60 * 1000;
 
 async function GetUser(str, nom) {
-	console.log("getuser", str, nom);
 	const stmt =
 		"SELECT U.id,U.nom,U.last_db,B.filename,B.id_owner, UB.*, UG.id_user as is_guru, UG1.id_user as is_admin FROM users U \
 	LEFT JOIN bases B ON B.id=U.last_db \
@@ -173,7 +172,6 @@ async function GetUser(str, nom) {
 		str +
 		"=?";
 	let row = await db_get(db_login, stmt, [nom]);
-	console.log("getuser", row);
 	return row != undefined
 		? {
 				id: row.id,
@@ -520,7 +518,12 @@ io.on("connection", async (socket) => {
 		if (session.user != undefined) {
 			try {
 				if (session.dirty == true) {
-					if (db_rw) await db_run(db_login, "UPDATE user_base SET choix=? WHERE id_user=? AND id_base=?", [JSON.stringify(session.user.choix), session.user.id, session.user.id_base]);
+					if (db_rw)
+						await db_run(db_login, "UPDATE user_base SET choix=? WHERE id_user=? AND id_base=?", [
+							JSON.stringify(session.user.choix),
+							session.user.id,
+							session.user.id_base,
+						]);
 					session.dirty = false;
 					session.save();
 				}
@@ -554,7 +557,8 @@ io.on("connection", async (socket) => {
 	/* AVEC CALLBACK */
 	/*****************/
 	async function AddTreeNode(node, id_parent) {
-		if (node.jeux == undefined) node.jeux = await db_all(db, "SELECT d.id,d.nom FROM data2tree t LEFT JOIN donnes d ON d.id==t.id_donne WHERE t.id_arbre" + id_parent);
+		if (node.jeux == undefined)
+			node.jeux = await db_all(db, "SELECT d.id,d.nom FROM data2tree t LEFT JOIN donnes d ON d.id==t.id_donne WHERE t.id_arbre" + id_parent);
 		node.childs = await db_all(db, "SELECT id,itm,pos FROM arbre WHERE id_parent" + id_parent + " ORDER BY pos");
 		for (let el of node.childs) {
 			await AddTreeNode(el, "=" + el.id);
@@ -652,7 +656,17 @@ io.on("connection", async (socket) => {
 					const row = await db_get(db, "SELECT * FROM donnes WHERE id=" + id);
 					if (nom != "") nom += ",";
 					nom += row.nom;
-					st += "INSERT INTO donnes (nom,data) VALUES ('" + row.nom + "', '" + row.data.replace(/'/g, "''").replace('", "txt1":', '",\n"txt1":').replace('", "txt2":', '",\n"txt2":').replace('", "donne":', '",\n"donne":').replace('], "enchere":', '],\n"enchere":') + "');\n";
+					st +=
+						"INSERT INTO donnes (nom,data) VALUES ('" +
+						row.nom +
+						"', '" +
+						row.data
+							.replace(/'/g, "''")
+							.replace('", "txt1":', '",\n"txt1":')
+							.replace('", "txt2":', '",\n"txt2":')
+							.replace('", "donne":', '",\n"donne":')
+							.replace('], "enchere":', '],\n"enchere":') +
+						"');\n";
 				}
 				nom += ".sql";
 				const fn = dir_upload + dir_sep + nom;
