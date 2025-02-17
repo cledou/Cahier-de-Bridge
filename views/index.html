@@ -484,6 +484,7 @@
 							<div class="level0 si_admin" style="background-image: url('/images/settings_30px.png')" hlp="Paramètres de l'application et administration">
 								<div class="level1">
 									<button class="itmh" onclick="window.location.href='/edit_user'" hlp="Créer/Modifier un utilisateur"><img src="/images/user_edit.png" />Editer utilisateur</button>
+									<button class="itmh" onclick="window.location.href='/edit_grp'" hlp="Créer/Modifier un groupe d'utilisateurs"><img src="/images/Crowd_25px.png" />Editer un groupe</button>
 									<input type="file" style="display: none" id="btn_bkp" />
 									<a class="hide_me" id="bkp_lnk" href="/public/bridge.db" download>Télécharger</a>
 									<button class="itmh" onclick="onBkp()" hlp="Sauvegarder la base de donnée dans un backup"><img src="/images/database_export_24px.png" />Sauvegarde</button>
@@ -1972,7 +1973,7 @@
 				// Add a message to inform users if no groups are available
 				if (st === "") {
 					sel_who2.innerHTML = "<option value=''>Aucun groupe disponible</option>";
-					Warning('Il n\'y a pas de groupe disponible pour l\'envoi de notifications');
+					Warning("Il n'y a pas de groupe disponible pour l'envoi de notifications");
 				}
 			}
 		});

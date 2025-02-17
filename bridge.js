@@ -837,8 +837,12 @@ app.get("/reset", (req, res) => {
 	res.render("resetpw.html");
 });
 
-app.get("/edit_user", (req, res) => {
+app.get("/edit_user", checkIsAdmin, (req, res) => {
 	res.render("edit_user.html");
+});
+
+app.get("/edit_grp", checkIsAdmin, (req, res) => {
+	res.render("edit_groupes.html");
 });
 
 //*******************
@@ -859,6 +863,18 @@ function checkAuthenticated(req, res, next) {
 		//console.log(req.session.user.nom);
 		next();
 	} else {
+		res.redirect("/login");
+		//console.log("Echec auth");
+	}
+}
+
+function checkIsAdmin(req, res, next) {
+	//console.log("checkAuthenticated", app_config.need_login, req.sesssion);
+	if (req.session != undefined && req.session.user != undefined && req.session.user.is_admin) {
+		//console.log(req.session.user.nom);
+		next();
+	} else {
+		req.session.err = "Accès refusé";
 		res.redirect("/login");
 		//console.log("Echec auth");
 	}

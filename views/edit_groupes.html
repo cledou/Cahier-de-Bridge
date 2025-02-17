@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<!-- https://www.youtube.com/watch?v=TUD1AWZVgQ8  -->
+		<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png" />
+		<link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png" />
+		<link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png" />
+		<link rel="manifest" href="/images/site.webmanifest" />
+		<link rel="stylesheet" href="/css/style.css" />
+		<link rel="stylesheet" href="/css/status.css" />
+		<link rel="stylesheet" href="/css/jolicbx.css" />
+		<link rel="stylesheet" href="/css/tags.css" />
+		<link rel="stylesheet" href="/css/jolirbt.css" />
+		<title>Editer un groupe</title>
+		<style>
+			.main {
+				position: absolute;
+				display: flex;
+				flex-direction: column;
+				justify-content: space-between;
+				width: 100%;
+				height: 100%;
+				box-sizing: border-box;
+				background: linear-gradient(rgba(211, 211, 211, 0.5), rgba(211, 211, 211, 0.5)), url("/images/Cards.png");
+			}
+
+			.container {
+				position: relative;
+				display: flex;
+				flex-direction: row;
+				justify-content: center;
+				align-items: center;
+				width: 100%;
+				height: 100%;
+				box-sizing: inherit;
+				flex-wrap: wrap;
+			}
+			.card {
+				margin: 1em;
+				box-sizing: inherit;
+				position: absolute;
+				display: flex;
+				flex-direction: row;
+				max-height: 95%;
+				padding: 5px 20px 13px 20px;
+				border-radius: 10px;
+				background: #999;
+				background: -moz-linear-gradient(#000, #999);
+				background: -webkit-linear-gradient(#000, #999);
+				background: -o-linear-gradient(#000, #999);
+				-webkit-animation-name: zoom;
+				-webkit-animation-duration: 0.6s;
+				animation-name: zoom;
+				animation-duration: 0.6s;
+				color: antiquewhite;
+			}
+			#grp-list {
+				display: flex;
+				flex-direction: column;
+				flex-wrap: wrap;
+				padding: 1em;
+				margin-right: 1em;
+				border-right: solid 2px antiquewhite;
+				overflow: auto;
+				height: 100%;
+			}
+			#btn_new {
+				align-self: center;
+			}
+			#grp-edit {
+				position: relative;
+				display: flex;
+				flex-direction: column;
+				padding: 1em;
+			}
+			.groupe {
+				margin: 0.3em;
+				padding: 0.5em;
+				border: solid 1px rgb(250, 235, 215, 0.4);
+				border-radius: 5px;
+				background-color: #333;
+				color: antiquewhite;
+				cursor: pointer;
+			}
+			.groupe:not(.disable):hover {
+				background-color: #666;
+			}
+
+			.groupe.disable {
+				cursor: not-allowed;
+				opacity: 0.3;
+			}
+
+			.groupe.sel {
+				background-color: #666;
+				border: inset 3px antiquewhite;
+			}
+			.card .edbox {
+				display: flex;
+				flex-direction: column;
+				justify-content: flex-start;
+				margin-top: 10px;
+				margin-bottom: 10px;
+			}
+			.edbox input {
+				width: 100%;
+				margin-right: 8px;
+			}
+			.red {
+				color: rgb(128, 19, 19);
+				font-weight: bold;
+				margin-bottom: 8px;
+			}
+			.red.hide_me {
+				display: none;
+			}
+
+			.wrap {
+				display: flex;
+				flex-direction: row;
+				justify-content: space-between;
+				width: 100%;
+				margin-top: 1em;
+			}
+			button {
+				padding: 0.2em;
+				display: flex;
+				flex-direction: row;
+				align-items: center;
+				font-size: large;
+				cursor: pointer;
+				width: max-content;
+			}
+
+			button:disabled {
+				cursor: not-allowed;
+			}
+			.users-list {
+				display: flex;
+				flex-direction: column;
+				justify-content: flex-start;
+				align-items: flex-start;
+				flex-wrap: wrap;
+			}
+			#users {
+				display: flex;
+				flex-direction: row;
+				justify-content: flex-start;
+				margin-bottom: 0.5em;
+				flex-wrap: auto;
+			}
+			h1 {
+				margin: auto;
+			}
+			#find {
+				width: 80%;
+				display: flex;
+				flex-direction: row;
+				align-items: center;
+			}
+			#find > input {
+				width: 100%;
+				height: 100%;
+			}
+			#find > img {
+				padding: 4px;
+			}
+			#del_rch {
+				cursor: pointer;
+			}
+			#find.hide_me {
+				display: none;
+			}
+			details {
+				margin-top: 1em;
+			}
+			summary {
+				cursor: pointer;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="main">
+			<div class="container">
+				<div class="card">
+					<div id="grp-list" class="disable"></div>
+					<div id="grp-edit">
+						<h1 id="l_nom"></h1>
+						<div class="edbox">
+							Nom du groupe:
+							<input type="text" id="ed_label" />
+						</div>
+						<div class="edbox">
+							Description:
+							<input type="text" id="ed_hlp" />
+						</div>
+						<button id="btn_del" style="align-self: center"><img src="/images/erase_25px.png" />Effacer ce groupe</button>
+						<div class="users-list"></div>
+						<div class="wh100"></div>
+						<div class="wrap">
+							<button id="btn_OK"><img src="/images/save_30px.png" />Sauver</button>
+							<button id="btn_NOK"><img src="/images/Cross Mark.png" />Annuler</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div id="status"></div>
+		</div>
+	</body>
+</html>
+<script src="/socket.io/socket.io.min.js"></script>
+<script src="/js/status.js"></script>
+<script>
+	//*********************
+	//  Variables globales
+	//*********************
+	var io = io.connect(location.host);
+	var session;
+	var mesChoix;
+	var lesGroupes;
+	var unGroupe;
+	const l_nom = document.getElementById("l_nom");
+	const ed_label = document.getElementById("ed_label");
+	const ed_hlp = document.getElementById("ed_hlp");
+	const btn_ok = document.getElementById("btn_OK");
+	const btn_nok = document.getElementById("btn_NOK");
+	const not_nom = document.getElementById("not_nom");
+	const btn_del = document.getElementById("btn_del");
+
+	const hide_me = (id, hide) => {
+		const el = document.getElementById(id);
+		if (hide) el.classList.add("hide_me");
+		else el.classList.remove("hide_me");
+	};
+
+	//*********************
+	// SESSION socket I/O
+	//*********************
+
+	function SetChoix(nom, val) {
+		mesChoix[nom] = val;
+		io.emit("upducfg", nom, val);
+	}
+
+	function setGroupes() {
+		let st = '<button id="btn_new" onclick="handleGrpClick(0)"><img src="/images/Crowd_30px.png" />Ajouter un groupe</button>';
+		io.emit("login_all", "SELECT id,nom,hlp FROM groupes ORDER BY nom", [], (rows) => {
+			if (rows.err) Erreur(rows.err);
+			else {
+				lesGroupes = rows;
+				rows.forEach((row) => {
+					st += `<div class="groupe" id="grp_${row.id}" onclick="handleGrpClick(${row.id})">${row.nom}</div>`;
+				});
+				document.getElementById("grp-list").innerHTML = st;
+				rows.forEach((row) => {
+					const itm = document.getElementById(`grp_${row.id}`);
+					itm.addEventListener("mouseover", (e) => {
+						e.stopPropagation();
+						Info(row.hlp);
+					});
+					itm.addEventListener("mouseout", (e) => {
+						Info("");
+					});
+				});
+				handleGrpClick(unGroupe != undefined ? unGroupe.id : lesGroupes.length > 0 ? lesGroupes[0].id : 0);
+			}
+		});
+	}
+
+	function setUsers() {}
+
+	io.on("connect", function () {
+		io.emit("session", (r) => {
+			session = r;
+			console.log("session", r);
+			mesChoix = session.user.choix;
+			setGroupes();
+			let st = "";
+			io.emit("login_all", "SELECT id,nom FROM users WHERE id > 1 ORDER BY nom", [], (rows) => {
+				if (rows.err) Erreur(rows.err);
+				else {
+					rows.forEach((row) => {
+						st += `<div class="jolicbx"><input type="checkbox" id="cb_${row.id}" onchange="setSaveState()" /><label for="cb_${row.id}">${row.nom}</label></div>`;
+					});
+					document.querySelector(".users-list").innerHTML = st;
+				}
+			});
+		});
+	}); // io connect
+
+	/****************************/
+	/*       Volet Gauche       */
+	/****************************/
+	function handleGrpClick(id) {
+		for (const el of document.querySelectorAll(".groupe.sel")) el.classList.remove("sel");
+		unGroupe = lesGroupes.find((row) => row.id == id);
+		if (unGroupe == undefined) {
+			unGroupe = { id: 0, nom: "", hlp: "" };
+			l_nom.innerHTML = "Nouveau groupe";
+		} else {
+			l_nom.innerHTML = unGroupe.nom;
+			document.getElementById(`grp_${id}`).classList.add("sel");
+		}
+		ed_label.value = unGroupe.nom;
+		ed_hlp.value = unGroupe.hlp;
+		hide_me("btn_del", unGroupe.id < 5);
+		document.querySelectorAll(".jolicbx input").forEach((el) => {
+			el.checked = false;
+			el.setAttribute("old_val", 0);
+		});
+		io.emit("login_all", "SELECT id_user FROM user_groupe WHERE id_groupe=?", [id], (rows) => {
+			if (rows.err) Erreur(rows.err);
+			else {
+				console.log(rows);
+				rows.forEach((row) => {
+					const el = document.getElementById(`cb_${row.id_user}`);
+					if (el) {
+						// pas anonyme, effacé, ou autre pbl
+						el.checked = true;
+						el.setAttribute("old_val", 1);
+					}
+				});
+				setSaveState();
+			}
+		});
+	}
+
+	// Add more user handling logic as needed here
+	function setDisabled(disabled) {
+		document.querySelectorAll(".groupe").forEach((el) => {
+			if (disabled) el.classList.add("disable");
+			else el.classList.remove("disable");
+		});
+		document.getElementById("btn_new").disabled = disabled;
+	}
+
+	/****************************/
+	/*       Volet Droit       */
+	/****************************/
+	ed_label.addEventListener("input", setSaveState);
+	ed_hlp.addEventListener("input", setSaveState);
+
+	function setSaveState() {
+		btn_ok.disabled = !isDirty();
+		setDisabled(!btn_ok.disabled);
+	}
+
+	function userListDirty() {
+		for (const el of document.querySelectorAll(".jolicbx input")) {
+			if (el.checked != (el.getAttribute("old_val") == 1)) return true;
+		}
+		return false;
+	}
+	function isUserDirty() {
+		return ed_label.value != unGroupe.nom || ed_hlp.value != unGroupe.hlp;
+	}
+	function isDirty() {
+		return unGroupe != undefined && (isUserDirty() || userListDirty());
+	}
+
+	function saveUser() {
+		return new Promise((resolve, reject) => {
+			if (unGroupe.id > 0)
+				io.emit("login_run", "UPDATE groupes SET nom=?,hlp=? WHERE id=?", [ed_label.value, ed_hlp.value, unGroupe.id], (r) => {
+					if (r.err) reject(r.err);
+					else {
+						unGroupe.nom = ed_label.value;
+						unGroupe.hlp = ed_hlp.value;
+						resolve();
+					}
+				});
+			else
+				io.emit("login_run", "INSERT INTO groupes (nom,hlp) VALUES (?,?)", [ed_label.value, ed_hlp.value], (r) => {
+					if (r.err) reject(r.err);
+					else {
+						unGroupe.id = r.lastID;
+						resolve();
+					}
+				});
+		});
+	}
+
+	function saveGrp(id_user, id_groupe, chk) {
+		return new Promise((resolve, reject) => {
+			if (chk) {
+				io.emit("login_run", "INSERT INTO user_groupe (id_user,id_groupe) VALUES (?,?)", [id_user, id_groupe], (r) => {
+					if (r.err) reject(r.err);
+					else resolve();
+				});
+			} else {
+				io.emit("login_run", "DELETE FROM user_groupe WHERE id_user=? AND id_groupe=?", [id_user, id_groupe], (r) => {
+					if (r.err) reject(r.err);
+					else resolve();
+				});
+			}
+		});
+	}
+
+	btn_ok.addEventListener("click", async function () {
+		try {
+			const nouveau = unGroupe.id == 0;
+			if (nouveau || isUserDirty()) await saveUser();
+			for (const el of document.querySelectorAll(".jolicbx input")) if (el.checked != (el.getAttribute("old_val") == 1)) await saveGrp(el.id.split("_")[1], unGroupe.id, el.checked);
+			if (nouveau) setGroupes();
+			else handleGrpClick(unGroupe.id);
+		} catch (err) {
+			Erreur(err);
+		}
+	});
+
+	btn_nok.addEventListener("click", function () {
+		if (isDirty()) handleGrpClick(unGroupe.id);
+		else window.location.href = "/";
+	});
+
+	btn_del.addEventListener("click", function () {
+		if (unGroupe.id > 4) {
+			io.emit("login_run", "DELETE FROM groupes WHERE id=?", [unGroupe.id], (rows) => {
+				if (rows.err) Erreur(rows.err);
+				else {
+					unGroupe = undefined;
+					setGroupes();
+				}
+			});
+		}
+	});
+</script>
