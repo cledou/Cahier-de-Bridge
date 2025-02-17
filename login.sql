@@ -13,7 +13,8 @@ CREATE TABLE users (
   hash VARCHAR(60),
   reset_hash VARCHAR(60),
   last_db INTEGER REFERENCES bases(id),
-  binette BLOB
+  binette BLOB,
+  admin BOOLEAN DEFAULT FALSE
 );
 
 CREATE TABLE bases (
@@ -23,7 +24,7 @@ CREATE TABLE bases (
 );
 
 INSERT INTO users (id,nom) VALUES (1,'Anonyme');
-INSERT INTO users (id,nom) VALUES (2,'Administrateur');
+INSERT INTO users (id,nom,admin) VALUES (2,'Administrateur',true);
 
 INSERT INTO bases (id,filename,id_owner) VALUES (1,'example.db',1);
 INSERT INTO bases (id,filename,id_owner) VALUES (2,'bridge.db',2);
@@ -48,7 +49,7 @@ CREATE TABLE groupes (
 );
 
 // catégories système
-INSERT INTO groupes (id,nom,hlp) VALUES (1,'Gourou','Responsable technique du site');
+INSERT INTO groupes (id,nom,hlp) VALUES (1,'Webmaster','Responsable technique du site');
 INSERT INTO groupes (id,nom,hlp) VALUES (2,'Administrateurs','Responsables de la maintenance des données et des utilisateurs');
 INSERT INTO groupes (id,nom,hlp) VALUES (3,'Notifications','peuvent recevoir et écrire des notifications');
 INSERT INTO groupes (id,nom,hlp) VALUES (4,'Profil privé','sont invisibles pour les autres membres');
@@ -62,7 +63,6 @@ CREATE TABLE user_groupe (
   id_groupe INTEGER REFERENCES groupes(id)
 );
 
-INSERT INTO user_groupe (id_user,id_groupe) VALUES (1,3);
 INSERT INTO user_groupe (id_user,id_groupe) VALUES (1,4);
 INSERT INTO user_groupe (id_user,id_groupe) VALUES (2,1);
 INSERT INTO user_groupe (id_user,id_groupe) VALUES (2,2);
@@ -95,7 +95,6 @@ END;
 CREATE TRIGGER on_delete_base AFTER DELETE ON bases
 BEGIN
   DELETE FROM user_base WHERE id_base=OLD.id;
-  UPDATE users SET last_db = (SELECT id FROM bases WHERE id_owner=OLD.id ORDER BY id DESC LIMIT 1) WHERE last_db=OLD.id;
 END;
 
 CREATE TRIGGER on_delete_notif AFTER DELETE ON notifications
@@ -110,9 +109,9 @@ END;
 
 CREATE TRIGGER on_add_user AFTER INSERT ON users
 BEGIN
-  INSERT INTO user_groupe (id_user,id_groupe) VALUES (NEW.ID,3);
+  INSERT INTO user_groupe (id_user,id_groupe) VALUES (NEW.ID,2);
   INSERT INTO notifications (id_user_de,id_user_vers,message) VALUES (2,NEW.id,'Bienvenue ' || NEW.nom || ' !');
-  INSERT INTO notifications (id_user_vers,message) VALUES (1,'Inscription de ' || NEW.nom);
+  INSERT INTO notifications (id_user_vers,message) VALUES (2,'Inscription de ' || NEW.nom);
 END;
 INSERT INTO users (nom) VALUES ('Harry Cover');
 INSERT INTO users (nom) VALUES ('Mélusine Enfayite');
