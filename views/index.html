@@ -458,14 +458,14 @@
 						<label for="tree_sw">
 							<img src="/images/arrow_d.png" alt="Afficher/Cacher l'arbre de situation" />
 						</label>
-						<button class="hamburger" type="button" aria-label="Toggle navigation" aria-expanded="false" onclick="toggleNav()">
+						<div class="hamburger" aria-label="Toggle navigation" aria-expanded="false" onclick="toggleNav()">
 							<span></span>
 							<span></span>
 							<span></span>
-						</button>
-
+						</div>
 						<div class="menu2">
-							<div class="level0" style="background-image: url('/images/dossier.png')" hlp="Actions génériques sur une donne (ouvrir, sauver, copier...)">
+							<div class="mn-itm">
+								<label hlp="Actions génériques sur une donne (ouvrir, sauver, copier...)"><img src="/images/dossier.png" /></label>
 								<div class="level1">
 									<button class="itmh" id="itm_new"><img src="/images/create_30px.png" alt="Créer une nouvelle donne" />Créer une donne</button>
 									<button class="itmh si_un" alt="Sélectionner une donne existante" id="itm_open"><img src="/images/dossier.png" />Ouvrir une donne</button>
@@ -475,13 +475,15 @@
 									<button class="itmh si_open" onclick="PrintThis()" alt="Imprimer"><img src="/images/print_30px.png" />Imprimer cette donne</button>
 								</div>
 							</div>
-							<div class="level0" id="menu_user" style="background-image: url('/images/user_30px.png')" hlp="Gestion des utilisateurs">
+							<div class="mn-itm" id="menu_user">
+								<label hlp="Gestion des utilisateurs"><img src="/images/user_30px.png" /></label>
 								<div class="level1">
 									<button class="itmh" onclick="window.location.href='/user'" hlp="Modifier mon profil enregistré"><img src="/images/user_edit.png" />Modifier mon profil</button>
 									<button class="itmh" id="del_profil" onclick="OpenModalWnd('del_dlg')" hlp="Effacer mon profil de ce site. Vous ne pourrez plus vous connecter avec cet identifiant."><img src="/images/user_remove_30px.png" />Effacer mon profil</button>
 								</div>
 							</div>
-							<div class="level0 si_admin" style="background-image: url('/images/settings_30px.png')" hlp="Paramètres de l'application et administration">
+							<div class="mn-itm si_admin">
+								<label hlp="Paramètres de l'application et administration"><img src="/images/settings_30px.png" /></label>
 								<div class="level1">
 									<button class="itmh" onclick="window.location.href='/edit_user'" hlp="Créer/Modifier un utilisateur"><img src="/images/user_edit.png" />Editer utilisateur</button>
 									<button class="itmh" onclick="window.location.href='/edit_grp'" hlp="Créer/Modifier un groupe d'utilisateurs"><img src="/images/Crowd_25px.png" />Editer un groupe</button>
@@ -495,7 +497,8 @@
 									<label for="get_import" class="itmh" hlp="Importer des donnes depuis un fichier SQL"> <img src="/images/import_24px.png" />Importer donne(s) </label>
 								</div>
 							</div>
-							<div class="level0" id="menu_notif" style="background-image: url('/images/Notification.png')" hlp="Lire et envoyer des notifications">
+							<div class="mn-itm" id="menu_notif">
+								<label hlp="Lire et envoyer des notifications"><img src="/images/Notification.png" /><img src="/images/Alarm.png" class="hide_me" /></label>
 								<div class="level1">
 									<div class="notifs">
 										<div class="topbar">Filtrer:<select id="sel_who" onchange="selectUserVers(this.value)"></select></div>
@@ -513,7 +516,8 @@
 									</div>
 								</div>
 							</div>
-							<div class="level0" style="background-image: url('/images/link_30px.png')" hlp="Liens en relations avec ce logiciel (aide, mise à jour..)">
+							<div class="mn-itm">
+								<label hlp="Liens en relations avec ce logiciel (aide, mise à jour..)"><img src="/images/link_30px.png" /></label>
 								<div class="level1">
 									<a href="https://github.com/cledou/Cahier-de-Bridge/blob/main/interface.md">Aide à la saisie</a>
 									<a href="https://github.com/cledou/Cahier-de-Bridge/blob/main/install.md">Installation</a>
@@ -755,6 +759,7 @@
 			let foo = session.user.nom;
 			if (session.user.email != undefined && session.user.email.indexOf("@") != -1) foo += " (" + session.user.email + ")";
 			document.getElementById("del_nom").innerText = foo;
+			setNotifAlarm();
 
 			OpenOrNew(); // asynchrone..
 		});
@@ -981,26 +986,23 @@
 	/*           MENUS          */
 	/****************************/
 	const menu2 = document.querySelector(".menu2");
-	const level0 = document.querySelectorAll(".level0");
+	const mn_itm = document.querySelectorAll(".mn-itm");
 
 	function closeMenu() {
-		level0.forEach((itm) => {
-			itm.classList.remove("open");
+		mn_itm.forEach((el) => {
+			el.classList.remove("open");
 		});
 	}
 
-	level0.forEach((el, idx) => {
+	mn_itm.forEach((el, idx) => {
 		el.addEventListener("click", (e) => {
-			e.stopPropagation();
-			// différencier le bouton du menu des sous-menus
-			if (e.target.classList.contains("level0")) {
-				let foo = e.target.classList.contains("open");
-				level0.forEach((el1) => el1.classList.remove("open"));
-				if (!foo) {
-					e.target.classList.add("open");
-					if (e.target.id == "menu_notif") setNotifs();
-				}
-			}
+			e.stopPropagation(); // ne pas générer container.closemenu
+			if (!e.target.parentElement.classList.contains("mn-itm")) return;
+			mn_itm.forEach((other) => {
+				if (other != el) other.classList.remove("open");
+			});
+			el.classList.toggle("open");
+			if (el.classList.contains("open") && el.id == "menu_notif") setNotifs();
 		});
 	});
 
@@ -1815,6 +1817,36 @@
 	const vers_un = document.getElementById("vers_un");
 	const vers_plus = document.getElementById("vers_plus");
 	const sel_who2 = document.getElementById("sel_who2");
+	const n_img = document.querySelectorAll("#menu_notif > label img");
+	var alarm;
+
+	function onNbrNotifChg(cnt) {
+		if (cnt > 0)
+			alarm = setInterval(function () {
+				n_img.forEach((el) => el.classList.toggle("hide_me"));
+			}, 200);
+		else if (alarm != undefined) {
+			clearInterval(alarm);
+			n_img[0].classList.remove("hide_me");
+			n_img[1].classList.add("hide_me");
+		}
+	}
+	function getNonLuesCount() {
+		return new Promise((resolve, reject) => {
+			io.emit("login_get", "SELECT COUNT(*) as cnt FROM notifications WHERE id_user_vers=? AND lu=0", [session.user.id], (r) => {
+				if (r.err) reject(r.err.message);
+				else resolve(r.cnt);
+			});
+		});
+	}
+
+	function setNotifAlarm() {
+		getNonLuesCount()
+			.then((cnt) => {
+				onNbrNotifChg(cnt);
+			})
+			.catch((e) => Erreur(e));
+	}
 
 	ed_notif.addEventListener("input", function () {
 		const empty = this.innerText.trim().length == 0;
@@ -1832,12 +1864,13 @@
 				notif_users = r;
 				if (mesChoix.vers_un) vers_un.click();
 				else vers_plus.click(); // notifs non-lues
-				io.emit("login_get", "SELECT COUNT(*) as cnt FROM notifications WHERE id_user_vers=? AND lu=0", [session.user.id], (r1) => {
-					if (r1.err) Erreur(r1.err.message);
-					else {
+				getNonLuesCount()
+					.catch((e) => Erreur(e))
+					.then((cnt) => {
+						onNbrNotifChg(cnt);
 						let st = "<option value=-1>Toutes</option>";
 						st += "<option value=0>Messages système</option>";
-						if (r1.cnt > 0) st += "<option value=1>Non lus</option>";
+						if (cnt > 0) st += "<option value=1>Non lus</option>";
 						r.forEach((el) => {
 							if (el.id != session.user.id) st += "<option value=" + el.id + ">" + el.nom + "</option>";
 						});
@@ -1845,16 +1878,15 @@
 						sel_who.innerHTML = st;
 
 						// Update the selected user if it still exists in the new list
-						if (r1.cnt > 0 && (old_val == "" || old_val == 1)) sel_who.value = 1;
-						else if (old_val == 1 && r1.cnt == 0) sel_who.value = -1;
+						if (cnt > 0 && (old_val == "" || old_val == 1)) sel_who.value = 1;
+						else if (old_val == 1 && cnt == 0) sel_who.value = -1;
 						else if (old_val > 1) {
 							if (r.map((el) => el.id).includes(parseInt(old_val))) {
 								sel_who.value = old_val;
 							} else sel_who.value = 1;
 						}
 						selectUserVers(sel_who.value);
-					}
-				});
+					});
 			}
 		});
 	}
@@ -1941,7 +1973,7 @@
 	}
 
 	// Add event listeners for new elements
-	vers_un.addEventListener("click", function () {
+	vers_un.addEventListener("click", function (e) {
 		// Handle the change event for vers_un
 		SetChoix("vers_un", true);
 		let st = "";
@@ -1951,7 +1983,7 @@
 		vers_un.classList.add("sel");
 	});
 
-	vers_plus.addEventListener("click", function () {
+	vers_plus.addEventListener("click", function (e) {
 		// Handle the change event for vers_plus
 		SetChoix("vers_un", false);
 		vers_un.classList.remove("sel");

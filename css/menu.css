@@ -18,44 +18,36 @@
 	height: 100%;
 }
 
-.menuC {
+.menu button:disabled {
+	opacity: 0.3;
+	cursor: default;
+}
+.mn-itm {
+	position: relative;
+	width: 48px;
+	height: 48px;
+}
+.mn-itm > label {
+	width: 100%;
+	height: 100%;
+	cursor: pointer;
 	display: flex;
 	flex-direction: row;
 	justify-content: center;
 	align-items: center;
 }
-
-.menuD {
-	display: flex;
-	flex-direction: row;
-	justify-content: flex-end;
-	align-items: center;
-	align-self: flex-end;
+.mn-itm > label img {
+	pointer-events: none;
 }
-.menuD button {
-	border-radius: 25%;
-	margin: 5px;
-	cursor: pointer;
-}
-
-.menu button:disabled {
-	opacity: 0.3;
-	cursor: default;
-}
-
-.level0 {
-	position: relative;
-	width: 50px;
-	background-repeat: no-repeat;
-	background-position: center center;
-	background-color: inherit;
-	cursor: pointer;
-}
-
-.level0:hover {
+.mn-itm:hover {
 	background-color: rgb(209, 197, 183);
 	z-index: 20;
 }
+.mn-itm.open .level1 {
+	display: flex;
+	align-self: flex-start;
+}
+
 .level1 {
 	display: none;
 	position: absolute;
@@ -138,49 +130,6 @@ select.itmh {
 	margin-right: 5px;
 }
 
-.level0.open .level1 {
-	display: flex;
-}
-
-.glowchk {
-	/* Pas de case à cocher */
-	display: none;
-}
-.glowchk + label {
-	position: relative;
-	cursor: pointer;
-	transition: color 0.3s ease;
-	border-radius: 5px;
-}
-.glowchk:not(:checked):hover + label {
-	color: rgb(0, 47, 255);
-}
-.glowchk:checked + label {
-	color: antiquewhite;
-	background-color: black;
-}
-ul.ff_btns {
-	display: flex;
-	flex-direction: row;
-	justify-content: flex-start;
-	align-content: center;
-}
-ul.ff_btns input:not([type="number"]) {
-	display: none;
-}
-.ff_btns label {
-	cursor: pointer;
-	font-size: 24px;
-	margin-right: 8px;
-}
-.ff_btns label:hover {
-	color: blue;
-	background-color: aliceblue;
-}
-.ff_btns input:checked + label {
-	border-bottom: 3px blue solid;
-	color: blue;
-}
 /* summary */
 .level1 summary {
 	display: inline-flex;
@@ -242,7 +191,7 @@ ul.ff_btns input:not([type="number"]) {
 	.menu2 {
 		position: absolute;
 		flex-direction: column;
-		top: 50px;
+		top: 40px;
 		transform: translate(-120%);
 		transition: none;
 		height: max-content;
@@ -251,9 +200,6 @@ ul.ff_btns input:not([type="number"]) {
 		z-index: 1;
 	}
 
-	.level0 {
-		height: 50px;
-	}
 	.level1 {
 		top: 0;
 		left: 100%;
