@@ -427,7 +427,8 @@
 									tr.querySelector(".can_delete").style.display = "block";
 									tr.querySelector(".jrbt").classList.remove("hide_me");
 								});
-								tb_base.querySelector("#jrbt" + currentUser.last_db).checked = true;
+								let foo = tb_base.querySelector("#jrbt" + currentUser.last_db);
+								if (foo) foo.checked = true;
 								tb_base.querySelectorAll("input").forEach((el) => {
 									el.setAttribute("old_chk", el.checked.toString());
 								});
@@ -512,7 +513,8 @@
 	}
 
 	function isUserDirty() {
-		return currentUser.nom != ed_login.value || (currentUser.email || "") != ed_email.value || tb_base.querySelector("#jrbt" + currentUser.last_db).checked != true;
+		const foo = tb_base.querySelector("input.jrbt:checked");
+		return currentUser.nom != ed_login.value || (currentUser.email || "") != ed_email.value || (foo ? foo.id.substr(4) != currentUser.last_db : false);
 	}
 
 	function isDirty() {
