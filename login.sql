@@ -111,7 +111,7 @@ CREATE TRIGGER on_add_user AFTER INSERT ON users
 BEGIN
   INSERT INTO user_groupe (id_user,id_groupe) VALUES (NEW.ID,3);
   INSERT INTO notifications (id_user_de,id_user_vers,message) VALUES (2,NEW.id,'Bienvenue ' || NEW.nom || ' !');
-  INSERT INTO notifications (id_user_vers,message) VALUES (1,'Inscription de ' || NEW.nom);
+  INSERT INTO notifications (id_user_vers,message) VALUES (2,'Inscription de ' || NEW.nom);
 END;
 INSERT INTO users (nom) VALUES ('Harry Cover');
 INSERT INTO users (nom) VALUES ('Mélusine Enfayite');

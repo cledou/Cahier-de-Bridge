@@ -501,12 +501,17 @@
 								<label hlp="Lire et envoyer des notifications"><img src="/images/Notification.png" /><img src="/images/Alarm.png" class="hide_me" /></label>
 								<div class="level1">
 									<div class="notifs">
-										<div class="topbar">Filtrer:<select id="sel_who" onchange="selectUserVers(this.value)"></select></div>
+										<div class="topbar">Filtrer:<select id="sel_from" onchange="selectUserVers(this.value)"></select></div>
 										<div class="reception" id="notifs_liste"></div>
-										<div class="who2">
-											<img class="inset" src="/images/Customer_25px.png" id="vers_un" hlp="Envoyer une notification à un utilisateur" />
-											<img src="/images/Crowd_25px.png" id="vers_plus" hlp="Envoyer une notification à un groupe d'utilisateur" />
-											<select id="sel_who2"></select>
+										<div class="who2 flexSB">
+											<div class="flexV">
+												<img class="inset" src="/images/Customer_25px.png" id="vers_un" hlp="Envoyer une notification à un utilisateur" />
+												<select id="sel_user"></select>
+											</div>
+											<div class="flexV">
+												<img src="/images/Crowd_25px.png" id="vers_plus" hlp="Envoyer une notification à un groupe d'utilisateur" />
+												<select id="sel_grp" oninput="console.log(this)"></select>
+											</div>
 										</div>
 										<div class="footbar">
 											<div id="ed_notif" contenteditable="true"></div>
@@ -760,6 +765,7 @@
 			if (session.user.email != undefined && session.user.email.indexOf("@") != -1) foo += " (" + session.user.email + ")";
 			document.getElementById("del_nom").innerText = foo;
 			setNotifAlarm();
+			initSendElvis();
 
 			OpenOrNew(); // asynchrone..
 		});
@@ -1813,10 +1819,11 @@
 	const if_no_text = document.getElementById("if_no_text");
 	const notif_send = document.getElementById("notif_send");
 	const notifs_liste = document.getElementById("notifs_liste");
-	const sel_who = document.getElementById("sel_who");
+	const sel_from = document.getElementById("sel_from");
 	const vers_un = document.getElementById("vers_un");
 	const vers_plus = document.getElementById("vers_plus");
-	const sel_who2 = document.getElementById("sel_who2");
+	const sel_user = document.getElementById("sel_user");
+	const sel_grp = document.getElementById("sel_grp");
 	const n_img = document.querySelectorAll("#menu_notif > label img");
 	var dring = false;
 
@@ -1849,50 +1856,88 @@
 	});
 
 	var notif_users = [];
-	// 0: Toutes 1: Non-lues 2..n: User
-	async function setNotifs() {
-		io.emit("login_all", "SELECT U.id,U.nom FROM user_groupe UG INNER JOIN users U ON U.id=UG.id_user WHERE UG.id_groupe=? ORDER BY U.nom", [2], (r) => {
+	function setNotifSel() {
+		function getOptStr(id, nom) {
+			return '<option value="' + id + '" ' + (id == mesChoix.sel_from ? "selected" : "") + ">" + nom + "</option>";
+		}
+		let st = getOptStr(-1, "Toutes");
+		let st1 = "";
+		let st2 = "";
+		let st3 = "";
+		let st4 = "";
+		lesNotifs.forEach((el) => {
+			if (st1 == "" && el.id_user_de == 0) st1 += getOptStr(0, "Messages système");
+			if (st2 == "" && el.lu == 0) st2 += getOptStr(-2, "Non lus");
+			if (st3 == "" && el.id_user_de == session.user.id) st3 += getOptStr(session.user.id, "De moi");
+			if (el.id_user_de != 0 && el.id_user_de != session.user.id) {
+				let foo = getOptStr(el.id_user_de, "De " + el.nom);
+				if (!st4.contains(foo)) st4 += foo;
+			}
+		});
+		sel_from.innerHTML = st + st1 + st2 + st3 + st4;
+		document.querySelector(".topbar").style.display = "flex";
+	}
+
+	function initSendElvis() {
+		io.emit("login_all", "SELECT U.id,U.nom FROM users U INNER JOIN user_groupe UG1 ON UG1.id_user=u.id AND UG1.id_groupe=3 LEFT JOIN user_groupe UG2 ON UG2.id_user=u.id AND UG2.id_groupe=4 WHERE UG2.id_groupe IS NULL", [], (r) => {
+			console.log(r);
 			if (r.err) Erreur(r.err.message);
 			else {
 				notif_users = r;
+				let st = "";
+				for (let el of notif_users) if (el.id != session.user.id) st += "<option value=" + el.id + ">" + el.nom + "</option>";
+				sel_user.innerHTML = st;
+				// Récupérer le nom et nbr d'inscrits dans un groupe (sauf les groupes 'Gourou','Notifications',Privé')
+				const stm =
+					"SELECT id_groupe, COUNT(*) as cnt,G.nom,G.hlp FROM user_groupe UG \
+		INNER JOIN groupes G ON G.id=UG.id_groupe \
+		WHERE UG.id_groupe NOT IN (3,4) \
+		GROUP BY id_groupe ORDER BY G.nom";
+				io.emit("login_all", stm, [], (r) => {
+					if (r.err) Erreur(r.err.message);
+					else {
+						let st = "";
+						r.forEach((el) => {
+							if (el.cnt > 0) st += '<option hlp="' + el.hlp + '" value=' + el.id_groupe + ">" + el.nom + "</option>";
+						});
+						sel_grp.innerHTML = st;
+						// Add a message to inform users if no groups are available
+						if (st === "") {
+							sel_grp.innerHTML = "<option value=''>Aucun groupe disponible</option>";
+							Warning("Il n'y a pas de groupe disponible pour l'envoi de notifications");
+						}
+					}
+				});
 				if (mesChoix.vers_un) vers_un.click();
 				else vers_plus.click(); // notifs non-lues
-				getNonLuesCount()
-					.catch((e) => Erreur(e))
-					.then((cnt) => {
-						dring = cnt > 0;
-						let st = "<option value=-1>Toutes</option>";
-						st += "<option value=0>Messages système</option>";
-						if (cnt > 0) st += "<option value=1>Non lus</option>";
-						r.forEach((el) => {
-							if (el.id != session.user.id) st += "<option value=" + el.id + ">" + el.nom + "</option>";
-						});
-						const old_val = sel_who.value;
-						sel_who.innerHTML = st;
-
-						// Update the selected user if it still exists in the new list
-						if (cnt > 0 && (old_val == "" || old_val == 1)) sel_who.value = 1;
-						else if (old_val == 1 && cnt == 0) sel_who.value = -1;
-						else if (old_val > 1) {
-							if (r.map((el) => el.id).includes(parseInt(old_val))) {
-								sel_who.value = old_val;
-							} else sel_who.value = 1;
-						}
-						selectUserVers(sel_who.value);
-					});
 			}
 		});
 	}
 
 	var lesNotifs = [];
 
-	function onNotifsRecues(obj) {
-		console.log(obj);
-		if (obj.err) Erreur(obj.err.message || obj.err.code);
-		else {
-			let st = "";
-			lesNotifs = obj;
-			lesNotifs.forEach((ntf, idx) => {
+	// 0: Toutes 1: Non-lues 2..n: User
+	function setNotifs() {
+		// afficher les notifications destinée à l'utilisateur connecté
+		io.emit("login_all", "SELECT N.* FROM notifications N WHERE N.id_user_vers=? ORDER BY t", [session.user.id], (rows) => {
+			console.log(rows);
+			if (rows.err) Erreur(rows.err.message || rows.err.code);
+			else {
+				let st = "";
+				lesNotifs = rows;
+				setNotifSel();
+				selectUserVers(mesChoix.sel_from);
+			}
+		});
+	}
+
+	function selectUserVers(val) {
+		if (val == undefined) val = -1;
+		SetChoix("sel_from", val);
+		let st = "";
+		lesNotifs.forEach((ntf, idx) => {
+			const make_me = val == -1 || (val == -2 && ntf.lu == 0) || ntf.id_user_de == val;
+			if (make_me) {
 				const trash = '<img src="images/Trash.png" hlp="Effacer cette notification" onclick="delNotif(' + ntf.id + ')" />';
 				let d1 = new Date();
 				let d2 = new Date(Date.parse(ntf.t.substr(0, 10).replace(/-/g, "/")));
@@ -1925,25 +1970,9 @@
 					st += "</div>";
 				}
 				st += "</div>";
-			});
-			notifs_liste.innerHTML = st;
-		}
-	}
-
-	function selectUserVers(val) {
-		const stm =
-			"SELECT N.* FROM notifications N \
-			JOIN user_base UB ON UB.id_user=N.id_user_vers AND UB.id_base=?  \
-			JOIN user_groupe UG ON UG.id_user=N.id_user_vers AND UG.id_groupe=2 \
-			WHERE (N.id_user_vers=?";
-		if (val == -1)
-			// Tous
-			io.emit("login_all", stm + ") ORDER BY t", [session.user.id_base, session.user.id], onNotifsRecues);
-		else if (val == 1)
-			// non-lus
-			io.emit("login_all", stm + " AND N.lu=0) ORDER BY t", [session.user.id_base, session.user.id], onNotifsRecues);
-		// depuis/vers qq un
-		else io.emit("login_all", stm + " AND id_user_de=?) OR (id_user_de=? AND id_user_vers=?) ORDER BY t", [session.user.id_base, session.user.id, val, session.user.id, val], onNotifsRecues);
+			}
+		});
+		notifs_liste.innerHTML = st;
 	}
 
 	function bulle(idx) {
@@ -1969,11 +1998,10 @@
 	vers_un.addEventListener("click", function (e) {
 		// Handle the change event for vers_un
 		SetChoix("vers_un", true);
-		let st = "";
-		for (let el of notif_users) if (el.id != session.user.id) st += "<option value=" + el.id + ">" + el.nom + "</option>";
-		sel_who2.innerHTML = st;
 		vers_plus.classList.remove("sel");
 		vers_un.classList.add("sel");
+		sel_user.disabled = false;
+		sel_grp.disabled = true;
 	});
 
 	vers_plus.addEventListener("click", function (e) {
@@ -1981,42 +2009,22 @@
 		SetChoix("vers_un", false);
 		vers_un.classList.remove("sel");
 		vers_plus.classList.add("sel");
-		// Récupérer le nom et nbr d'inscrits dans un groupe (sauf les groupes 'Gourou','Notifications',Privé')
-		const stm =
-			"SELECT id_groupe, COUNT(*) as cnt,G.nom,G.hlp FROM user_groupe UG \
-		INNER JOIN groupes G ON G.id=UG.id_groupe \
-		WHERE UG.id_groupe NOT IN (1,3,4) \
-		GROUP BY id_groupe ORDER BY G.nom";
-		io.emit("login_all", stm, [], (r) => {
-			if (r.err) Erreur(r.err.message);
-			else {
-				let st = "";
-				r.forEach((el) => {
-					if (el.cnt > 0) st += "<option onmousehover=\"Info('" + el.hlp + "')\" value=" + el.id_groupe + ">" + el.nom + "</option>";
-				});
-				sel_who2.innerHTML = st;
-				// Add a message to inform users if no groups are available
-				if (st === "") {
-					sel_who2.innerHTML = "<option value=''>Aucun groupe disponible</option>";
-					Warning("Il n'y a pas de groupe disponible pour l'envoi de notifications");
-				}
-			}
-		});
+		sel_user.disabled = true;
+		sel_grp.disabled = false;
 	});
 
 	notif_send.addEventListener("click", function () {
 		// Handle the click event for notif_send
-		const val = sel_who2.value;
 		const txt = ed_notif.innerText.trim();
 		ed_notif.innerText = "";
 		if (txt.length == 0) return;
 		if (mesChoix.vers_un)
-			io.emit("login_run", "INSERT INTO notifications (id_user_de,id_user_vers,message) VALUES (?,?,?)", [session.user.id, val, txt], (r) => {
+			io.emit("login_run", "INSERT INTO notifications (id_user_de,id_user_vers,message) VALUES (?,?,?)", [session.user.id, sel_user.value, txt], (r) => {
 				if (r.err) Erreur(r.err.message);
 				else setNotifs();
 			});
 		else
-			io.emit("login_all", "SELECT id_user FROM user_groupe WHERE id_groupe=?", [val], (r) => {
+			io.emit("login_all", "SELECT id_user FROM user_groupe WHERE id_groupe=?", [sel_grp.value], (r) => {
 				if (r.err) Erreur(r.err.message);
 				else {
 					r.forEach((el) => {

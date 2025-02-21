@@ -2,6 +2,7 @@
 /*        STATUS BAR        */
 /****************************/
 const status_bar = document.getElementById("status");
+status_bar.innerText = "Chargement...";
 var fade_timer;
 document.querySelectorAll("[hlp],[alt]").forEach((itm) => {
 	itm.addEventListener("mouseover", (e) => {
