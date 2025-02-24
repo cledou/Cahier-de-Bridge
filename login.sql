@@ -14,7 +14,11 @@ CREATE TABLE users (
   reset_hash VARCHAR(60),
   last_db INTEGER REFERENCES bases(id),
   binette BLOB,
-  admin BOOLEAN DEFAULT FALSE
+  is_guru BOOLEAN DEFAULT FALSE,
+  can_receive_notif BOOLEAN DEFAULT TRUE,
+// can_receive_email BOOLEAN DEFAULT TRUE,
+// can_receive_sms BOOLEAN DEFAULT TRUE,
+  can_send_notif BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE bases (
@@ -24,9 +28,9 @@ CREATE TABLE bases (
 );
 
 INSERT INTO users (id,nom) VALUES (1,'Anonyme');
-INSERT INTO users (id,nom,admin) VALUES (2,'Administrateur',true);
+INSERT INTO users (id,nom,is_guru) VALUES (2,'Administrateur',true);
 
-INSERT INTO bases (id,filename,id_owner) VALUES (1,'example.db',1);
+INSERT INTO bases (id,filename,id_owner) VALUES (1,'example.db',2);
 INSERT INTO bases (id,filename,id_owner) VALUES (2,'bridge.db',2);
 UPDATE users SET last_db = 1 WHERE id = 1;
 UPDATE users SET last_db = 2 WHERE id = 2;
@@ -34,13 +38,16 @@ UPDATE users SET last_db = 2 WHERE id = 2;
 CREATE TABLE user_base (
   id_user INTEGER REFERENCES users(id),
   id_base INTEGER REFERENCES bases(id),
+  is_admin BOOLEAN DEFAULT FALSE,
   can_edit BOOLEAN DEFAULT FALSE,
   can_delete BOOLEAN DEFAULT FALSE,
-  choix TEXT DEFAULT '{"flags": 1}'
+  choix TEXT DEFAULT '{"flags": 1}',
+  PRIMARY KEY (id_user,id_base)
 );
 
 INSERT INTO user_base (id_user,id_base) VALUES (1,1);
-INSERT INTO user_base (id_user,id_base,can_edit, can_delete) VALUES (2,2,1,1);
+INSERT INTO user_base (id_user,id_base,is_admin,can_edit, can_delete) VALUES (2,1,1,1,1);
+INSERT INTO user_base (id_user,id_base,is_admin,can_edit, can_delete) VALUES (2,2,1,1,1);
 
 CREATE TABLE groupes (
   id INTEGER PRIMARY KEY,
@@ -48,25 +55,18 @@ CREATE TABLE groupes (
   hlp TEXT DEFAULT ''
 );
 
-// catégories système
-INSERT INTO groupes (id,nom,hlp) VALUES (1,'Webmaster','Responsable technique du site');
-INSERT INTO groupes (id,nom,hlp) VALUES (2,'Administrateurs','Responsables de la maintenance des données et des utilisateurs');
-INSERT INTO groupes (id,nom,hlp) VALUES (3,'Notifications','peuvent recevoir et écrire des notifications');
-INSERT INTO groupes (id,nom,hlp) VALUES (4,'Profil privé','sont invisibles pour les autres membres');
-// catégories libres
 INSERT INTO groupes (nom,hlp) VALUES ('Débutants','Moins de 2 ans de pratique');
 INSERT INTO groupes (nom,hlp) VALUES ('En retard de cotisation','Penser à faire un rappel');
 INSERT INTO groupes (nom,hlp) VALUES ('Jeunes','Jusqu''à 25 ans');
 
 CREATE TABLE user_groupe (
   id_user INTEGER REFERENCES users(id),
-  id_groupe INTEGER REFERENCES groupes(id)
+  id_groupe INTEGER REFERENCES groupes(id),
+  PRIMARY KEY (id_user, id_groupe)
 );
 
-INSERT INTO user_groupe (id_user,id_groupe) VALUES (1,4);
+INSERT INTO user_groupe (id_user,id_groupe) VALUES (1,2);
 INSERT INTO user_groupe (id_user,id_groupe) VALUES (2,1);
-INSERT INTO user_groupe (id_user,id_groupe) VALUES (2,2);
-INSERT INTO user_groupe (id_user,id_groupe) VALUES (2,3);
 
 
 CREATE TABLE notifications (
@@ -109,11 +109,10 @@ END;
 
 CREATE TRIGGER on_add_user AFTER INSERT ON users
 BEGIN
-  INSERT INTO user_groupe (id_user,id_groupe) VALUES (NEW.ID,3);
+  INSERT INTO user_base (id_user,id_base) VALUES (NEW.ID,1);
   INSERT INTO notifications (id_user_de,id_user_vers,message) VALUES (2,NEW.id,'Bienvenue ' || NEW.nom || ' !');
   INSERT INTO notifications (id_user_vers,message) VALUES (2,'Inscription de ' || NEW.nom);
 END;
 INSERT INTO users (nom) VALUES ('Harry Cover');
 INSERT INTO users (nom) VALUES ('Mélusine Enfayite');
 INSERT INTO users (nom) VALUES ('Richard Dassault');
-INSERT INTO users (nom) VALUES ('Agripine De Cheuvalle');

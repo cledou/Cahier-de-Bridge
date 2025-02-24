@@ -204,6 +204,12 @@
 			#ubase table tr td * {
 				margin-left: 8px;
 			}
+			details[open] {
+				display: flex;
+				justify-content: flex-start;
+				align-content: flex-start;
+				flex-direction: column;
+			}
 		</style>
 	</head>
 	<body>
@@ -234,6 +240,12 @@
 							<input type="text" id="ed_email" />
 						</div>
 						<button id="btn_MP" style="align-self: center"><img src="/images/erase_25px.png" />Effacer le mot de passe</button>
+						<details class="if_admin">
+							<summary>Options</summary>
+							<div class="jolicbx if_guru" hlp="Donner toutes les autorisations à cet utilisateur"><input type="checkbox" onchange="onGuru()" id="chk_guru" /><label for="chk_guru">Webmaster</label></div>
+							<div class="jolicbx" hlp="Peut recevoir des notifications"><input type="checkbox" onchange="onNotifChk(this.checked)" id="chk_notif_in" /><label for="chk_notif_in">Peut recevoir des notifications</label></div>
+							<div class="jolicbx" hlp="Peut envoyer des notifications"><input type="checkbox" onchange="setSaveState()" id="chk_notif_out" /><label for="chk_notif_out">Peut envoyer des notifications</label></div>
+						</details>
 						<details>
 							<summary>Groupes d'utilisateurs</summary>
 							<div id="groupes"></div>
@@ -277,6 +289,9 @@
 	const tb_base = document.getElementById("ubase");
 	const groupes = document.getElementById("groupes");
 	const btn_MP = document.getElementById("btn_MP");
+	const chk_notif_in = document.getElementById("chk_notif_in");
+	const chk_notif_out = document.getElementById("chk_notif_out");
+	const chk_guru = document.getElementById("chk_guru");
 
 	const hide_me = (id, hide) => {
 		const el = document.getElementById(id);
@@ -348,15 +363,16 @@
 							function getJoliCbx(id) {
 								return `<div class="jolicbx"><input type="checkbox" class="${id}" onchange="setSaveState()" /></div>`;
 							}
-							st = "<table><thead><tr><th>Base</th><th>Voir</th><th>Éditer</th><th>Supprimer</th><th>Login</th></tr></thead><tbody>";
+							st = "<table><thead><tr><th>Base</th><th>Voir</th><th>Admin</th><th>Éditer</th><th>Supprimer</th><th>Login</th></tr></thead><tbody>";
 							rows.forEach((row) => {
-								st += '<tr id="base' + row.id + `"><td>${row.filename}</td><td>${getJoliCbx("in_use")}</td><td>${getJoliCbx("can_edit")}</td><td>${getJoliCbx("can_delete")}</td>`;
+								st += '<tr id="base' + row.id + `"><td>${row.filename}</td><td>${getJoliCbx("in_use")}</td><td>${getJoliCbx("is_admin")}</td><td>${getJoliCbx("can_edit")}</td><td>${getJoliCbx("can_delete")}</td>`;
 								st += '<td><input type="radio" class="jrbt" name="log_first" id="jrbt' + row.id + '" onchange="setSaveState()"/><label for="jrbt' + row.id + '"></label></td></tr>';
 							});
 							tb_base.innerHTML = st;
 							document.querySelectorAll(".in_use").forEach((el) =>
 								el.addEventListener("change", function () {
 									const tr = el.parentElement.parentElement.parentElement;
+									tr.querySelector(".is_admin").style.display = el.checked ? "block" : "none";
 									tr.querySelector(".can_edit").style.display = el.checked ? "block" : "none";
 									tr.querySelector(".can_delete").style.display = el.checked ? "block" : "none";
 									tr.querySelector(".jrbt").classList.toggle("hide_me", !el.checked);
@@ -379,7 +395,7 @@
 
 	var lastUser = 2; // retour à un utilisateur connu si annulation nouvelle fiche
 	function handleUserClick(id) {
-		io.emit("login_get", "SELECT id,nom,email,last_db FROM users WHERE id=?", [id], (enr) => {
+		io.emit("login_get", "SELECT id,nom,email,last_db,is_guru,can_receive_notif,can_send_notif FROM users WHERE id=?", [id], (enr) => {
 			if (enr && enr.err) Erreur(enr.err);
 			else {
 				if (id != 0) lastUser = id;
@@ -394,6 +410,13 @@
 				ed_login.value = currentUser.nom;
 				ed_email.value = currentUser.email;
 				btn_MP.disabled = currentUser.id == 0;
+				chk_guru.checked = currentUser.is_guru;
+				chk_notif_in.checked = currentUser.can_receive_notif;
+				chk_notif_out.checked = currentUser.can_send_notif;
+				chk_notif_out.disabled = !currentUser.can_receive_notif;
+				document.querySelectorAll(".jolicbx > input").forEach((el) => {
+					el.setAttribute("old_chk", el.checked.toString());
+				});
 				nom_ok = true;
 				email_ok = true;
 				io.emit("login_all", "SELECT id_groupe FROM user_groupe WHERE id_user=?", [id], (rows) => {
@@ -404,15 +427,15 @@
 							el.setAttribute("old_chk", el.checked.toString());
 						});
 						// on ne peut pas changer son propre status admin
-						document.getElementById("tag1").disabled = currentUser.id == session.user.id;
-						document.getElementById("tag2").disabled = currentUser.id == session.user.id;
-						io.emit("login_all", "SELECT id_base,can_edit,can_delete FROM user_base WHERE id_user=?", [id], (rows) => {
+						//document.getElementById("tag1").disabled = currentUser.id == session.user.id;
+						//document.getElementById("tag2").disabled = currentUser.id == session.user.id;
+						io.emit("login_all", "SELECT id_base,is_admin,can_edit,can_delete FROM user_base WHERE id_user=?", [id], (rows) => {
 							if (rows.err) Erreur(rows.err);
 							else {
 								tb_base.querySelectorAll("input").forEach((el) => {
 									el.checked = false;
 								});
-								tb_base.querySelectorAll(".can_edit,.can_delete").forEach((el) => {
+								tb_base.querySelectorAll(".is_admin,.can_edit,.can_delete").forEach((el) => {
 									el.style.display = "none";
 								});
 								tb_base.querySelectorAll(".jrbt").forEach((el) => {
@@ -421,6 +444,9 @@
 								rows.forEach((row) => {
 									const tr = document.getElementById("base" + row.id_base);
 									tr.querySelector(".in_use").checked = true;
+									tr.querySelector(".is_admin").checked = row.is_admin;
+									tr.querySelector(".is_admin").style.display = "block";
+									tr.querySelector(".is_admin").disabled = id == session.user.id;
 									tr.querySelector(".can_edit").checked = row.can_edit;
 									tr.querySelector(".can_edit").style.display = "block";
 									tr.querySelector(".can_delete").checked = row.can_delete;
@@ -432,8 +458,6 @@
 								tb_base.querySelectorAll("input").forEach((el) => {
 									el.setAttribute("old_chk", el.checked.toString());
 								});
-								// on ne peut pas changer son propre status admin
-								document.getElementById("tag1").disabled = currentUser.id == session.user.id;
 								setSaveState();
 							}
 						});
@@ -441,6 +465,16 @@
 				});
 			}
 		});
+	}
+
+	function onGuru() {
+		setSaveState();
+	}
+
+	function onNotifChk(val) {
+		setSaveState();
+		chk_notif_out.checked = false;
+		chk_notif_out.disabled = !val;
 	}
 
 	function updateGroupes() {
@@ -465,11 +499,12 @@
 		tb_base.querySelectorAll('[id^="base"]').forEach((el) => {
 			let id_base = Number(el.id.substr(4));
 			let in_use = el.querySelector(".in_use");
+			let is_admin = el.querySelector(".is_admin");
 			let can_edit = el.querySelector(".can_edit");
 			let can_delete = el.querySelector(".can_delete");
 			if (in_use.checked.toString() != in_use.getAttribute("old_chk")) {
 				if (in_use.checked) {
-					io.emit("login_run", "INSERT INTO user_base (id_user, id_base, can_edit, can_delete) VALUES (?,?,?,?)", [currentUser.id, id_base, can_edit.checked, can_delete.checked], (r) => {
+					io.emit("login_run", "INSERT INTO user_base (id_user, id_base, is_admin, can_edit, can_delete) VALUES (?,?,?,?)", [currentUser.id, id_base, is_admin.checked, can_edit.checked, can_delete.checked], (r) => {
 						if (r.err) Erreur(r.err);
 					});
 				} else {
@@ -477,10 +512,28 @@
 						if (r.err) Erreur(r.err);
 					});
 				}
-			} else if (can_edit.checked.toString() != can_edit.getAttribute("old_chk") || can_delete.checked.toString() != can_delete.getAttribute("old_chk")) {
-				io.emit("login_run", "UPDATE user_base SET can_edit=?, can_delete=? WHERE id_user=? AND id_base=?", [can_edit.checked, can_delete.checked, currentUser.id, id_base], (r) => {
-					if (r.err) Erreur(r.err);
-				});
+			} else {
+				let st = "";
+				let p = [];
+				if (is_admin.checked.toString() != is_admin.getAttribute("old_chk")) {
+					st += "is_admin=?,";
+					p.push(is_admin.checked);
+				}
+				if (can_edit.checked.toString() != can_edit.getAttribute("old_chk")) {
+					st += "can_edit=?,";
+					p.push(can_edit.checked);
+				}
+				if (can_delete.checked.toString() != can_delete.getAttribute("old_chk")) {
+					st += "can_delete=?,";
+					p.push(can_delete.checked);
+				}
+				if (p.length > 0) {
+					p.push(currentUser.id);
+					p.push(id_base);
+					io.emit("login_run", "UPDATE user_base SET " + st.substr(0, st.length - 1) + " WHERE id_user=? AND id_base=?", p, (r) => {
+						if (r.err) Erreur(r.err);
+					});
+				}
 			}
 		});
 	}
@@ -513,6 +566,7 @@
 	}
 
 	function isUserDirty() {
+		for (let el of document.querySelectorAll(".jolicbx > input")) if (el.checked.toString() != el.getAttribute("old_chk")) return true;
 		const foo = tb_base.querySelector("input.jrbt:checked");
 		return currentUser.nom != ed_login.value || (currentUser.email || "") != ed_email.value || (foo ? foo.id.substr(4) != currentUser.last_db : false);
 	}
@@ -549,10 +603,12 @@
 
 	function modifUser() {
 		return new Promise((resolve, reject) => {
-			io.emit("login_modifs", currentUser, (r) => {
+			const stm = currentUser.id == 0 ? "INSERT INTO users (nom,email,is_guru,can_receive_notif,can_send_notif) VALUES (?,?,?,?,?)" : "UPDATE users SET nom=?,email=?,is_guru=?,can_receive_notif=?,can_send_notif=? WHERE id=?";
+			let p = [ed_login.value, ed_email.value, chk_guru.checked, chk_notif_in.checked, chk_notif_out.checked];
+			if (currentUser.id != 0) p.push(currentUser.id);
+			io.emit("login_run", stm, p, (r) => {
 				if (r.err) reject(r.err);
 				else {
-					console.log(r);
 					if (currentUser.id == 0) currentUser.id = r.lastID;
 					resolve();
 				}

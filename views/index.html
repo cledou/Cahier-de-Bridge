@@ -1879,19 +1879,18 @@
 	}
 
 	function initSendElvis() {
-		io.emit("login_all", "SELECT U.id,U.nom FROM users U INNER JOIN user_groupe UG1 ON UG1.id_user=u.id AND UG1.id_groupe=3 LEFT JOIN user_groupe UG2 ON UG2.id_user=u.id AND UG2.id_groupe=4 WHERE UG2.id_groupe IS NULL", [], (r) => {
+		io.emit("login_all", "SELECT id,nom,can_receive_notif,can_send_notif FROM users", [], (r) => {
 			console.log(r);
 			if (r.err) Erreur(r.err.message);
 			else {
 				notif_users = r;
 				let st = "";
-				for (let el of notif_users) if (el.id != session.user.id) st += "<option value=" + el.id + ">" + el.nom + "</option>";
+				for (let el of notif_users) if (el.can_receive_notif && el.id != session.user.id) st += "<option value=" + el.id + ">" + el.nom + "</option>";
 				sel_user.innerHTML = st;
 				// Récupérer le nom et nbr d'inscrits dans un groupe (sauf les groupes 'Gourou','Notifications',Privé')
 				const stm =
 					"SELECT id_groupe, COUNT(*) as cnt,G.nom,G.hlp FROM user_groupe UG \
 		INNER JOIN groupes G ON G.id=UG.id_groupe \
-		WHERE UG.id_groupe NOT IN (3,4) \
 		GROUP BY id_groupe ORDER BY G.nom";
 				io.emit("login_all", stm, [], (r) => {
 					if (r.err) Erreur(r.err.message);

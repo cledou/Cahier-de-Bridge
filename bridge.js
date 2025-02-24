@@ -163,11 +163,9 @@ const SESSION_RELOAD_INTERVAL = 10 * 60 * 1000;
 
 async function GetUser(str, nom) {
 	const stmt =
-		"SELECT U.id,U.nom,U.last_db,B.filename,B.id_owner, UB.*, UG.id_user as is_guru, UG1.id_user as is_admin FROM users U \
+		"SELECT U.id,U.nom,U.last_db,U.is_guru,B.filename,B.id_owner, UB.* FROM users U \
 	LEFT JOIN bases B ON B.id=U.last_db \
 	LEFT JOIN user_base UB ON UB.id_user=U.id AND UB.id_base=U.last_db \
-	LEFT JOIN user_groupe UG ON UG.id_user=U.id AND UG.id_groupe=1 \
-	LEFT JOIN user_groupe UG1 ON UG1.id_user=U.id AND UG1.id_groupe=2 \
 	WHERE U." +
 		str +
 		"=?";
@@ -179,11 +177,11 @@ async function GetUser(str, nom) {
 				nom: row.nom,
 				filename: row.filename,
 				choix: JSON.parse(row.choix),
-				can_edit: Boolean(row.is_guru == row.id || row.is_admin == row.id || row.can_edit),
-				can_delete: Boolean(row.is_guru == row.id || row.is_admin == row.id || row.can_delete),
-				can_erase: Boolean(row.id_user > 1 && row.id_owner == row.id_user),
-				is_guru: Boolean(row.is_guru == row.id),
-				is_admin: Boolean(row.is_guru == row.id || row.is_admin == row.id),
+				can_edit: Boolean(row.is_guru || row.is_admin || row.can_edit),
+				can_delete: Boolean(row.is_guru || row.is_admin || row.can_delete),
+				can_erase: Boolean(row.is_guru || row.id_owner == row.id),
+				is_guru: Boolean(row.is_guru),
+				is_admin: Boolean(row.is_guru || row.is_admin),
 		  }
 		: {
 				id: 1,
@@ -196,6 +194,8 @@ async function GetUser(str, nom) {
 				can_erase: false,
 				is_guru: false,
 				is_admin: false,
+				can_receive_notif: false,
+				can_send_notif: false,
 		  };
 }
 
@@ -462,29 +462,16 @@ io.on("connection", async (socket) => {
 			});
 	});
 
-	socket.on("login_modifs", (user, cb) => {
-		console.log(user);
-		if (db_login == undefined) cb({ err: "NTBS: Session fermée. Reconnectez vous" });
-		else if (user.id == undefined || user.id == 0) {
-			db_login.run("INSERT INTO users (nom,email) VALUES (?,?)", [user.nom, user.email], function (err) {
-				if (err) cb(err.message);
-				else cb(this);
-			});
-		} else {
-			db_login.run("UPDATE users SET nom=?,email=? WHERE id=?", [user.nom, user.email, user.id], function (err) {
-				if (err) cb(err.message);
-				else cb(this);
-			});
-		}
-	});
-
 	//*******************
 	//     bridge.db
 	//*******************
 	socket.on("session", async (cb) => {
 		session.need_login = app_config.need_login;
-		if (!app_config.need_login) session.user = await GetUser("id", 2);
-		else if (session.user == undefined) {
+		if (!app_config.need_login) {
+			session.user = await GetUser("id", 2);
+			session.save();
+			console.log("Session ouverte pour " + session.user.nom);
+		} else if (session.user == undefined) {
 			session.err = "Vous avez été déconnecté";
 			session.save();
 			socket.emit("eject");
@@ -518,12 +505,7 @@ io.on("connection", async (socket) => {
 		if (session.user != undefined) {
 			try {
 				if (session.dirty == true) {
-					if (db_rw)
-						await db_run(db_login, "UPDATE user_base SET choix=? WHERE id_user=? AND id_base=?", [
-							JSON.stringify(session.user.choix),
-							session.user.id,
-							session.user.id_base,
-						]);
+					if (db_rw) await db_run(db_login, "UPDATE user_base SET choix=? WHERE id_user=? AND id_base=?", [JSON.stringify(session.user.choix), session.user.id, session.user.id_base]);
 					session.dirty = false;
 					session.save();
 				}
@@ -557,8 +539,7 @@ io.on("connection", async (socket) => {
 	/* AVEC CALLBACK */
 	/*****************/
 	async function AddTreeNode(node, id_parent) {
-		if (node.jeux == undefined)
-			node.jeux = await db_all(db, "SELECT d.id,d.nom FROM data2tree t LEFT JOIN donnes d ON d.id==t.id_donne WHERE t.id_arbre" + id_parent);
+		if (node.jeux == undefined) node.jeux = await db_all(db, "SELECT d.id,d.nom FROM data2tree t LEFT JOIN donnes d ON d.id==t.id_donne WHERE t.id_arbre" + id_parent);
 		node.childs = await db_all(db, "SELECT id,itm,pos FROM arbre WHERE id_parent" + id_parent + " ORDER BY pos");
 		for (let el of node.childs) {
 			await AddTreeNode(el, "=" + el.id);
@@ -656,17 +637,7 @@ io.on("connection", async (socket) => {
 					const row = await db_get(db, "SELECT * FROM donnes WHERE id=" + id);
 					if (nom != "") nom += ",";
 					nom += row.nom;
-					st +=
-						"INSERT INTO donnes (nom,data) VALUES ('" +
-						row.nom +
-						"', '" +
-						row.data
-							.replace(/'/g, "''")
-							.replace('", "txt1":', '",\n"txt1":')
-							.replace('", "txt2":', '",\n"txt2":')
-							.replace('", "donne":', '",\n"donne":')
-							.replace('], "enchere":', '],\n"enchere":') +
-						"');\n";
+					st += "INSERT INTO donnes (nom,data) VALUES ('" + row.nom + "', '" + row.data.replace(/'/g, "''").replace('", "txt1":', '",\n"txt1":').replace('", "txt2":', '",\n"txt2":').replace('", "donne":', '",\n"donne":').replace('], "enchere":', '],\n"enchere":') + "');\n";
 				}
 				nom += ".sql";
 				const fn = dir_upload + dir_sep + nom;
@@ -871,7 +842,7 @@ app.post("/upload_this", function (req, res) {
 });
 
 function checkAuthenticated(req, res, next) {
-	//console.log("checkAuthenticated", app_config.need_login, req.sesssion);
+	console.log("checkAuthenticated", app_config.need_login, req.session.user);
 	if (app_config.need_login == false) next();
 	else if (req.session != undefined && req.session.user != undefined) {
 		//console.log(req.session.user.nom);
@@ -883,7 +854,7 @@ function checkAuthenticated(req, res, next) {
 }
 
 function checkIsAdmin(req, res, next) {
-	//console.log("checkAuthenticated", app_config.need_login, req.sesssion);
+	console.log("checkIsAdmin", app_config.need_login, req.session.user);
 	if (req.session != undefined && req.session.user != undefined && req.session.user.is_admin) {
 		//console.log(req.session.user.nom);
 		next();
