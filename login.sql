@@ -15,7 +15,7 @@ CREATE TABLE users (
   last_db INTEGER REFERENCES bases(id),
   binette BLOB,
   is_guru BOOLEAN DEFAULT FALSE,
-  can_receive_notif BOOLEAN DEFAULT TRUE,
+  visible BOOLEAN DEFAULT TRUE,
 // can_receive_email BOOLEAN DEFAULT TRUE,
 // can_receive_sms BOOLEAN DEFAULT TRUE,
   can_send_notif BOOLEAN DEFAULT TRUE

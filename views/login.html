@@ -99,6 +99,7 @@
 	io.on("connect", function () {
 		io.emit("get_login", (obj) => {
 			console.log(obj);
+			Info("Entrez votre nom ou votre email et votre mot de passe");
 			if (obj.nom) {
 				ed_login.value = obj.nom;
 				onUser();
@@ -127,15 +128,25 @@
 
 	function onUser() {
 		io.emit("is_user", ed_login.value, (r) => {
-			const b = r.startsWith("OK");
-			box_pw.style.opacity = b ? 1 : 0;
-			lk_forgot.style.opacity = b ? 1 : 0;
-			btn_OK.disabled = !b;
-			if (r.startsWith("NTBS")) Erreur(r);
+			if (r.err) Erreur(r.err);
+			else {
+				const b = r.cnt > 0;
+				box_pw.style.opacity = b ? 1 : 0;
+				lk_forgot.style.opacity = b ? 1 : 0;
+				btn_OK.disabled = !b;
+			}
 		});
 	}
 
 	ed_login.addEventListener("input", onUser);
+	ed_login.addEventListener("change", () => {
+		console.log("change", ed_login.value);
+		io.emit("is_user", ed_login.value, (r) => {
+			if (r.err) Erreur(r.err);
+			else if (r.cnt == 1 && r.has_pw == false) btn_OK.click();
+			else if (r.cnt > 0) ed_pw.focus();
+		});
+	});
 
 	const connect_me = (nom, pw) => {
 		io.emit("connect_me", nom, pw, (r) => {

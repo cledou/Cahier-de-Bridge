@@ -15,6 +15,7 @@
 		<link rel="stylesheet" href="/css/modal.css" />
 		<link rel="stylesheet" href="/css/hamburger.css" />
 		<link rel="stylesheet" href="/css/notifs.css" />
+		<link rel="stylesheet" href="/css/minicbx.css" />
 		<style type="text/css">
 			body {
 				box-sizing: border-box;
@@ -320,6 +321,10 @@
 			.encheres:hover .icn_wrap {
 				display: flex;
 			}
+			.minicbx:hover * {
+				font-weight: bolder;
+				cursor: pointer;
+			}
 
 			@media (width <= 1300px) {
 				.main {
@@ -485,6 +490,7 @@
 							<div class="mn-itm si_admin">
 								<label hlp="Paramètres de l'application et administration"><img src="/images/settings_30px.png" /></label>
 								<div class="level1">
+									<div class="minicbx hide_me" hlp="Protéger l'accès au site en demandant de s'identifier"><input type="checkbox" id="chk_login" /><label for="chk_login">Demander identité pour entrer</label></div>
 									<button class="itmh" onclick="window.location.href='/edit_user'" hlp="Créer/Modifier un utilisateur"><img src="/images/user_edit.png" />Editer utilisateur</button>
 									<button class="itmh" onclick="window.location.href='/edit_grp'" hlp="Créer/Modifier un groupe d'utilisateurs"><img src="/images/Crowd_25px.png" />Editer un groupe</button>
 									<input type="file" style="display: none" id="btn_bkp" />
@@ -661,6 +667,7 @@
 	const print_this = document.getElementById("print_this");
 	const cbx_db = document.getElementById("cbx_db");
 	const ed_masquer = document.getElementById("ed_masquer");
+	const chk_login = document.getElementById("chk_login");
 	const ShowHide = (id, b) => {
 		document.getElementById(id).style.opacity = b ? "1.0" : "0";
 	};
@@ -678,6 +685,10 @@
 	};
 	const SetRbtValue = (name, idx) => {
 		document.querySelectorAll('input[name="' + name + '"]')[idx].checked = true;
+	};
+	const HideMe = (id, b) => {
+		if (id[0] == "." || id[0] == "#") document.querySelectorAll(id).forEach((el) => el.classList.toggle("hide_me", b));
+		else document.getElementById(id).classList.toggle("hide_me", b);
 	};
 	let enr = {};
 
@@ -703,8 +714,16 @@
 			// ajuster l'affichage au chargement
 			if (session.user.id < 3) document.getElementById("del_profil").remove();
 			if (!session.need_login || session.user.id != 1) document.getElementById("btn_register").remove();
+			if (session.user.is_guru) {
+				chk_login.checked = session.need_login;
+				chk_login.parentElement.classList.remove("hide_me");
+				chk_login.onchange = function () {
+					io.emit("need_login", chk_login.checked);
+					HideMe("btn_back", !chk_login.checked);
+				};
+			} else chk_login.parentElement.remove();
 			if (!session.need_login) {
-				document.getElementById("btn_back").remove();
+				HideMe("btn_back", true);
 				document.getElementById("menu_user").remove();
 			} else if (session.user.id == 1) document.getElementById("menu_user").remove();
 			if (!session.user.is_admin) for (let el of document.getElementsByClassName("si_admin")) el.remove();
@@ -1879,13 +1898,13 @@
 	}
 
 	function initSendElvis() {
-		io.emit("login_all", "SELECT id,nom,can_receive_notif,can_send_notif FROM users", [], (r) => {
+		io.emit("login_all", "SELECT id,nom,visible,can_send_notif FROM users", [], (r) => {
 			console.log(r);
 			if (r.err) Erreur(r.err.message);
 			else {
 				notif_users = r;
 				let st = "";
-				for (let el of notif_users) if (el.can_receive_notif && el.id != session.user.id) st += "<option value=" + el.id + ">" + el.nom + "</option>";
+				for (let el of notif_users) if (el.visible && el.id != session.user.id) st += "<option value=" + el.id + ">" + el.nom + "</option>";
 				sel_user.innerHTML = st;
 				// Récupérer le nom et nbr d'inscrits dans un groupe (sauf les groupes 'Gourou','Notifications',Privé')
 				const stm =
@@ -1996,7 +2015,7 @@
 	// Add event listeners for new elements
 	vers_un.addEventListener("click", function (e) {
 		// Handle the change event for vers_un
-		SetChoix("vers_un", true);
+		//SetChoix("vers_un", true);
 		vers_plus.classList.remove("sel");
 		vers_un.classList.add("sel");
 		sel_user.disabled = false;
@@ -2005,7 +2024,7 @@
 
 	vers_plus.addEventListener("click", function (e) {
 		// Handle the change event for vers_plus
-		SetChoix("vers_un", false);
+		//SetChoix("vers_un", false);
 		vers_un.classList.remove("sel");
 		vers_plus.classList.add("sel");
 		sel_user.disabled = true;

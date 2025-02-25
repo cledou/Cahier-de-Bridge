@@ -25,19 +25,6 @@
 				box-sizing: border-box;
 				background: linear-gradient(rgba(211, 211, 211, 0.5), rgba(211, 211, 211, 0.5)), url("/images/Cards.png");
 			}
-			.menu {
-				position: relative;
-				width: 100%;
-				height: 48px;
-				background-color: lightgray;
-				display: flex;
-				flex-direction: row;
-				border-radius: 5px;
-				justify-content: flex-end;
-				align-items: center;
-				padding-right: 0.5em;
-				box-sizing: inherit;
-			}
 
 			.container {
 				position: relative;
@@ -214,11 +201,6 @@
 	</head>
 	<body>
 		<div class="main">
-			<div class="menu">
-				<button class="si_login" onclick="window.location.href='/'">
-					<img src="/images/close_window_30px.png" hlp="Revenir au tableau de bord" />
-				</button>
-			</div>
 			<div class="container">
 				<div class="card">
 					<div class="flexV">
@@ -395,7 +377,7 @@
 
 	var lastUser = 2; // retour à un utilisateur connu si annulation nouvelle fiche
 	function handleUserClick(id) {
-		io.emit("login_get", "SELECT id,nom,email,last_db,is_guru,can_receive_notif,can_send_notif FROM users WHERE id=?", [id], (enr) => {
+		io.emit("login_get", "SELECT id,nom,email,last_db,is_guru,visible,can_send_notif FROM users WHERE id=?", [id], (enr) => {
 			if (enr && enr.err) Erreur(enr.err);
 			else {
 				if (id != 0) lastUser = id;
@@ -411,9 +393,9 @@
 				ed_email.value = currentUser.email;
 				btn_MP.disabled = currentUser.id == 0;
 				chk_guru.checked = currentUser.is_guru;
-				chk_notif_in.checked = currentUser.can_receive_notif;
+				chk_notif_in.checked = currentUser.visible;
 				chk_notif_out.checked = currentUser.can_send_notif;
-				chk_notif_out.disabled = !currentUser.can_receive_notif;
+				chk_notif_out.disabled = !currentUser.visible;
 				document.querySelectorAll(".jolicbx > input").forEach((el) => {
 					el.setAttribute("old_chk", el.checked.toString());
 				});
@@ -573,7 +555,6 @@
 
 	function isDirty() {
 		let b = currentUser.id == 0 || isUserDirty() || isGroupesDirty() || idBasesDirty();
-		btn_nok.disabled = !b;
 		return b;
 	}
 
@@ -603,7 +584,7 @@
 
 	function modifUser() {
 		return new Promise((resolve, reject) => {
-			const stm = currentUser.id == 0 ? "INSERT INTO users (nom,email,is_guru,can_receive_notif,can_send_notif) VALUES (?,?,?,?,?)" : "UPDATE users SET nom=?,email=?,is_guru=?,can_receive_notif=?,can_send_notif=? WHERE id=?";
+			const stm = currentUser.id == 0 ? "INSERT INTO users (nom,email,is_guru,visible,can_send_notif) VALUES (?,?,?,?,?)" : "UPDATE users SET nom=?,email=?,is_guru=?,visible=?,can_send_notif=? WHERE id=?";
 			let p = [ed_login.value, ed_email.value, chk_guru.checked, chk_notif_in.checked, chk_notif_out.checked];
 			if (currentUser.id != 0) p.push(currentUser.id);
 			io.emit("login_run", stm, p, (r) => {
@@ -640,7 +621,8 @@
 
 	btn_nok.addEventListener("click", function () {
 		if (ed_find.value != "") del_rch.click();
-		else handleUserClick(lastUser);
+		else if (isDirty()) handleUserClick(lastUser);
+		else window.location.href = "/";
 	});
 
 	/****************************/
