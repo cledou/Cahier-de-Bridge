@@ -1033,22 +1033,22 @@ async function openBase(path, sql = "bridge.sql") {
 }
 
 async function createBase(id_user) {
-	return new Promise(async (resolve, reject) => {
-		try {
-			const db = await openBase(db_dir + "id_" + id_user + ".db");
-			db.close();
-			let r = await db_run(db_login, "INSERT INTO bases (filename, id_owner) VALUES (?,?)", ["id_" + id_user + ".db", id_user]);
-			if (r.lastID) {
-				const id_base = r.lastID;
-				await db_run(db_login, "INSERT INTO user_base (id_user,id_base,can_edit,can_delete) VALUES (?,?,1,1)", [id_user, id_base]);
-				await db_run(db_login, "UPDATE users SET last_db=? WHERE id=?", [id_base, id_user]);
-				console.log("Base créée pour " + id_user, id_base);
-				resolve();
-			} else reject("Erreur lors de la création de la base");
-		} catch (e) {
-			reject(e);
-		}
-	});
+	const filename = "id_" + id_user + ".db";
+	const fn = db_dir + filename;
+	if (fs.existsSync(fn)) console.error(fn + " existe déjà");
+	else {
+		const db = await openBase(fn);
+		db.close();
+	}
+	let r = await db_get(db_login, "SELECT id as lastID FROM bases WHERE filename=?", [filename]);
+	if (!r) r = await db_run(db_login, "INSERT INTO bases (filename, id_owner) VALUES (?,?)", [filename, id_user]);
+	if (r.lastID) {
+		const id_base = r.lastID;
+		r = await db_get(db_login, "SELECT id_user FROM user_base WHERE id_user=? AND id_base=?", [id_user, id_base]);
+		if (!r) r = await db_run(db_login, "INSERT INTO user_base (id_user,id_base,can_edit,can_delete) VALUES (?,?,1,1)", [id_user, id_base]);
+		await db_run(db_login, "UPDATE users SET last_db=? WHERE id=?", [id_base, id_user]);
+		console.log("Base créée pour " + id_user, id_base);
+	}
 }
 
 async function IsBridge(nom) {

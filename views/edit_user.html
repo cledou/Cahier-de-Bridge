@@ -224,9 +224,8 @@
 						<button id="btn_MP" style="align-self: center"><img src="/images/erase_25px.png" />Effacer le mot de passe</button>
 						<details class="if_admin">
 							<summary>Options</summary>
-							<div class="jolicbx if_guru" hlp="Donner toutes les autorisations à cet utilisateur"><input type="checkbox" onchange="onGuru()" id="chk_guru" /><label for="chk_guru">Webmaster</label></div>
-							<div class="jolicbx" hlp="Peut recevoir des notifications"><input type="checkbox" onchange="onNotifChk(this.checked)" id="chk_notif_in" /><label for="chk_notif_in">Peut recevoir des notifications</label></div>
-							<div class="jolicbx" hlp="Peut envoyer des notifications"><input type="checkbox" onchange="setSaveState()" id="chk_notif_out" /><label for="chk_notif_out">Peut envoyer des notifications</label></div>
+							<div class="jolicbx if_guru" hlp="Donner toutes les autorisations à cet utilisateur"><input type="checkbox" onchange="setSaveState()" id="chk_guru" /><label for="chk_guru">Webmaster</label></div>
+							<div class="jolicbx" hlp="Cochez pour pouvoir échanger avec d'autres inscrits sur le site"><input type="checkbox" onchange="setSaveState()" id="chk_visible" /><label for="chk_visible">Profil publique</label></div>
 						</details>
 						<details>
 							<summary>Groupes d'utilisateurs</summary>
@@ -271,8 +270,7 @@
 	const tb_base = document.getElementById("ubase");
 	const groupes = document.getElementById("groupes");
 	const btn_MP = document.getElementById("btn_MP");
-	const chk_notif_in = document.getElementById("chk_notif_in");
-	const chk_notif_out = document.getElementById("chk_notif_out");
+	const chk_visible = document.getElementById("chk_visible");
 	const chk_guru = document.getElementById("chk_guru");
 
 	const hide_me = (id, hide) => {
@@ -377,7 +375,7 @@
 
 	var lastUser = 2; // retour à un utilisateur connu si annulation nouvelle fiche
 	function handleUserClick(id) {
-		io.emit("login_get", "SELECT id,nom,email,last_db,is_guru,visible,can_send_notif FROM users WHERE id=?", [id], (enr) => {
+		io.emit("login_get", "SELECT id,nom,email,last_db,is_guru,visible FROM users WHERE id=?", [id], (enr) => {
 			if (enr && enr.err) Erreur(enr.err);
 			else {
 				if (id != 0) lastUser = id;
@@ -393,9 +391,7 @@
 				ed_email.value = currentUser.email;
 				btn_MP.disabled = currentUser.id == 0;
 				chk_guru.checked = currentUser.is_guru;
-				chk_notif_in.checked = currentUser.visible;
-				chk_notif_out.checked = currentUser.can_send_notif;
-				chk_notif_out.disabled = !currentUser.visible;
+				chk_visible.checked = currentUser.visible;
 				document.querySelectorAll(".jolicbx > input").forEach((el) => {
 					el.setAttribute("old_chk", el.checked.toString());
 				});
@@ -447,16 +443,6 @@
 				});
 			}
 		});
-	}
-
-	function onGuru() {
-		setSaveState();
-	}
-
-	function onNotifChk(val) {
-		setSaveState();
-		chk_notif_out.checked = false;
-		chk_notif_out.disabled = !val;
 	}
 
 	function updateGroupes() {
@@ -584,8 +570,8 @@
 
 	function modifUser() {
 		return new Promise((resolve, reject) => {
-			const stm = currentUser.id == 0 ? "INSERT INTO users (nom,email,is_guru,visible,can_send_notif) VALUES (?,?,?,?,?)" : "UPDATE users SET nom=?,email=?,is_guru=?,visible=?,can_send_notif=? WHERE id=?";
-			let p = [ed_login.value, ed_email.value, chk_guru.checked, chk_notif_in.checked, chk_notif_out.checked];
+			const stm = currentUser.id == 0 ? "INSERT INTO users (nom,email,is_guru,visible) VALUES (?,?,?,?,?)" : "UPDATE users SET nom=?,email=?,is_guru=?,visible=? WHERE id=?";
+			let p = [ed_login.value, ed_email.value, chk_guru.checked, chk_visible.checked];
 			if (currentUser.id != 0) p.push(currentUser.id);
 			io.emit("login_run", stm, p, (r) => {
 				if (r.err) reject(r.err);

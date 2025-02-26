@@ -16,6 +16,7 @@
 		<link rel="stylesheet" href="/css/hamburger.css" />
 		<link rel="stylesheet" href="/css/notifs.css" />
 		<link rel="stylesheet" href="/css/minicbx.css" />
+		<link rel="stylesheet" href="/css/chk_image.css" />
 		<style type="text/css">
 			body {
 				box-sizing: border-box;
@@ -507,18 +508,19 @@
 								<label hlp="Lire et envoyer des notifications"><img src="/images/Notification.png" /><img src="/images/Alarm.png" class="hide_me" /></label>
 								<div class="level1">
 									<div class="notifs">
-										<div class="topbar">Filtrer:<select id="sel_from" onchange="selectUserVers(this.value)"></select></div>
+										<div class="topbar">Filtrer:<select id="sel_from" onchange="onNotifFiltre(this.value)"></select></div>
 										<div class="reception" id="notifs_liste"></div>
-										<div class="who2 flexSB">
-											<div class="flexV">
-												<img class="inset" src="/images/Customer_25px.png" id="vers_un" hlp="Envoyer une notification à un utilisateur" />
-												<select id="sel_user"></select>
-											</div>
-											<div class="flexV">
-												<img src="/images/Crowd_25px.png" id="vers_plus" hlp="Envoyer une notification à un groupe d'utilisateur" />
-												<select id="sel_grp" oninput="console.log(this)"></select>
-											</div>
+										<div class="flexH" style="justify-content: space-evenly">
+											<input type="checkbox" id="chk_grp" class="chk_image" />
+											<label for="chk_grp">
+												<img src="/images/Customer_25px.png" alt="Envoyer une notification à un utilisateur" id />
+												<img src="/images/Crowd_25px.png" alt="Envoyer une notification à un groupe d'utilisateur" />
+											</label>
+											<div></div>
+											<select id="sel_user" class="si_chk"></select>
+											<select id="sel_grp" class="si_unchk"></select>
 										</div>
+
 										<div class="footbar">
 											<div id="ed_notif" contenteditable="true"></div>
 											<div id="if_no_text" class="placeholder">Tapez votre message ici</div>
@@ -754,7 +756,7 @@
 					},
 					set: (b) => SetSessionFlag(8, b),
 				},
-				vers_un: {
+				chk_grp: {
 					get: () => {
 						return Boolean(this.flags & 16);
 					},
@@ -1839,8 +1841,7 @@
 	const notif_send = document.getElementById("notif_send");
 	const notifs_liste = document.getElementById("notifs_liste");
 	const sel_from = document.getElementById("sel_from");
-	const vers_un = document.getElementById("vers_un");
-	const vers_plus = document.getElementById("vers_plus");
+	const vers_chk = document.getElementById("vers_chk");
 	const sel_user = document.getElementById("sel_user");
 	const sel_grp = document.getElementById("sel_grp");
 	const n_img = document.querySelectorAll("#menu_notif > label img");
@@ -1875,61 +1876,49 @@
 	});
 
 	var notif_users = [];
-	function setNotifSel() {
-		function getOptStr(id, nom) {
-			return '<option value="' + id + '" ' + (id == mesChoix.sel_from ? "selected" : "") + ">" + nom + "</option>";
-		}
-		let st = getOptStr(-1, "Toutes");
-		let st1 = "";
-		let st2 = "";
-		let st3 = "";
-		let st4 = "";
-		lesNotifs.forEach((el) => {
-			if (st1 == "" && el.id_user_de == 0) st1 += getOptStr(0, "Messages système");
-			if (st2 == "" && el.lu == 0) st2 += getOptStr(-2, "Non lus");
-			if (st3 == "" && el.id_user_de == session.user.id) st3 += getOptStr(session.user.id, "De moi");
-			if (el.id_user_de != 0 && el.id_user_de != session.user.id) {
-				let foo = getOptStr(el.id_user_de, "De " + el.nom);
-				if (!st4.contains(foo)) st4 += foo;
-			}
+
+	function login_all(stm, params) {
+		return new Promise((resolve, reject) => {
+			io.emit("login_all", stm, params, (r) => {
+				if (r.err) reject(r.err.message);
+				else resolve(r);
+			});
 		});
-		sel_from.innerHTML = st + st1 + st2 + st3 + st4;
-		document.querySelector(".topbar").style.display = "flex";
 	}
 
-	function initSendElvis() {
-		io.emit("login_all", "SELECT id,nom,visible,can_send_notif FROM users", [], (r) => {
-			console.log(r);
-			if (r.err) Erreur(r.err.message);
-			else {
-				notif_users = r;
-				let st = "";
-				for (let el of notif_users) if (el.visible && el.id != session.user.id) st += "<option value=" + el.id + ">" + el.nom + "</option>";
-				sel_user.innerHTML = st;
-				// Récupérer le nom et nbr d'inscrits dans un groupe (sauf les groupes 'Gourou','Notifications',Privé')
-				const stm =
-					"SELECT id_groupe, COUNT(*) as cnt,G.nom,G.hlp FROM user_groupe UG \
+	async function initSendElvis() {
+		try {
+			let r = await login_all("SELECT id,nom,visible FROM users WHERE id>2 AND visible=true ORDER BY nom", []);
+			notif_users = r;
+			if (notif_users.length == 0) {
+			}
+			let st = "";
+			for (let user of notif_users) {
+				user.groupes = [];
+				if (user.id != session.user.id) st += "<option value=" + user.id + ">" + user.nom + "</option>";
+				// récupérer les groupes de cet utilisateur
+				let ids = await login_all("SELECT id_groupe FROM user_groupe WHERE id_user=?", [user.id]);
+				console.log("" + user.id + " ids:", ids);
+				ids.forEach((row) => user.groupes.push(row.id_groupe));
+			}
+			sel_user.innerHTML = st;
+			console.log(notif_users);
+			// Récupérer le nom et nbr d'inscrits dans un groupe (sauf les groupes 'Gourou','Notifications',Privé')
+			const stm =
+				"SELECT id_groupe, COUNT(*) as cnt,G.nom,G.hlp FROM user_groupe UG \
 		INNER JOIN groupes G ON G.id=UG.id_groupe \
 		GROUP BY id_groupe ORDER BY G.nom";
-				io.emit("login_all", stm, [], (r) => {
-					if (r.err) Erreur(r.err.message);
-					else {
-						let st = "";
-						r.forEach((el) => {
-							if (el.cnt > 0) st += '<option hlp="' + el.hlp + '" value=' + el.id_groupe + ">" + el.nom + "</option>";
-						});
-						sel_grp.innerHTML = st;
-						// Add a message to inform users if no groups are available
-						if (st === "") {
-							sel_grp.innerHTML = "<option value=''>Aucun groupe disponible</option>";
-							Warning("Il n'y a pas de groupe disponible pour l'envoi de notifications");
-						}
-					}
-				});
-				if (mesChoix.vers_un) vers_un.click();
-				else vers_plus.click(); // notifs non-lues
-			}
-		});
+			let r2 = await login_all(stm, []);
+			console.log(r2);
+			st = "<option value=-2>Webmasters</option><option value=-1>Administrateur</option>";
+			r2.forEach((el) => {
+				if (el.cnt > 0) st += '<option hlp="' + el.hlp + '" value=' + el.id_groupe + ">" + el.nom + "</option>";
+			});
+			sel_grp.innerHTML = st;
+		} catch (e) {
+			Erreur(e);
+		}
+		chk_grp.checked = mesChoix.chk_grp;
 	}
 
 	var lesNotifs = [];
@@ -1941,17 +1930,46 @@
 			console.log(rows);
 			if (rows.err) Erreur(rows.err.message || rows.err.code);
 			else {
-				let st = "";
 				lesNotifs = rows;
-				setNotifSel();
-				selectUserVers(mesChoix.sel_from);
+				document.querySelector(".topbar").style.display = lesNotifs.length > 0 ? "flex" : "none";
+				if (lesNotifs.length > 0) {
+					// changer le filtre en fonction des notifications
+					let st = "";
+					function addOptStr(id, nom) {
+						const idst = 'value="' + id + '" ';
+						if (!st.includes(idst)) st += "<option " + idst + (id == mesChoix.sel_from ? "selected" : "") + ">" + nom + "</option>";
+					}
+					addOptStr(-1, "Toutes");
+					for (const el of lesNotifs)
+						if (el.id_user_de == 0) {
+							addOptStr(0, "Messages système");
+							break;
+						}
+					for (const el of lesNotifs)
+						if (el.lu == 0) {
+							addOptStr(-2, "Non lus");
+							break;
+						}
+					for (const el of lesNotifs)
+						if (el.id_user_de == session.user.id) {
+							addOptStr(session.user.id, "De moi");
+							break;
+						}
+					for (const el of lesNotifs) {
+						let qui = notif_users.find((el2) => el2.id == el.id_user_de);
+						if (qui != undefined) addOptStr(el.id_user_de, "De " + qui.nom);
+					}
+					sel_from.innerHTML = st;
+					document.querySelector(".topbar").style.display = lesNotifs.length > 0 ? "flex" : "none";
+					onNotifFiltre(mesChoix.sel_from);
+				}
 			}
 		});
 	}
 
-	function selectUserVers(val) {
+	function onNotifFiltre(val) {
 		if (val == undefined) val = -1;
-		SetChoix("sel_from", val);
+		if (val != mesChoix.sel_from) SetChoix("sel_from", val);
 		let st = "";
 		lesNotifs.forEach((ntf, idx) => {
 			const make_me = val == -1 || (val == -2 && ntf.lu == 0) || ntf.id_user_de == val;
@@ -2013,22 +2031,8 @@
 	}
 
 	// Add event listeners for new elements
-	vers_un.addEventListener("click", function (e) {
-		// Handle the change event for vers_un
-		//SetChoix("vers_un", true);
-		vers_plus.classList.remove("sel");
-		vers_un.classList.add("sel");
-		sel_user.disabled = false;
-		sel_grp.disabled = true;
-	});
-
-	vers_plus.addEventListener("click", function (e) {
-		// Handle the change event for vers_plus
-		//SetChoix("vers_un", false);
-		vers_un.classList.remove("sel");
-		vers_plus.classList.add("sel");
-		sel_user.disabled = true;
-		sel_grp.disabled = false;
+	chk_grp.addEventListener("click", function (e) {
+		SetChoix("chk_grp", this.checked);
 	});
 
 	notif_send.addEventListener("click", function () {
@@ -2036,7 +2040,7 @@
 		const txt = ed_notif.innerText.trim();
 		ed_notif.innerText = "";
 		if (txt.length == 0) return;
-		if (mesChoix.vers_un)
+		if (mesChoix.chk_grp)
 			io.emit("login_run", "INSERT INTO notifications (id_user_de,id_user_vers,message) VALUES (?,?,?)", [session.user.id, sel_user.value, txt], (r) => {
 				if (r.err) Erreur(r.err.message);
 				else setNotifs();

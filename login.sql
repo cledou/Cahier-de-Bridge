@@ -15,10 +15,7 @@ CREATE TABLE users (
   last_db INTEGER REFERENCES bases(id),
   binette BLOB,
   is_guru BOOLEAN DEFAULT FALSE,
-  visible BOOLEAN DEFAULT TRUE,
-// can_receive_email BOOLEAN DEFAULT TRUE,
-// can_receive_sms BOOLEAN DEFAULT TRUE,
-  can_send_notif BOOLEAN DEFAULT TRUE
+  visible BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE bases (
@@ -27,7 +24,7 @@ CREATE TABLE bases (
   id_owner INTEGER key REFERENCES users(id)
 );
 
-INSERT INTO users (id,nom) VALUES (1,'Anonyme');
+INSERT INTO users (id,nom,visible) VALUES (1,'Anonyme',false);
 INSERT INTO users (id,nom,is_guru) VALUES (2,'Administrateur',true);
 
 INSERT INTO bases (id,filename,id_owner) VALUES (1,'example.db',2);
